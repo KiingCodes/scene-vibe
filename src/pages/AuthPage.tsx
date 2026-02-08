@@ -79,7 +79,7 @@ const AuthPage = () => {
 </div>
 
 
-            <h1 className="font-display font-bold text-3xl text-primary neon-text">City Vibes</h1>
+            <h1 className="font-display font-bold text-3xl text-primary neon-text"></h1>
             <p className="text-muted-foreground text-sm">
               {isLogin ? 'Welcome back to the vibe' : 'Join the scene'}
             </p>
