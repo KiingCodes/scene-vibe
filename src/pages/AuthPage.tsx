@@ -70,13 +70,14 @@ const AuthPage = () => {
       >
         <div className="glass rounded-2xl p-8 space-y-6">
           <div className="text-center space-y-2">
-          <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 neon-border">
+ <div className="flex justify-center mb-4">
   <img
     src={logo}
     alt="Scene Logo"
-    className="w-10 h-10 object-contain"
+    className="w-19 h-19 object-contain"
   />
 </div>
+
 
             <h1 className="font-display font-bold text-3xl text-primary neon-text">SCENE</h1>
             <p className="text-muted-foreground text-sm">
