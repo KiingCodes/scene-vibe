@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { MapPin, MessageCircle, Home, User, LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import logo from '@/assets/logo.png';
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
@@ -20,13 +21,20 @@ const Navbar = () => {
       animate={{ y: 0, opacity: 1 }}
       className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/30"
     >
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-display font-bold text-sm">S</span>
-          </div>
-          <span className="font-display font-bold text-xl text-primary neon-text">SCENE</span>
-        </Link>
+  <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+  <Link to="/" className="flex items-center gap-2">
+    <img
+      src={logo}
+      alt="Scene Vibe Logo"
+      className="w-8 h-8 object-contain"
+    />
+    <span className="font-display font-bold text-xl text-primary neon-text">
+      SCENE
+    </span>
+    <p>City Vibes</p>
+  </Link>
+</div>
+
 
         <div className="flex items-center gap-1">
           {navItems.map(({ path, icon: Icon, label }) => (
@@ -56,7 +64,7 @@ const Navbar = () => {
             </Link>
           )}
         </div>
-      </div>
+      
     </motion.nav>
   );
 };

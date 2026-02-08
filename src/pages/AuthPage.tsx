@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { Flame } from 'lucide-react';
+import logo from '@/assets/logo.png';
 
 const AuthPage = () => {
   const { signIn, signUp } = useAuth();
@@ -69,9 +70,14 @@ const AuthPage = () => {
       >
         <div className="glass rounded-2xl p-8 space-y-6">
           <div className="text-center space-y-2">
-            <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 neon-border">
-              <Flame className="w-8 h-8 text-primary-foreground" />
-            </div>
+          <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 neon-border">
+  <img
+    src={logo}
+    alt="Scene Logo"
+    className="w-10 h-10 object-contain"
+  />
+</div>
+
             <h1 className="font-display font-bold text-3xl text-primary neon-text">SCENE</h1>
             <p className="text-muted-foreground text-sm">
               {isLogin ? 'Welcome back to the vibe' : 'Join the scene'}
