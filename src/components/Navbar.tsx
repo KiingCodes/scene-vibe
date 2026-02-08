@@ -31,7 +31,6 @@ const Navbar = () => {
     <span className="font-display font-bold text-xl text-primary neon-text">
       SCENE
     </span>
-    <p>City Vibes</p>
   </Link>
 </div>
 
