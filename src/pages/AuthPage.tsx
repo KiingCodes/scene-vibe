@@ -74,12 +74,12 @@ const AuthPage = () => {
   <img
     src={logo}
     alt="Scene Logo"
-    className="w-19 h-19 object-contain"
+    className="w-18 h-18 object-contain"
   />
 </div>
 
 
-            <h1 className="font-display font-bold text-3xl text-primary neon-text">SCENE</h1>
+            <h1 className="font-display font-bold text-3xl text-primary neon-text">City Vibes</h1>
             <p className="text-muted-foreground text-sm">
               {isLogin ? 'Welcome back to the vibe' : 'Join the scene'}
             </p>
