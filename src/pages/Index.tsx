@@ -44,7 +44,7 @@ const Index = () => {
             <span className="text-primary neon-text">SCENE</span>
           </h1>
           <p className="text-muted-foreground text-lg max-w-md mx-auto">
-            Discover what's vibing in Johannesburg right now
+            What’s the scene in your city?
           </p>
         </motion.div>
 
