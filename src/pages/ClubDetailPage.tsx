@@ -1,10 +1,11 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, MapPin, Clock, Music, Users, Flame, TrendingUp, Navigation, Globe, Instagram } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Music, Flame, TrendingUp, Navigation, Globe, Instagram } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import ClubChat from '@/components/ClubChat';
 import ClubReviews from '@/components/ClubReviews';
 import ClubMap from '@/components/ClubMap';
+import CrowdLevel from '@/components/CrowdLevel';
 import { useClub } from '@/hooks/useClubs';
 import { useVibeCount, useHasVibed, useVibe, useAllVibes } from '@/hooks/useVibes';
 import { useAuth } from '@/hooks/useAuth';
@@ -104,7 +105,19 @@ const ClubDetailPage = () => {
             <div className="glass rounded-xl p-5 space-y-4">
               <p className="text-muted-foreground text-sm leading-relaxed">{club.description}</p>
               
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {/* Crowd Level Indicator */}
+              <div className="bg-muted/30 rounded-lg p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Current Crowd Level</p>
+                  <CrowdLevel vibeCount={vibeCount || 0} size="lg" />
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-primary">{vibeCount || 0}</p>
+                  <p className="text-xs text-muted-foreground">vibes today</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {club.genre && (
                   <div className="bg-muted/30 rounded-lg p-3 text-center">
                     <Music className="w-4 h-4 text-secondary mx-auto mb-1" />
@@ -121,16 +134,11 @@ const ClubDetailPage = () => {
                 )}
                 {club.capacity && (
                   <div className="bg-muted/30 rounded-lg p-3 text-center">
-                    <Users className="w-4 h-4 text-accent mx-auto mb-1" />
+                    <Flame className="w-4 h-4 text-accent mx-auto mb-1" />
                     <p className="text-xs text-muted-foreground">Capacity</p>
                     <p className="text-sm font-semibold text-foreground">{club.capacity}</p>
                   </div>
                 )}
-                <div className="bg-muted/30 rounded-lg p-3 text-center">
-                  <Flame className="w-4 h-4 text-primary mx-auto mb-1" />
-                  <p className="text-xs text-muted-foreground">Vibes (24h)</p>
-                  <p className="text-sm font-semibold text-foreground">{vibeCount || 0}</p>
-                </div>
               </div>
 
               {/* Links */}
