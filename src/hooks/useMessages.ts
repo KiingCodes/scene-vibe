@@ -65,3 +65,24 @@ export const useSendMessage = () => {
     },
   });
 };
+
+export const useDeleteMessage = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ messageId, clubId }: { messageId: string; clubId: string }) => {
+      if (!user) throw new Error('Must be signed in');
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', messageId)
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return clubId;
+    },
+    onSuccess: (clubId) => {
+      queryClient.invalidateQueries({ queryKey: ['messages', clubId] });
+    },
+  });
+};

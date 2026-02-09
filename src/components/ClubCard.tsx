@@ -2,11 +2,11 @@ import { motion } from 'framer-motion';
 import { Flame, TrendingUp, MapPin, Clock, Music } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useVibeCount, useHasVibed, useVibe } from '@/hooks/useVibes';
+import { useHasVibed, useVibe } from '@/hooks/useVibes';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import type { Club } from '@/hooks/useClubs';
-
+import CrowdLevel from './CrowdLevel';
 interface ClubCardProps {
   club: Club;
   vibeCount?: number;
@@ -93,19 +93,22 @@ const ClubCard = ({ club, vibeCount = 0, index }: ClubCardProps) => {
               <span className="truncate">{club.area}</span>
             </div>
 
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              {club.genre && (
-                <span className="flex items-center gap-1">
-                  <Music className="w-3 h-3 text-secondary/70" />
-                  {club.genre}
-                </span>
-              )}
-              {club.opening_hours && (
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-accent/70" />
-                  {club.opening_hours}
-                </span>
-              )}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                {club.genre && (
+                  <span className="flex items-center gap-1">
+                    <Music className="w-3 h-3 text-secondary/70" />
+                    {club.genre}
+                  </span>
+                )}
+                {club.opening_hours && (
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-accent/70" />
+                    {club.opening_hours}
+                  </span>
+                )}
+              </div>
+              <CrowdLevel vibeCount={vibeCount} size="sm" showLabel={false} />
             </div>
           </div>
         </div>

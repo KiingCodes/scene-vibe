@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { useTrendingNotifications } from "@/hooks/useTrendingNotifications";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
 import MapPage from "./pages/MapPage";
@@ -20,22 +21,31 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const AppContent = () => {
+  // Enable trending notifications globally
+  useTrendingNotifications();
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/auth" element={<AuthGuard><AuthPage /></AuthGuard>} />
+        <Route path="/map" element={<MapPage />} />
+        <Route path="/chat" element={<ChatPage />} />
+        <Route path="/club/:id" element={<ClubDetailPage />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<AuthGuard><AuthPage /></AuthGuard>} />
-            <Route path="/map" element={<MapPage />} />
-            <Route path="/chat" element={<ChatPage />} />
-            <Route path="/club/:id" element={<ClubDetailPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <AppContent />
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>

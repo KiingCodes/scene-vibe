@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Send } from 'lucide-react';
+import { Send, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useMessages, useSendMessage } from '@/hooks/useMessages';
+import { useMessages, useSendMessage, useDeleteMessage } from '@/hooks/useMessages';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface ClubChatProps {
   clubId: string;
@@ -16,6 +17,7 @@ const ClubChat = ({ clubId, clubName }: ClubChatProps) => {
   const { user } = useAuth();
   const { data: messages, isLoading } = useMessages(clubId);
   const sendMessage = useSendMessage();
+  const deleteMessage = useDeleteMessage();
   const [newMessage, setNewMessage] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -33,6 +35,15 @@ const ClubChat = ({ clubId, clubName }: ClubChatProps) => {
       setNewMessage('');
     } catch {
       // error handled by mutation
+    }
+  };
+
+  const handleDelete = async (messageId: string) => {
+    try {
+      await deleteMessage.mutateAsync({ messageId, clubId });
+      toast.success('Message deleted');
+    } catch {
+      toast.error('Could not delete message');
     }
   };
 
@@ -56,9 +67,9 @@ const ClubChat = ({ clubId, clubName }: ClubChatProps) => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.02 }}
-              className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group`}
             >
-              <div className={`max-w-[75%] px-3 py-2 rounded-xl text-sm ${
+              <div className={`relative max-w-[75%] px-3 py-2 rounded-xl text-sm ${
                 isOwn
                   ? 'gradient-primary text-primary-foreground rounded-br-sm'
                   : 'bg-muted text-foreground rounded-bl-sm'
@@ -69,6 +80,15 @@ const ClubChat = ({ clubId, clubName }: ClubChatProps) => {
                   </p>
                 )}
                 <p>{msg.content}</p>
+                {isOwn && (
+                  <button
+                    onClick={() => handleDelete(msg.id)}
+                    className="absolute -right-6 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:text-destructive"
+                    title="Delete message"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             </motion.div>
           );
