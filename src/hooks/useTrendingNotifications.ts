@@ -18,12 +18,12 @@ export const useTrendingNotifications = () => {
           if (!clubId) return;
 
           // Check if this club just hit trending (3 vibes)
-          const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+          const twentyMinutesAgo = new Date(Date.now() - 20 * 60 * 1000).toISOString();
           const { count } = await supabase
             .from('vibes')
             .select('*', { count: 'exact', head: true })
             .eq('club_id', clubId)
-            .gte('created_at', twentyFourHoursAgo);
+            .gte('created_at', twentyMinutesAgo);
 
           // If club just hit 3 vibes and we haven't notified yet
           if (count === 3 && !notifiedClubs.current.has(clubId)) {
