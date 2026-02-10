@@ -10,12 +10,12 @@ export const useVibeCount = (clubId: string) => {
   const query = useQuery({
     queryKey: ['vibes', clubId],
     queryFn: async () => {
-      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const twentyMinutesAgo = new Date(Date.now() - 20 * 60 * 1000).toISOString();
       const { count, error } = await supabase
         .from('vibes')
         .select('*', { count: 'exact', head: true })
         .eq('club_id', clubId)
-        .gte('created_at', twentyFourHoursAgo);
+        .gte('created_at', twentyMinutesAgo);
       if (error) throw error;
       return count ?? 0;
     },
@@ -43,11 +43,11 @@ export const useAllVibes = () => {
   const query = useQuery({
     queryKey: ['all-vibes'],
     queryFn: async () => {
-      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const twentyMinutesAgo = new Date(Date.now() - 20 * 60 * 1000).toISOString();
       const { data, error } = await supabase
         .from('vibes')
         .select('club_id')
-        .gte('created_at', twentyFourHoursAgo);
+        .gte('created_at', twentyMinutesAgo);
       if (error) throw error;
       const counts: Record<string, number> = {};
       data?.forEach(v => { counts[v.club_id] = (counts[v.club_id] || 0) + 1; });
@@ -76,13 +76,13 @@ export const useHasVibed = (clubId: string) => {
     queryKey: ['has-vibed', clubId, deviceId],
     queryFn: async () => {
       if (!deviceId) return false;
-      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const twentyMinutesAgo = new Date(Date.now() - 20 * 60 * 1000).toISOString();
       const { data, error } = await supabase
         .from('vibes')
         .select('id')
         .eq('club_id', clubId)
         .eq('device_id', deviceId)
-        .gte('created_at', twentyFourHoursAgo)
+        .gte('created_at', twentyMinutesAgo)
         .limit(1);
       if (error) throw error;
       return (data?.length ?? 0) > 0;
