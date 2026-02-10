@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useTrendingNotifications } from "@/hooks/useTrendingNotifications";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
 import MapPage from "./pages/MapPage";
@@ -24,6 +25,7 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
 const AppContent = () => {
   // Enable trending notifications globally
   useTrendingNotifications();
+  usePushNotifications();
 
   return (
     <BrowserRouter>
