@@ -4,8 +4,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Flame } from 'lucide-react';
 import logo from '@/assets/logo.png';
+import background from '@/assets/background.jpg'; // 👈 your background image
 
 const AuthPage = () => {
   const { signIn, signUp } = useAuth();
@@ -58,68 +58,91 @@ const AuthPage = () => {
     } catch {
       toast.error('Something went wrong');
     }
+
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 gradient-dark">
+    <div
+      className="min-h-screen flex items-center justify-center p-4 relative"
+      style={{
+        backgroundImage: `url(${background})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-black/65" />
+
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-md"
+        className="w-full max-w-md relative z-10"
       >
         <div className="glass rounded-2xl p-8 space-y-6">
+          {/* Logo & Header */}
           <div className="text-center space-y-2">
- <div className="flex justify-center mb-4">
-  <img
-    src={logo}
-    alt="Scene Logo"
-    className="w-18 h-18 object-contain"
-  />
-</div>
+            <div className="flex justify-center mb-4">
+              <img
+                src={logo}
+                alt="Scene Logo"
+                className="w-20 h-20 object-contain"
+              />
+            </div>
 
-
-            <h1 className="font-display font-bold text-3xl text-primary neon-text"></h1>
             <p className="text-muted-foreground text-sm">
               {isLogin ? 'Welcome back to the vibe' : 'Join the scene'}
             </p>
           </div>
 
+          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <Input
                 type="text"
                 placeholder="Username"
                 value={username}
-                onChange={e => setUsername(e.target.value)}
-                required={!isLogin}
+                onChange={(e) => setUsername(e.target.value)}
+                required
                 className="bg-muted/50 border-border/50"
               />
             )}
+
             <Input
               type="email"
               placeholder="Email"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
               required
               className="bg-muted/50 border-border/50"
             />
+
             <Input
               type="password"
               placeholder="Password"
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
               required
               className="bg-muted/50 border-border/50"
             />
-            <Button type="submit" disabled={loading} className="w-full gradient-primary text-primary-foreground font-semibold">
+
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full gradient-primary text-primary-foreground font-semibold"
+            >
               {loading ? 'Loading...' : isLogin ? 'Sign In' : 'Sign Up'}
             </Button>
           </form>
 
+          {/* Switch auth mode */}
           <p className="text-center text-sm text-muted-foreground">
             {isLogin ? "Don't have an account?" : 'Already have an account?'}{' '}
-            <button onClick={() => setIsLogin(!isLogin)} className="text-primary hover:underline font-semibold">
+            <button
+              onClick={() => setIsLogin(!isLogin)}
+              className="text-primary hover:underline font-semibold"
+            >
               {isLogin ? 'Sign Up' : 'Sign In'}
             </button>
           </p>
