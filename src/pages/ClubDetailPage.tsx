@@ -1,6 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, MapPin, Clock, Music, Flame, TrendingUp, Navigation, Globe, Instagram } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Music, Flame, TrendingUp, Navigation, Globe, Instagram, Car } from 'lucide-react';
+import PullingUpButton from '@/components/PullingUpButton';
 import Navbar from '@/components/Navbar';
 import ClubChat from '@/components/ClubChat';
 import ClubReviews from '@/components/ClubReviews';
@@ -8,6 +9,7 @@ import ClubMap from '@/components/ClubMap';
 import CrowdLevel from '@/components/CrowdLevel';
 import { useClub } from '@/hooks/useClubs';
 import { useVibeCount, useHasVibed, useVibe, useAllVibes } from '@/hooks/useVibes';
+import { usePullingUpCount, useHasPulledUp, usePullUp } from '@/hooks/usePullingUp';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -19,6 +21,7 @@ const ClubDetailPage = () => {
   const { data: vibeCounts } = useAllVibes();
   const { data: hasVibed } = useHasVibed(id!);
   const vibeMutation = useVibe();
+  const { data: pullingUpCount } = usePullingUpCount(id!);
   const { user } = useAuth();
 
   const isTrending = (vibeCount || 0) >= 3;
@@ -81,18 +84,21 @@ const ClubDetailPage = () => {
                   </p>
                 </div>
 
-                <Button
-                  onClick={handleVibe}
-                  disabled={hasVibed || vibeMutation.isPending}
-                  className={`gap-2 rounded-full font-semibold ${
-                    hasVibed
-                      ? 'bg-primary/20 text-primary border border-primary/30'
-                      : 'gradient-primary text-primary-foreground'
-                  } ${!hasVibed ? 'vibe-pulse' : ''}`}
-                >
-                  <Flame className="w-5 h-5" />
-                  {vibeCount || 0} {hasVibed ? 'Vibed' : 'Vibe It'}
-                </Button>
+                <div className="flex gap-2">
+                  <PullingUpButton clubId={id!} pullingUpCount={pullingUpCount || 0} size="default" />
+                  <Button
+                    onClick={handleVibe}
+                    disabled={hasVibed || vibeMutation.isPending}
+                    className={`gap-2 rounded-full font-semibold ${
+                      hasVibed
+                        ? 'bg-primary/20 text-primary border border-primary/30'
+                        : 'gradient-primary text-primary-foreground'
+                    } ${!hasVibed ? 'vibe-pulse' : ''}`}
+                  >
+                    <Flame className="w-5 h-5" />
+                    {vibeCount || 0} {hasVibed ? 'Vibed' : 'Vibe It'}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -111,9 +117,15 @@ const ClubDetailPage = () => {
                   <p className="text-xs text-muted-foreground mb-1">Current Crowd Level</p>
                   <CrowdLevel vibeCount={vibeCount || 0} size="lg" />
                 </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-primary">{vibeCount || 0}</p>
-                  <p className="text-xs text-muted-foreground">vibes today</p>
+                <div className="flex gap-6">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-accent flex items-center gap-1"><Car className="w-5 h-5" /> {pullingUpCount || 0}</p>
+                    <p className="text-xs text-muted-foreground">pulling up</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-primary">{vibeCount || 0}</p>
+                    <p className="text-xs text-muted-foreground">vibes now</p>
+                  </div>
                 </div>
               </div>
 

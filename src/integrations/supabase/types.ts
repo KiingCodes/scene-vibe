@@ -162,6 +162,44 @@ export type Database = {
         }
         Relationships: []
       }
+      pulling_up: {
+        Row: {
+          club_id: string
+          created_at: string
+          device_id: string
+          eta_minutes: number
+          expires_at: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          device_id: string
+          eta_minutes?: number
+          expires_at: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          device_id?: string
+          eta_minutes?: number
+          expires_at?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pulling_up_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reviews: {
         Row: {
           club_id: string
