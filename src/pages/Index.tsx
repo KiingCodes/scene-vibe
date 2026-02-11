@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Search, Flame, TrendingUp, SlidersHorizontal } from 'lucide-react';
 import { useClubs } from '@/hooks/useClubs';
 import { useAllVibes } from '@/hooks/useVibes';
+import { useAllPullingUp } from '@/hooks/usePullingUp';
 import ClubCard from '@/components/ClubCard';
 import Navbar from '@/components/Navbar';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,7 @@ import { Button } from '@/components/ui/button';
 const Index = () => {
   const { data: clubs, isLoading } = useClubs();
   const { data: vibeCounts } = useAllVibes();
+  const { data: pullingUpCounts } = useAllPullingUp();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'trending' | 'vibing'>('all');
 
@@ -110,6 +112,7 @@ const Index = () => {
                 key={club.id}
                 club={club}
                 vibeCount={vibeCounts?.[club.id] || 0}
+                pullingUpCount={pullingUpCounts?.[club.id] || 0}
                 index={i}
               />
             ))}

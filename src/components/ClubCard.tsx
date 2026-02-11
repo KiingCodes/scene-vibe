@@ -4,16 +4,19 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useHasVibed, useVibe } from '@/hooks/useVibes';
 import { Button } from '@/components/ui/button';
+import PullingUpButton from '@/components/PullingUpButton';
 import { toast } from 'sonner';
 import type { Club } from '@/hooks/useClubs';
 import CrowdLevel from './CrowdLevel';
+
 interface ClubCardProps {
   club: Club;
   vibeCount?: number;
+  pullingUpCount?: number;
   index: number;
 }
 
-const ClubCard = ({ club, vibeCount = 0, index }: ClubCardProps) => {
+const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardProps) => {
   const { user } = useAuth();
   const { data: hasVibed } = useHasVibed(club.id);
   const vibeMutation = useVibe();
@@ -66,7 +69,8 @@ const ClubCard = ({ club, vibeCount = 0, index }: ClubCardProps) => {
               </motion.div>
             )}
 
-            <div className="absolute bottom-3 right-3">
+            <div className="absolute bottom-3 right-3 flex gap-1.5">
+              <PullingUpButton clubId={club.id} pullingUpCount={pullingUpCount} />
               <Button
                 size="sm"
                 onClick={handleVibe}
