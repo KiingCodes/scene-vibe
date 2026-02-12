@@ -9,10 +9,12 @@ export const useMessages = (clubId: string) => {
   const query = useQuery({
     queryKey: ['messages', clubId],
     queryFn: async () => {
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
       const { data: msgs, error } = await supabase
         .from('messages')
         .select('*')
         .eq('club_id', clubId)
+        .gte('created_at', twentyFourHoursAgo)
         .order('created_at', { ascending: true })
         .limit(100);
       if (error) throw error;
