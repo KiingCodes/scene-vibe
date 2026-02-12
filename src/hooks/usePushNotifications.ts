@@ -1,13 +1,13 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-const registerServiceWorker = async () => {
+const getServiceWorkerRegistration = async () => {
   if (!('serviceWorker' in navigator) || !('Notification' in window)) return null;
   try {
-    const registration = await navigator.serviceWorker.register('/sw.js');
+    const registration = await navigator.serviceWorker.ready;
     return registration;
   } catch {
-    console.warn('SW registration failed');
+    console.warn('SW not available');
     return null;
   }
 };
@@ -40,7 +40,7 @@ export const usePushNotifications = () => {
   }, [requestPermission]);
 
   useEffect(() => {
-    registerServiceWorker().then(reg => {
+    getServiceWorkerRegistration().then(reg => {
       swRegistration.current = reg;
     });
 

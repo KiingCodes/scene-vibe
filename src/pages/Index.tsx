@@ -43,7 +43,7 @@ const Index = () => {
           className="text-center mb-8 space-y-3"
         >
           <h1 className="font-display font-bold text-4xl sm:text-5xl">
-            <span className="text-primary neon-text"></span>
+            <span className="text-primary neon-text">SCENE</span>
           </h1>
           <p className="text-muted-foreground text-lg max-w-md mx-auto">
             What’s the scene in your city?
