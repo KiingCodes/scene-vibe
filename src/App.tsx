@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useTrendingNotifications } from "@/hooks/useTrendingNotifications";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import InstallPrompt from "./components/InstallPrompt";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
 import MapPage from "./pages/MapPage";
@@ -29,6 +30,7 @@ const AppContent = () => {
 
   return (
     <BrowserRouter>
+      <InstallPrompt />
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/auth" element={<AuthGuard><AuthPage /></AuthGuard>} />
