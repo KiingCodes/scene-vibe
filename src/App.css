@@ -40,3 +40,11 @@
 .read-the-docs {
   color: #888;
 }
+
+
+.neon-glow {
+  text-shadow:
+    0 0 5px rgba(255, 0, 150, 0.6),
+    0 0 10px rgba(138, 43, 226, 0.6),
+    0 0 20px rgba(0, 191, 255, 0.6);
+}

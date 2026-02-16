@@ -4,6 +4,8 @@ import { MapPin, MessageCircle, Home, User, LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import logo from '@/assets/logo.png';
+import "@fontsource/poppins/800.css";
+
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
@@ -28,9 +30,10 @@ const Navbar = () => {
       alt="Scene Vibe Logo"
       className="w-8 h-8 object-contain"
     />
-    <span className="font-display font-bold text-xl text-primary neon-text">
-      SCENE
-    </span>
+   <span className="font-poppins font-extrabold text-2xl tracking-wider bg-gradient-to-r from-orange-400 via-pink-500 via-purple-500 to-cyan-400 bg-clip-text text-transparent neon-glow">
+  SCENE
+</span>
+
   </Link>
 </div>
 
