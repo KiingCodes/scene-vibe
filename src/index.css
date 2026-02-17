@@ -1,58 +1,61 @@
-/* Move @import to the very top */
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ---------------------------- */
+/* 🔥 BASE LAYER */
+/* ---------------------------- */
 @layer base {
   :root {
-    --background: hsl(240, 10%, 4%);
-    --foreground: hsl(0, 0%, 95%);
+    /* Core Colors (RAW HSL values for Tailwind config compatibility) */
+    --background: 240 10% 4%;
+    --foreground: 0 0% 95%;
 
-    --card: hsl(240, 8%, 8%);
-    --card-foreground: hsl(0, 0%, 95%);
+    --card: 240 8% 8%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: hsl(240, 8%, 8%);
-    --popover-foreground: hsl(0, 0%, 95%);
+    --popover: 240 8% 8%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: hsl(174, 100%, 50%);
-    --primary-foreground: hsl(240, 10%, 4%);
+    --primary: 174 100% 50%;
+    --primary-foreground: 240 10% 4%;
 
-    --secondary: hsl(330, 100%, 60%);
-    --secondary-foreground: hsl(0, 0%, 100%);
+    --secondary: 330 100% 60%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: hsl(240, 6%, 14%);
-    --muted-foreground: hsl(240, 5%, 55%);
+    --muted: 240 6% 14%;
+    --muted-foreground: 240 5% 55%;
 
-    --accent: hsl(270, 80%, 60%);
-    --accent-foreground: hsl(0, 0%, 100%);
+    --accent: 270 80% 60%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: hsl(0, 84%, 60%);
-    --destructive-foreground: hsl(0, 0%, 100%);
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: hsl(240, 6%, 18%);
-    --input: hsl(240, 6%, 18%);
-    --ring: hsl(174, 100%, 50%);
+    --border: 240 6% 18%;
+    --input: 240 6% 18%;
+    --ring: 174 100% 50%;
 
     --radius: 0.75rem;
 
-    --neon-glow: 0 0 20px hsl(174, 100%, 50% / 0.4);
-    --neon-glow-secondary: 0 0 20px hsl(330, 100%, 60% / 0.4);
-    --neon-glow-accent: 0 0 20px hsl(270, 80%, 60% / 0.4);
+    /* Neon Effects */
+    --neon-glow: 0 0 20px hsla(174, 100%, 50%, 0.4);
+    --neon-glow-secondary: 0 0 20px hsla(330, 100%, 60%, 0.4);
+    --neon-glow-accent: 0 0 20px hsla(270, 80%, 60%, 0.4);
 
-    --sidebar-background: hsl(240, 10%, 4%);
-    --sidebar-foreground: hsl(0, 0%, 95%);
-    --sidebar-primary: hsl(174, 100%, 50%);
-    --sidebar-primary-foreground: hsl(240, 10%, 4%);
-    --sidebar-accent: hsl(240, 6%, 14%);
-    --sidebar-accent-foreground: hsl(0, 0%, 95%);
-    --sidebar-border: hsl(240, 6%, 18%);
-    --sidebar-ring: hsl(174, 100%, 50%);
+    /* Sidebar */
+    --sidebar-background: 240 10% 4%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 174 100% 50%;
+    --sidebar-primary-foreground: 240 10% 4%;
+    --sidebar-accent: 240 6% 14%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 240 6% 18%;
+    --sidebar-ring: 174 100% 50%;
   }
-}
 
-@layer base {
   * {
     @apply border-border;
   }
@@ -66,7 +69,12 @@
   }
 }
 
+/* ---------------------------- */
+/* ⚡ UTILITIES LAYER */
+/* ---------------------------- */
 @layer utilities {
+
+  /* Neon Text */
   .neon-text {
     text-shadow: var(--neon-glow);
   }
@@ -75,6 +83,11 @@
     text-shadow: var(--neon-glow-secondary);
   }
 
+  .neon-text-accent {
+    text-shadow: var(--neon-glow-accent);
+  }
+
+  /* Neon Borders */
   .neon-border {
     box-shadow: var(--neon-glow);
   }
@@ -83,37 +96,68 @@
     box-shadow: var(--neon-glow-secondary);
   }
 
-  .glass {
-    @apply bg-card/60 backdrop-blur-xl border border-border/50;
+  .neon-border-accent {
+    box-shadow: var(--neon-glow-accent);
   }
 
+  /* Glass Effect */
+  .glass {
+    @apply bg-card backdrop-blur-xl border border-border;
+    background-color: hsl(var(--card) / 0.6);
+  }
+
+  /* Gradients */
   .gradient-primary {
-    background: linear-gradient(135deg, hsl(174, 100%, 50%), hsl(200, 100%, 50%));
+    background: linear-gradient(
+      135deg,
+      hsl(var(--primary)),
+      hsl(200 100% 50%)
+    );
   }
 
   .gradient-secondary {
-    background: linear-gradient(135deg, hsl(330, 100%, 60%), hsl(280, 100%, 60%));
+    background: linear-gradient(
+      135deg,
+      hsl(var(--secondary)),
+      hsl(280 100% 60%)
+    );
   }
 
   .gradient-dark {
-    background: linear-gradient(180deg, hsl(240, 10%, 6%), hsl(240, 10%, 3%));
+    background: linear-gradient(
+      180deg,
+      hsl(240 10% 6%),
+      hsl(240 10% 3%)
+    );
   }
 
+  /* Vibe Pulse Animation */
   .vibe-pulse {
     animation: vibePulse 2s ease-in-out infinite;
   }
 
   @keyframes vibePulse {
-    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 hsl(174, 100%, 50% / 0.4); }
-    50% { transform: scale(1.05); box-shadow: 0 0 20px 10px hsl(174, 100%, 50% / 0.1); }
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 hsla(174, 100%, 50%, 0.4);
+    }
+    50% {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px 10px hsla(174, 100%, 50%, 0.1);
+    }
   }
 
+  /* Trending Glow */
   .trending-glow {
     animation: trendingGlow 1.5s ease-in-out infinite alternate;
   }
 
   @keyframes trendingGlow {
-    0% { box-shadow: 0 0 5px hsl(330, 100%, 60% / 0.3); }
-    100% { box-shadow: 0 0 25px hsl(330, 100%, 60% / 0.6); }
+    0% {
+      box-shadow: 0 0 5px hsla(330, 100%, 60%, 0.3);
+    }
+    100% {
+      box-shadow: 0 0 25px hsla(330, 100%, 60%, 0.6);
+    }
   }
 }
