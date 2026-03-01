@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Flame, TrendingUp, MapPin, Clock, Music } from 'lucide-react';
+import { Flame, TrendingUp, MapPin, Clock, Music, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useHasVibed, useVibe } from '@/hooks/useVibes';
@@ -134,6 +134,13 @@ const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardPr
               </div>
               <CrowdLevel vibeCount={vibeCount} size="sm" showLabel={false} />
             </div>
+
+            {club.is_community_added && (
+              <div className="flex items-center gap-1 text-xs text-secondary font-semibold">
+                <Users className="w-3 h-3" />
+                Community Added
+              </div>
+            )}
           </div>
         </div>
       </Link>
