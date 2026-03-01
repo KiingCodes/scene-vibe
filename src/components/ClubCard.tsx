@@ -3,6 +3,7 @@ import { Flame, TrendingUp, MapPin, Clock, Music } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useHasVibed, useVibe } from '@/hooks/useVibes';
+import { useFeedbackSummary, FEEDBACK_OPTIONS } from '@/hooks/useReviews';
 import { Button } from '@/components/ui/button';
 import PullingUpButton from '@/components/PullingUpButton';
 import { toast } from 'sonner';
@@ -20,7 +21,14 @@ const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardPr
   const { user } = useAuth();
   const { data: hasVibed } = useHasVibed(club.id);
   const vibeMutation = useVibe();
+  const { data: summary } = useFeedbackSummary(club.id);
   const isTrending = vibeCount >= 3;
+
+  const dominantVibe = summary && summary.total > 0
+    ? FEEDBACK_OPTIONS.reduce((best, opt) =>
+        (summary.counts[opt.value] || 0) > (summary.counts[best.value] || 0) ? opt : best
+      , FEEDBACK_OPTIONS[0])
+    : null;
 
   const handleVibe = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -66,6 +74,18 @@ const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardPr
               >
                 <TrendingUp className="w-3 h-3" />
                 TRENDING
+              </motion.div>
+            )}
+
+            {dominantVibe && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className={`absolute top-3 ${isTrending ? 'left-28' : 'left-3'} flex items-center gap-1 px-2 py-1 rounded-full bg-background/80 backdrop-blur-sm border border-border/50 text-xs font-semibold text-foreground`}
+              >
+                <span>{dominantVibe.emoji}</span>
+                {dominantVibe.label}
+                <span className="text-muted-foreground">({summary!.total})</span>
               </motion.div>
             )}
 
