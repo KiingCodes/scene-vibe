@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Send, ArrowLeft } from 'lucide-react';
+import { MapPin, Send, ArrowLeft, Sparkles, Loader2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,6 +32,7 @@ const SuggestSpotPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
   const [form, setForm] = useState({
     name: '', address: '', area: '', lat: '', lng: '',
     description: '', genre: '', capacity: '', opening_hours: '',
@@ -40,6 +41,42 @@ const SuggestSpotPage = () => {
 
   const update = (field: string, value: string) =>
     setForm(prev => ({ ...prev, [field]: value }));
+
+  const handleAiSuggest = async () => {
+    if (!form.name.trim() || !form.area.trim()) {
+      toast.error('Enter a spot name and area first');
+      return;
+    }
+    setAiLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-spot-suggest', {
+        body: { name: form.name.trim(), area: form.area.trim() },
+      });
+      if (error) throw error;
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+      const s = data.suggestion;
+      if (s) {
+        setForm(prev => ({
+          ...prev,
+          description: s.description || prev.description,
+          genre: s.genre || prev.genre,
+          capacity: s.capacity || prev.capacity,
+          opening_hours: s.opening_hours || prev.opening_hours,
+          address: s.address || prev.address,
+          lat: s.lat?.toString() || prev.lat,
+          lng: s.lng?.toString() || prev.lng,
+        }));
+        toast.success('✨ AI filled in suggested details!');
+      }
+    } catch {
+      toast.error('AI suggestion failed. Try again later.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,6 +175,17 @@ const SuggestSpotPage = () => {
                   <Input id="genre" value={form.genre} onChange={e => update('genre', e.target.value)} placeholder="e.g. Hip-Hop" />
                 </div>
               </div>
+
+              <Button
+                type="button"
+                onClick={handleAiSuggest}
+                disabled={aiLoading || !form.name.trim() || !form.area.trim()}
+                className="w-full gap-2 bg-secondary/20 border border-secondary/30 text-secondary hover:bg-secondary/30 transition-all"
+                variant="outline"
+              >
+                {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                {aiLoading ? 'AI is thinking...' : '✨ AI Auto-Fill Details'}
+              </Button>
 
               <div className="space-y-2">
                 <Label htmlFor="address">Address *</Label>
