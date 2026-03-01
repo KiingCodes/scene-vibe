@@ -1,1 +1,4 @@
 project_id = "jptppkkthozfpbtanvux"
+
+[functions.ai-spot-suggest]
+verify_jwt = false
