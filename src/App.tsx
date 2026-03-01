@@ -12,6 +12,7 @@ import AuthPage from "./pages/AuthPage";
 import MapPage from "./pages/MapPage";
 import ChatPage from "./pages/ChatPage";
 import ClubDetailPage from "./pages/ClubDetailPage";
+import SuggestSpotPage from "./pages/SuggestSpotPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const AppContent = () => {
         <Route path="/map" element={<MapPage />} />
         <Route path="/chat" element={<ChatPage />} />
         <Route path="/club/:id" element={<ClubDetailPage />} />
+        <Route path="/suggest" element={<SuggestSpotPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

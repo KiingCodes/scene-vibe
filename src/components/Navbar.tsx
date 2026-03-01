@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
-import { MapPin, MessageCircle, Home, User, LogOut } from 'lucide-react';
+import { MapPin, MessageCircle, Home, User, LogOut, Plus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import logo from '@/assets/logo.png';
@@ -15,6 +15,7 @@ const Navbar = () => {
     { path: '/', icon: Home, label: 'Clubs' },
     { path: '/map', icon: MapPin, label: 'Map' },
     { path: '/chat', icon: MessageCircle, label: 'Chat' },
+    { path: '/suggest', icon: Plus, label: 'Suggest' },
   ];
 
   return (

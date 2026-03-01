@@ -25,6 +25,7 @@ export type Database = {
           id: string
           image_url: string | null
           instagram: string | null
+          is_community_added: boolean
           lat: number
           lng: number
           name: string
@@ -42,6 +43,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           instagram?: string | null
+          is_community_added?: boolean
           lat: number
           lng: number
           name: string
@@ -59,6 +61,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           instagram?: string | null
+          is_community_added?: boolean
           lat?: number
           lng?: number
           name?: string
@@ -137,6 +140,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pending_clubs: {
+        Row: {
+          address: string
+          area: string
+          capacity: string | null
+          created_at: string
+          description: string | null
+          genre: string | null
+          id: string
+          image_url: string | null
+          instagram: string | null
+          lat: number
+          lng: number
+          name: string
+          opening_hours: string | null
+          phone: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          address: string
+          area: string
+          capacity?: string | null
+          created_at?: string
+          description?: string | null
+          genre?: string | null
+          id?: string
+          image_url?: string | null
+          instagram?: string | null
+          lat: number
+          lng: number
+          name: string
+          opening_hours?: string | null
+          phone?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          address?: string
+          area?: string
+          capacity?: string | null
+          created_at?: string
+          description?: string | null
+          genre?: string | null
+          id?: string
+          image_url?: string | null
+          instagram?: string | null
+          lat?: number
+          lng?: number
+          name?: string
+          opening_hours?: string | null
+          phone?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
