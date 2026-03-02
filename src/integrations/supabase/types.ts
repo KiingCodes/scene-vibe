@@ -71,6 +71,35 @@ export type Database = {
         }
         Relationships: []
       }
+      favorites: {
+        Row: {
+          club_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       media: {
         Row: {
           caption: string | null
@@ -140,6 +169,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      night_plan_items: {
+        Row: {
+          club_id: string
+          created_at: string
+          id: string
+          plan_id: string
+          position: number
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          id?: string
+          plan_id: string
+          position?: number
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          id?: string
+          plan_id?: string
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "night_plan_items_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "night_plan_items_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "night_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      night_plans: {
+        Row: {
+          created_at: string
+          id: string
+          share_token: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          share_token?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          share_token?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       pending_clubs: {
         Row: {
