@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion';
-import { Flame, TrendingUp, MapPin, Clock, Music, Users } from 'lucide-react';
+import { Flame, TrendingUp, MapPin, Clock, Music, Users, Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useHasVibed, useVibe } from '@/hooks/useVibes';
 import { useFeedbackSummary, FEEDBACK_OPTIONS } from '@/hooks/useReviews';
+import { useFavorites, useToggleFavorite } from '@/hooks/useFavorites';
 import { Button } from '@/components/ui/button';
 import PullingUpButton from '@/components/PullingUpButton';
 import { toast } from 'sonner';
@@ -22,7 +23,17 @@ const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardPr
   const { data: hasVibed } = useHasVibed(club.id);
   const vibeMutation = useVibe();
   const { data: summary } = useFeedbackSummary(club.id);
+  const { data: favorites } = useFavorites();
+  const toggleFav = useToggleFavorite();
   const isTrending = vibeCount >= 3;
+  const isFav = favorites?.has(club.id) || false;
+
+  const handleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) { toast.error('Sign in to save clubs!'); return; }
+    toggleFav.mutate({ clubId: club.id, isFav });
+  };
 
   const dominantVibe = summary && summary.total > 0
     ? FEEDBACK_OPTIONS.reduce((best, opt) =>
@@ -88,6 +99,10 @@ const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardPr
                 <span className="text-muted-foreground">({summary!.total})</span>
               </motion.div>
             )}
+
+            <button onClick={handleFavorite} className="absolute top-3 right-3 p-1.5 rounded-full bg-background/60 backdrop-blur-sm border border-border/50 hover:scale-110 transition-transform">
+              <Heart className={`w-4 h-4 ${isFav ? 'text-secondary fill-secondary' : 'text-muted-foreground'}`} />
+            </button>
 
             <div className="absolute bottom-3 right-3 flex gap-1.5">
               <PullingUpButton clubId={club.id} pullingUpCount={pullingUpCount} />
