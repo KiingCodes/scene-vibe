@@ -14,7 +14,7 @@ import ChatPage from "./pages/ChatPage";
 import ClubDetailPage from "./pages/ClubDetailPage";
 import SuggestSpotPage from "./pages/SuggestSpotPage";
 import SavedPage from "./pages/SavedPage";
-import SharedPlanPage from "./pages/SharedPlanPage";
+import AdminPage from "./pages/AdminPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,7 +42,7 @@ const AppContent = () => {
         <Route path="/club/:id" element={<ClubDetailPage />} />
         <Route path="/suggest" element={<SuggestSpotPage />} />
         <Route path="/saved" element={<SavedPage />} />
-        <Route path="/plan/:token" element={<SharedPlanPage />} />
+        <Route path="/admin" element={<AdminPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
-import { MapPin, MessageCircle, Home, User, LogOut, Plus, Heart } from 'lucide-react';
+import { MapPin, MessageCircle, Home, User, LogOut, Plus, Heart, Shield } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsAdmin } from '@/hooks/useAdmin';
 import { Button } from '@/components/ui/button';
 import logo from '@/assets/logo.png';
 import "@fontsource/poppins/800.css";
@@ -9,6 +10,7 @@ import "@fontsource/poppins/800.css";
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
+  const { data: isAdmin } = useIsAdmin();
   const location = useLocation();
 
   const navItems = [
@@ -55,10 +57,20 @@ const Navbar = () => {
           ))}
 
           {user ? (
-            <Button variant="ghost" size="sm" onClick={signOut} className="text-muted-foreground hover:text-foreground gap-2">
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Logout</span>
-            </Button>
+            <>
+              {isAdmin && (
+                <Link to="/admin">
+                  <Button variant="ghost" size="sm" className={`gap-2 transition-all ${location.pathname === '/admin' ? 'text-primary neon-text' : 'text-muted-foreground hover:text-foreground'}`}>
+                    <Shield className="w-4 h-4" />
+                    <span className="hidden sm:inline">Admin</span>
+                  </Button>
+                </Link>
+              )}
+              <Button variant="ghost" size="sm" onClick={signOut} className="text-muted-foreground hover:text-foreground gap-2">
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
+            </>
           ) : (
             <Link to="/auth">
               <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground gap-2">
