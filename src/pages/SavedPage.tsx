@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, Reorder } from 'framer-motion';
-import { Heart, Plus, Trash2, Share2, GripVertical, MapPin, ArrowLeft, PartyPopper, Copy, Check } from 'lucide-react';
+import { Heart, Plus, Trash2, GripVertical, MapPin, ArrowLeft, PartyPopper } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useFavoriteClubs } from '@/hooks/useFavorites';
@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import type { Club } from '@/hooks/useClubs';
 
 const SavedPage = () => {
   const { user } = useAuth();
@@ -24,7 +23,6 @@ const SavedPage = () => {
   const [creating, setCreating] = useState(false);
   const [planTitle, setPlanTitle] = useState("Tonight's Plan");
   const [selectedClubs, setSelectedClubs] = useState<Set<string>>(new Set());
-  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const toggleSelect = (id: string) => {
     setSelectedClubs(prev => {
@@ -50,13 +48,6 @@ const SavedPage = () => {
     }
   };
 
-  const handleShare = async (shareToken: string) => {
-    const url = `${window.location.origin}/plan/${shareToken}`;
-    await navigator.clipboard.writeText(url);
-    setCopiedId(shareToken);
-    toast.success('Link copied!');
-    setTimeout(() => setCopiedId(null), 2000);
-  };
 
   if (!user) {
     return (
@@ -113,7 +104,7 @@ const SavedPage = () => {
                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="glass rounded-xl p-4 space-y-3">
                       <Input value={planTitle} onChange={e => setPlanTitle(e.target.value)} placeholder="Plan name..." className="bg-muted/50 border-border/50" />
                       <p className="text-xs text-muted-foreground">Select clubs for your plan:</p>
-                      {(favoriteClubs as Club[])?.map(club => (
+                      {(favoriteClubs as any[])?.map(club => (
                         <label key={club.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/30 cursor-pointer">
                           <Checkbox checked={selectedClubs.has(club.id)} onCheckedChange={() => toggleSelect(club.id)} />
                           <span className="text-sm text-foreground">{club.name}</span>
@@ -128,7 +119,7 @@ const SavedPage = () => {
                       </div>
                     </motion.div>
                   )}
-                  {(favoriteClubs as Club[])?.map(club => (
+                  {(favoriteClubs as any[])?.map(club => (
                     <Link key={club.id} to={`/club/${club.id}`}>
                       <div className="glass rounded-xl p-4 flex items-center gap-3 hover:border-primary/30 transition-all">
                         <img src={club.image_url || '/placeholder.svg'} alt={club.name} className="w-14 h-14 rounded-lg object-cover" />
@@ -159,10 +150,8 @@ const SavedPage = () => {
                   <PlanCard
                     key={plan.id}
                     plan={plan}
-                    onShare={() => handleShare(plan.share_token)}
                     onDelete={() => deletePlan.mutateAsync(plan.id)}
                     onReorder={(ids) => updatePlanItems.mutateAsync({ planId: plan.id, clubIds: ids })}
-                    copied={copiedId === plan.share_token}
                   />
                 ))
               )}
@@ -176,13 +165,11 @@ const SavedPage = () => {
 
 interface PlanCardProps {
   plan: any;
-  onShare: () => void;
   onDelete: () => void;
   onReorder: (ids: string[]) => void;
-  copied: boolean;
 }
 
-const PlanCard = ({ plan, onShare, onDelete, onReorder, copied }: PlanCardProps) => {
+const PlanCard = ({ plan, onDelete, onReorder }: PlanCardProps) => {
   const items = (plan.night_plan_items || [])
     .sort((a: any, b: any) => a.position - b.position);
   const [orderedIds, setOrderedIds] = useState<string[]>(items.map((i: any) => i.club_id));
@@ -196,14 +183,9 @@ const PlanCard = ({ plan, onShare, onDelete, onReorder, copied }: PlanCardProps)
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-xl p-4 space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="font-display font-bold text-foreground">{plan.title}</h3>
-        <div className="flex gap-1.5">
-          <Button size="icon" variant="ghost" onClick={onShare} className="h-8 w-8 text-muted-foreground hover:text-primary">
-            {copied ? <Check className="w-4 h-4 text-primary" /> : <Share2 className="w-4 h-4" />}
-          </Button>
-          <Button size="icon" variant="ghost" onClick={onDelete} className="h-8 w-8 text-muted-foreground hover:text-destructive">
-            <Trash2 className="w-4 h-4" />
-          </Button>
-        </div>
+        <Button size="icon" variant="ghost" onClick={onDelete} className="h-8 w-8 text-muted-foreground hover:text-destructive">
+          <Trash2 className="w-4 h-4" />
+        </Button>
       </div>
 
       <Reorder.Group axis="y" values={orderedIds} onReorder={handleReorder} className="space-y-2">

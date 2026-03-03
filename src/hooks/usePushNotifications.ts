@@ -258,5 +258,77 @@ export const usePushNotifications = () => {
     return () => { supabase.removeChannel(channel); };
   }, [showNotification]);
 
+  // --- FAVORITE / SAVED CLUB NOTIFICATIONS ---
+  useEffect(() => {
+    const channel = supabase
+      .channel('push-favorites')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'favorites' },
+        async (payload) => {
+          const clubId = payload.new?.club_id;
+          if (!clubId) return;
+
+          const { data: club } = await supabase
+            .from('clubs')
+            .select('name')
+            .eq('id', clubId)
+            .maybeSingle();
+          if (!club) return;
+
+          showNotification(
+            `❤️ ${club.name} saved!`,
+            'You saved this spot — we\'ll keep you posted on the vibe!',
+            `/club/${clubId}`
+          );
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [showNotification]);
+
+  // --- COMMUNITY SUGGESTION NOTIFICATIONS ---
+  useEffect(() => {
+    const channel = supabase
+      .channel('push-pending-clubs')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'pending_clubs' },
+        async (payload) => {
+          const name = payload.new?.name;
+          const area = payload.new?.area;
+          if (!name) return;
+
+          showNotification(
+            `📍 New spot suggested: ${name}`,
+            `Someone suggested ${name} in ${area || 'your area'} — pending review!`,
+            '/admin'
+          );
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'pending_clubs' },
+        async (payload) => {
+          const status = payload.new?.status;
+          const name = payload.new?.name;
+          const id = payload.new?.id;
+          if (!name || !status) return;
+
+          if (status === 'approved') {
+            showNotification(
+              `🎉 ${name} is now live!`,
+              'A community spot just got approved — check it out!',
+              `/club/${id}`
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [showNotification]);
+
   return { requestPermission, showNotification };
 };
