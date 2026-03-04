@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
-import { MapPin, MessageCircle, Home, User, LogOut, Plus, Heart, Shield } from 'lucide-react';
+import { MapPin, MessageCircle, Home, User, LogOut, Plus, Heart, Shield, BarChart3, Trophy, History } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,9 @@ const Navbar = () => {
     { path: '/chat', icon: MessageCircle, label: 'Chat' },
     { path: '/saved', icon: Heart, label: 'Saved' },
     { path: '/suggest', icon: Plus, label: 'Suggest' },
+    { path: '/insights', icon: BarChart3, label: 'Insights' },
+    { path: '/leaderboard', icon: Trophy, label: 'Ranks' },
+    { path: '/history', icon: History, label: 'History' },
   ];
 
   return (

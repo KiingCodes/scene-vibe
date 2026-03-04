@@ -15,6 +15,9 @@ import ClubDetailPage from "./pages/ClubDetailPage";
 import SuggestSpotPage from "./pages/SuggestSpotPage";
 import SavedPage from "./pages/SavedPage";
 import AdminPage from "./pages/AdminPage";
+import InsightsPage from "./pages/InsightsPage";
+import LeaderboardPage from "./pages/LeaderboardPage";
+import VibeHistoryPage from "./pages/VibeHistoryPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +45,9 @@ const AppContent = () => {
         <Route path="/club/:id" element={<ClubDetailPage />} />
         <Route path="/suggest" element={<SuggestSpotPage />} />
         <Route path="/saved" element={<SavedPage />} />
+        <Route path="/insights" element={<InsightsPage />} />
+        <Route path="/leaderboard" element={<LeaderboardPage />} />
+        <Route path="/history" element={<VibeHistoryPage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

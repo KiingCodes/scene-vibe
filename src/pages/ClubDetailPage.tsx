@@ -5,12 +5,14 @@ import PullingUpButton from '@/components/PullingUpButton';
 import Navbar from '@/components/Navbar';
 import ClubChat from '@/components/ClubChat';
 import ClubReviews from '@/components/ClubReviews';
+import ClubDjMusicRating from '@/components/ClubDjMusicRating';
 import ClubMap from '@/components/ClubMap';
 import CrowdLevel from '@/components/CrowdLevel';
 import { useClub } from '@/hooks/useClubs';
 import { useVibeCount, useHasVibed, useVibe, useAllVibes } from '@/hooks/useVibes';
 import { usePullingUpCount, useHasPulledUp, usePullUp } from '@/hooks/usePullingUp';
 import { useAuth } from '@/hooks/useAuth';
+import { useAwardPoints, useEarnBadge } from '@/hooks/useGamification';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
@@ -23,7 +25,8 @@ const ClubDetailPage = () => {
   const vibeMutation = useVibe();
   const { data: pullingUpCount } = usePullingUpCount(id!);
   const { user } = useAuth();
-
+  const awardPoints = useAwardPoints();
+  const earnBadge = useEarnBadge();
   const isTrending = (vibeCount || 0) >= 3;
 
   const handleVibe = async () => {
@@ -37,6 +40,8 @@ const ClubDetailPage = () => {
     }
     try {
       await vibeMutation.mutateAsync(id!);
+      awardPoints.mutate({ action: 'vibe' });
+      earnBadge.mutate({ badgeType: 'first_vibe' });
       toast.success('🔥 Vibed!');
     } catch {
       toast.error('Could not vibe.');
@@ -186,6 +191,7 @@ const ClubDetailPage = () => {
           {/* Right column */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="space-y-4">
             <ClubChat clubId={club.id} clubName={club.name} />
+            <ClubDjMusicRating clubId={club.id} />
             <ClubReviews clubId={club.id} />
           </motion.div>
         </div>
