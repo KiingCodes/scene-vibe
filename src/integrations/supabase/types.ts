@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      club_ratings: {
+        Row: {
+          club_id: string
+          created_at: string
+          dj_rating: number
+          id: string
+          music_rating: number
+          user_id: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          dj_rating: number
+          id?: string
+          music_rating: number
+          user_id: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          dj_rating?: number
+          id?: string
+          music_rating?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_ratings_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clubs: {
         Row: {
           address: string
@@ -398,6 +433,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_badges: {
+        Row: {
+          badge_type: string
+          earned_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          badge_type: string
+          earned_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          badge_type?: string
+          earned_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_points: {
+        Row: {
+          id: string
+          level: number
+          points: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          level?: number
+          points?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          level?: number
+          points?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

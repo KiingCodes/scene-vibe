@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { useReviews, useSubmitReview, useHasGivenFeedback, useFeedbackSummary, FEEDBACK_OPTIONS, ratingToFeedback } from '@/hooks/useReviews';
+import { useAwardPoints, useEarnBadge } from '@/hooks/useGamification';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
@@ -16,6 +17,8 @@ const ClubReviews = ({ clubId }: ClubReviewsProps) => {
   const { data: hasGiven } = useHasGivenFeedback(clubId);
   const { data: summary } = useFeedbackSummary(clubId);
   const submitReview = useSubmitReview();
+  const awardPoints = useAwardPoints();
+  const earnBadge = useEarnBadge();
 
   const handleFeedback = async (rating: number) => {
     if (!user) return;
@@ -25,6 +28,8 @@ const ClubReviews = ({ clubId }: ClubReviewsProps) => {
     }
     try {
       await submitReview.mutateAsync({ clubId, rating });
+      awardPoints.mutate({ action: 'review' });
+      earnBadge.mutate({ badgeType: 'reviewer' });
       toast.success('Thanks for the feedback!');
     } catch {
       toast.error('Could not submit feedback.');
