@@ -35,7 +35,7 @@ const ClubDetailPage = () => {
       return;
     }
     if (hasVibed) {
-      toast.info('Already vibed today!');
+      toast.info('You can only vibe one club every 30 minutes!');
       return;
     }
     try {
