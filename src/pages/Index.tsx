@@ -6,6 +6,7 @@ import { useAllVibes } from '@/hooks/useVibes';
 import { useAllPullingUp } from '@/hooks/usePullingUp';
 import ClubCard from '@/components/ClubCard';
 import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
@@ -193,6 +194,7 @@ const Index = () => {
           </motion.div>
         )}
       </main>
+      <Footer />
     </div>
   );
 };
