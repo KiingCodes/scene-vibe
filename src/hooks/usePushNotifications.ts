@@ -245,7 +245,6 @@ export const usePushNotifications = () => {
             .maybeSingle();
           if (!club) return;
 
-          // 10. New chat message
           showNotification(
             `💬 New message in ${club.name} chat`,
             'Join the conversation about the vibe!',
@@ -288,6 +287,40 @@ export const usePushNotifications = () => {
     return () => { supabase.removeChannel(channel); };
   }, [showNotification]);
 
+  // --- DJ/MUSIC RATING NOTIFICATIONS ---
+  useEffect(() => {
+    const channel = supabase
+      .channel('push-club-ratings')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'club_ratings' },
+        async (payload) => {
+          const clubId = payload.new?.club_id;
+          const djRating = payload.new?.dj_rating;
+          const musicRating = payload.new?.music_rating;
+          if (!clubId) return;
+
+          const { data: club } = await supabase
+            .from('clubs')
+            .select('name')
+            .eq('id', clubId)
+            .maybeSingle();
+          if (!club) return;
+
+          if (djRating >= 4 || musicRating >= 4) {
+            showNotification(
+              `🎧 ${club.name} just got fire ratings!`,
+              `DJ: ${djRating}/5 | Music: ${musicRating}/5 — sounds like a great night!`,
+              `/club/${clubId}`
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [showNotification]);
+
   // --- COMMUNITY SUGGESTION NOTIFICATIONS ---
   useEffect(() => {
     const channel = supabase
@@ -323,6 +356,29 @@ export const usePushNotifications = () => {
               `/club/${id}`
             );
           }
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [showNotification]);
+
+  // --- GAMIFICATION NOTIFICATIONS ---
+  useEffect(() => {
+    const channel = supabase
+      .channel('push-user-badges')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'user_badges' },
+        async (payload) => {
+          const badgeType = payload.new?.badge_type;
+          if (!badgeType) return;
+
+          showNotification(
+            `🏅 New Badge Earned!`,
+            `You just unlocked the "${badgeType}" badge — keep going!`,
+            '/leaderboard'
+          );
         }
       )
       .subscribe();
