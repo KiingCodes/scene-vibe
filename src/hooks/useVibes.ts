@@ -22,7 +22,6 @@ export const useVibeCount = (clubId: string) => {
     enabled: !!clubId,
   });
 
-  // Realtime subscription
   useEffect(() => {
     const channel = supabase
       .channel(`vibes-${clubId}`)
@@ -69,18 +68,18 @@ export const useAllVibes = () => {
   return query;
 };
 
+// Global cooldown: check if device has vibed ANY club in last 30 min
 export const useHasVibed = (clubId: string) => {
   const deviceId = useDeviceId();
 
   return useQuery({
-    queryKey: ['has-vibed', clubId, deviceId],
+    queryKey: ['has-vibed-global', deviceId],
     queryFn: async () => {
       if (!deviceId) return false;
       const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
       const { data, error } = await supabase
         .from('vibes')
         .select('id')
-        .eq('club_id', clubId)
         .eq('device_id', deviceId)
         .gte('created_at', thirtyMinutesAgo)
         .limit(1);
@@ -107,7 +106,7 @@ export const useVibe = () => {
     },
     onSuccess: (_, clubId) => {
       queryClient.invalidateQueries({ queryKey: ['vibes', clubId] });
-      queryClient.invalidateQueries({ queryKey: ['has-vibed', clubId] });
+      queryClient.invalidateQueries({ queryKey: ['has-vibed-global'] });
       queryClient.invalidateQueries({ queryKey: ['all-vibes'] });
     },
   });
