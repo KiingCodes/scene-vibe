@@ -1,27 +1,24 @@
 import { motion } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
-import { MapPin, MessageCircle, Home, User, LogOut, Plus, Heart, Shield, BarChart3, Trophy, History } from 'lucide-react';
+import { MapPin, MessageCircle, Home, User, LogOut, Plus, Heart, Shield, BarChart3, Trophy, History, Info, FileText, BookOpen } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
 import { Button } from '@/components/ui/button';
 import logo from '@/assets/logo.png';
 import "@fontsource/poppins/800.css";
 
-
 const Navbar = () => {
   const { user, signOut } = useAuth();
   const { data: isAdmin } = useIsAdmin();
   const location = useLocation();
 
-  const navItems = [
+  const mainNav = [
     { path: '/', icon: Home, label: 'Clubs' },
     { path: '/map', icon: MapPin, label: 'Map' },
     { path: '/chat', icon: MessageCircle, label: 'Chat' },
     { path: '/saved', icon: Heart, label: 'Saved' },
-    { path: '/suggest', icon: Plus, label: 'Suggest' },
     { path: '/insights', icon: BarChart3, label: 'Insights' },
     { path: '/leaderboard', icon: Trophy, label: 'Ranks' },
-    { path: '/history', icon: History, label: 'History' },
   ];
 
   return (
@@ -30,31 +27,30 @@ const Navbar = () => {
       animate={{ y: 0, opacity: 1 }}
       className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/30"
     >
-  <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-  <Link to="/" className="flex items-center gap-2">
-    <img
-      src={logo}
-      alt="Scene Vibe Logo"
-      className="w-8 h-8 object-contain"
-    />
-   <span className="font-poppins font-extrabold text-2xl tracking-wider bg-gradient-to-r from-orange-400 via-pink-500 via-purple-500 to-cyan-400 bg-clip-text text-transparent neon-glow">
-  SCENE
-</span>
+      <div className="container mx-auto px-4 h-14 flex items-center justify-between">
+        {/* Logo */}
+        <Link to="/" className="flex items-center gap-2 shrink-0">
+          <img src={logo} alt="Scene Vibe Logo" className="w-7 h-7 object-contain" />
+          <span className="font-poppins font-extrabold text-xl tracking-wider bg-gradient-to-r from-orange-400 via-pink-500 via-purple-500 to-cyan-400 bg-clip-text text-transparent neon-glow">
+            SCENE
+          </span>
+        </Link>
 
-  </Link>
-</div>
-
-
-        <div className="flex items-center gap-1">
-          {navItems.map(({ path, icon: Icon, label }) => (
+        {/* Main Nav */}
+        <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide">
+          {mainNav.map(({ path, icon: Icon, label }) => (
             <Link key={path} to={path}>
               <Button
                 variant="ghost"
                 size="sm"
-                className={`gap-2 transition-all ${location.pathname === path ? 'text-primary neon-text' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`gap-1.5 h-9 px-2 sm:px-3 transition-all text-xs sm:text-sm ${
+                  location.pathname === path
+                    ? 'text-primary neon-text'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
               >
                 <Icon className="w-4 h-4" />
-                <span className="hidden sm:inline">{label}</span>
+                <span className="hidden md:inline">{label}</span>
               </Button>
             </Link>
           ))}
@@ -63,27 +59,29 @@ const Navbar = () => {
             <>
               {isAdmin && (
                 <Link to="/admin">
-                  <Button variant="ghost" size="sm" className={`gap-2 transition-all ${location.pathname === '/admin' ? 'text-primary neon-text' : 'text-muted-foreground hover:text-foreground'}`}>
+                  <Button variant="ghost" size="sm" className={`gap-1.5 h-9 px-2 sm:px-3 text-xs sm:text-sm ${location.pathname === '/admin' ? 'text-primary neon-text' : 'text-muted-foreground hover:text-foreground'}`}>
                     <Shield className="w-4 h-4" />
-                    <span className="hidden sm:inline">Admin</span>
+                    <span className="hidden md:inline">Admin</span>
                   </Button>
                 </Link>
               )}
-              <Button variant="ghost" size="sm" onClick={signOut} className="text-muted-foreground hover:text-foreground gap-2">
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </Button>
+              <Link to="/profile">
+                <Button variant="ghost" size="sm" className={`gap-1.5 h-9 px-2 sm:px-3 text-xs sm:text-sm ${location.pathname === '/profile' ? 'text-primary neon-text' : 'text-muted-foreground hover:text-foreground'}`}>
+                  <User className="w-4 h-4" />
+                  <span className="hidden md:inline">Profile</span>
+                </Button>
+              </Link>
             </>
           ) : (
             <Link to="/auth">
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground gap-2">
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground gap-1.5 h-9 px-2 sm:px-3 text-xs sm:text-sm">
                 <User className="w-4 h-4" />
-                <span className="hidden sm:inline">Login</span>
+                <span className="hidden md:inline">Login</span>
               </Button>
             </Link>
           )}
         </div>
-      
+      </div>
     </motion.nav>
   );
 };

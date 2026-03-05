@@ -18,6 +18,11 @@ import AdminPage from "./pages/AdminPage";
 import InsightsPage from "./pages/InsightsPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import VibeHistoryPage from "./pages/VibeHistoryPage";
+import ProfilePage from "./pages/ProfilePage";
+import TermsPage from "./pages/TermsPage";
+import PrivacyPage from "./pages/PrivacyPage";
+import AboutPage from "./pages/AboutPage";
+import HowItWorksPage from "./pages/HowItWorksPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,7 +35,6 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
 };
 
 const AppContent = () => {
-  // Enable trending notifications globally
   useTrendingNotifications();
   usePushNotifications();
 
@@ -48,6 +52,11 @@ const AppContent = () => {
         <Route path="/insights" element={<InsightsPage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/history" element={<VibeHistoryPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/how-it-works" element={<HowItWorksPage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
