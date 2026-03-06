@@ -106,6 +106,133 @@ export type Database = {
         }
         Relationships: []
       }
+      crew_members: {
+        Row: {
+          crew_id: string
+          id: string
+          joined_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          crew_id: string
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          crew_id?: string
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crew_members_crew_id_fkey"
+            columns: ["crew_id"]
+            isOneToOne: false
+            referencedRelation: "crews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crew_votes: {
+        Row: {
+          club_id: string
+          created_at: string
+          crew_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          crew_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          crew_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crew_votes_crew_id_fkey"
+            columns: ["crew_id"]
+            isOneToOne: false
+            referencedRelation: "crews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crews: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          invite_code: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          invite_code?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          invite_code?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      events: {
+        Row: {
+          club_id: string
+          created_at: string
+          description: string | null
+          event_date: string
+          id: string
+          image_url: string | null
+          is_boosted: boolean
+          promoter_id: string
+          title: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          description?: string | null
+          event_date: string
+          id?: string
+          image_url?: string | null
+          is_boosted?: boolean
+          promoter_id: string
+          title: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          description?: string | null
+          event_date?: string
+          id?: string
+          image_url?: string | null
+          is_boosted?: boolean
+          promoter_id?: string
+          title?: string
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           club_id: string
@@ -179,6 +306,9 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          is_pinned: boolean
+          media_url: string | null
+          message_type: string
           user_id: string
         }
         Insert: {
@@ -186,6 +316,9 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          is_pinned?: boolean
+          media_url?: string | null
+          message_type?: string
           user_id: string
         }
         Update: {
@@ -193,6 +326,9 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          is_pinned?: boolean
+          media_url?: string | null
+          message_type?: string
           user_id?: string
         }
         Relationships: [
@@ -358,6 +494,48 @@ export type Database = {
           id?: string
           user_id?: string
           username?: string | null
+        }
+        Relationships: []
+      }
+      promotions: {
+        Row: {
+          admin_note: string | null
+          amount_cents: number
+          bank_reference: string | null
+          created_at: string
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          target_id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          amount_cents?: number
+          bank_reference?: string | null
+          created_at?: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          target_id: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          amount_cents?: number
+          bank_reference?: string | null
+          created_at?: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          target_id?: string
+          type?: string
+          user_id?: string
         }
         Relationships: []
       }

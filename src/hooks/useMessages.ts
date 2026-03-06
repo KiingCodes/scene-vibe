@@ -19,7 +19,6 @@ export const useMessages = (clubId: string) => {
         .limit(100);
       if (error) throw error;
       
-      // Fetch profiles for user_ids
       const userIds = [...new Set(msgs?.map(m => m.user_id) || [])];
       const { data: profiles } = await supabase
         .from('profiles')
@@ -27,9 +26,7 @@ export const useMessages = (clubId: string) => {
         .in('user_id', userIds);
       
       const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
-      const data = msgs?.map(m => ({ ...m, profiles: profileMap.get(m.user_id) || null }));
-      if (error) throw error;
-      return data;
+      return msgs?.map(m => ({ ...m, profiles: profileMap.get(m.user_id) || null }));
     },
     enabled: !!clubId,
   });
@@ -53,12 +50,14 @@ export const useSendMessage = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ clubId, content }: { clubId: string; content: string }) => {
+    mutationFn: async ({ clubId, content, mediaUrl, messageType }: { clubId: string; content: string; mediaUrl?: string; messageType?: string }) => {
       if (!user) throw new Error('Must be signed in');
       const { error } = await supabase.from('messages').insert({
         club_id: clubId,
         user_id: user.id,
         content,
+        media_url: mediaUrl || null,
+        message_type: messageType || 'text',
       });
       if (error) throw error;
     },
@@ -75,11 +74,7 @@ export const useDeleteMessage = () => {
   return useMutation({
     mutationFn: async ({ messageId, clubId }: { messageId: string; clubId: string }) => {
       if (!user) throw new Error('Must be signed in');
-      const { error } = await supabase
-        .from('messages')
-        .delete()
-        .eq('id', messageId)
-        .eq('user_id', user.id);
+      const { error } = await supabase.from('messages').delete().eq('id', messageId).eq('user_id', user.id);
       if (error) throw error;
       return clubId;
     },
