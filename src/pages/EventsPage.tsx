@@ -99,9 +99,9 @@ const EventsPage = () => {
                 <div className="space-y-3">
                   <div className="bg-muted/30 rounded-lg p-3 text-xs text-foreground space-y-1">
                     <p className="font-semibold">Bank Details:</p>
-                    <p>Bank: FNB</p>
-                    <p>Account: 62XXXXXXXX</p>
-                    <p>Branch: 250655</p>
+                    <p>Bank: Access Bank</p>
+                    <p>Account: 51560399345</p>
+                    <p>Branch: 410506</p>
                     <p>Reference: Your username</p>
                   </div>
                   <Select value={boostForm.eventId} onValueChange={v => setBoostForm(f => ({ ...f, eventId: v }))}>
