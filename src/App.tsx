@@ -19,6 +19,8 @@ import InsightsPage from "./pages/InsightsPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import VibeHistoryPage from "./pages/VibeHistoryPage";
 import ProfilePage from "./pages/ProfilePage";
+import CrewsPage from "./pages/CrewsPage";
+import EventsPage from "./pages/EventsPage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import AboutPage from "./pages/AboutPage";
@@ -46,6 +48,8 @@ const AppContent = () => {
         <Route path="/auth" element={<AuthGuard><AuthPage /></AuthGuard>} />
         <Route path="/map" element={<MapPage />} />
         <Route path="/chat" element={<ChatPage />} />
+        <Route path="/crews" element={<CrewsPage />} />
+        <Route path="/events" element={<EventsPage />} />
         <Route path="/club/:id" element={<ClubDetailPage />} />
         <Route path="/suggest" element={<SuggestSpotPage />} />
         <Route path="/saved" element={<SavedPage />} />
