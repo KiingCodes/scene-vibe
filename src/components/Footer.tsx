@@ -12,6 +12,7 @@ const Footer = () => (
             <Link to="/map" className="block text-xs text-muted-foreground hover:text-foreground transition-colors">Map</Link>
             <Link to="/insights" className="block text-xs text-muted-foreground hover:text-foreground transition-colors">Insights</Link>
             <Link to="/leaderboard" className="block text-xs text-muted-foreground hover:text-foreground transition-colors">Leaderboard</Link>
+            <Link to="/events" className="block text-xs text-muted-foreground hover:text-foreground transition-colors">Events</Link>
           </div>
         </div>
         <div>
@@ -19,6 +20,7 @@ const Footer = () => (
           <div className="space-y-2">
             <Link to="/suggest" className="block text-xs text-muted-foreground hover:text-foreground transition-colors">Suggest a Spot</Link>
             <Link to="/chat" className="block text-xs text-muted-foreground hover:text-foreground transition-colors">Chat</Link>
+            <Link to="/crews" className="block text-xs text-muted-foreground hover:text-foreground transition-colors">Crews</Link>
             <Link to="/saved" className="block text-xs text-muted-foreground hover:text-foreground transition-colors">Saved</Link>
           </div>
         </div>
@@ -37,12 +39,9 @@ const Footer = () => (
           </div>
         </div>
       </div>
-
       <div className="border-t border-border/20 pt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">© 2026 SCENE. Built for the culture.</p>
-        <p className="text-xs text-muted-foreground flex items-center gap-1">
-          Made with <Heart className="w-3 h-3 text-secondary" /> for nightlife lovers
-        </p>
+        <p className="text-xs text-muted-foreground flex items-center gap-1">Made with <Heart className="w-3 h-3 text-secondary" /> for nightlife lovers</p>
       </div>
     </div>
   </footer>
