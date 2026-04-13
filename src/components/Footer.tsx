@@ -13,6 +13,8 @@ const Footer = () => (
             <Link to="/insights" className="block text-xs text-muted-foreground hover:text-foreground transition-colors">Insights</Link>
             <Link to="/leaderboard" className="block text-xs text-muted-foreground hover:text-foreground transition-colors">Leaderboard</Link>
             <Link to="/events" className="block text-xs text-muted-foreground hover:text-foreground transition-colors">Events</Link>
+            <Link to="/videos" className="block text-xs text-muted-foreground hover:text-foreground transition-colors">Videos</Link>
+            <Link to="/night-replay" className="block text-xs text-muted-foreground hover:text-foreground transition-colors">Night Replay</Link>
           </div>
         </div>
         <div>
