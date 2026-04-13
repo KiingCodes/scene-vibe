@@ -106,6 +106,41 @@ export type Database = {
         }
         Relationships: []
       }
+      crew_locations: {
+        Row: {
+          crew_id: string
+          id: string
+          latitude: number
+          longitude: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          crew_id: string
+          id?: string
+          latitude: number
+          longitude: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          crew_id?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crew_locations_crew_id_fkey"
+            columns: ["crew_id"]
+            isOneToOne: false
+            referencedRelation: "crews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crew_members: {
         Row: {
           crew_id: string
@@ -407,6 +442,50 @@ export type Database = {
         }
         Relationships: []
       }
+      night_replays: {
+        Row: {
+          created_at: string
+          data_json: Json | null
+          id: string
+          peak_hour: number | null
+          replay_date: string
+          top_club_id: string | null
+          top_club_name: string | null
+          total_messages: number
+          total_vibes: number
+        }
+        Insert: {
+          created_at?: string
+          data_json?: Json | null
+          id?: string
+          peak_hour?: number | null
+          replay_date: string
+          top_club_id?: string | null
+          top_club_name?: string | null
+          total_messages?: number
+          total_vibes?: number
+        }
+        Update: {
+          created_at?: string
+          data_json?: Json | null
+          id?: string
+          peak_hour?: number | null
+          replay_date?: string
+          top_club_id?: string | null
+          top_club_name?: string | null
+          total_messages?: number
+          total_vibes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "night_replays_top_club_id_fkey"
+            columns: ["top_club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pending_clubs: {
         Row: {
           address: string
@@ -700,6 +779,76 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "vibes_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_views: {
+        Row: {
+          device_id: string
+          id: string
+          video_id: string
+          viewed_at: string
+        }
+        Insert: {
+          device_id: string
+          id?: string
+          video_id: string
+          viewed_at?: string
+        }
+        Update: {
+          device_id?: string
+          id?: string
+          video_id?: string
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_views_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      videos: {
+        Row: {
+          caption: string | null
+          club_id: string | null
+          created_at: string
+          id: string
+          is_premium: boolean
+          user_id: string
+          video_url: string
+          view_count: number
+        }
+        Insert: {
+          caption?: string | null
+          club_id?: string | null
+          created_at?: string
+          id?: string
+          is_premium?: boolean
+          user_id: string
+          video_url: string
+          view_count?: number
+        }
+        Update: {
+          caption?: string | null
+          club_id?: string | null
+          created_at?: string
+          id?: string
+          is_premium?: boolean
+          user_id?: string
+          video_url?: string
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "videos_club_id_fkey"
             columns: ["club_id"]
             isOneToOne: false
             referencedRelation: "clubs"
