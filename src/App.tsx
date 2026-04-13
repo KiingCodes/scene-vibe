@@ -21,6 +21,8 @@ import VibeHistoryPage from "./pages/VibeHistoryPage";
 import ProfilePage from "./pages/ProfilePage";
 import CrewsPage from "./pages/CrewsPage";
 import EventsPage from "./pages/EventsPage";
+import VideosPage from "./pages/VideosPage";
+import NightReplayPage from "./pages/NightReplayPage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import AboutPage from "./pages/AboutPage";
@@ -50,6 +52,8 @@ const AppContent = () => {
         <Route path="/chat" element={<ChatPage />} />
         <Route path="/crews" element={<CrewsPage />} />
         <Route path="/events" element={<EventsPage />} />
+        <Route path="/videos" element={<VideosPage />} />
+        <Route path="/night-replay" element={<NightReplayPage />} />
         <Route path="/club/:id" element={<ClubDetailPage />} />
         <Route path="/suggest" element={<SuggestSpotPage />} />
         <Route path="/saved" element={<SavedPage />} />

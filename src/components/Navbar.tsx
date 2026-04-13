@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
-import { MapPin, MessageCircle, Home, User, LogOut, Heart, Shield, BarChart3, Trophy, Users, Calendar } from 'lucide-react';
+import { MapPin, MessageCircle, Home, User, LogOut, Heart, Shield, BarChart3, Trophy, Users, Calendar, Video, Moon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,8 @@ const Navbar = () => {
     { path: '/chat', icon: MessageCircle, label: 'Chat' },
     { path: '/crews', icon: Users, label: 'Crews' },
     { path: '/events', icon: Calendar, label: 'Events' },
+    { path: '/videos', icon: Video, label: 'Videos' },
+    { path: '/night-replay', icon: Moon, label: 'Replay' },
     { path: '/saved', icon: Heart, label: 'Saved' },
     { path: '/insights', icon: BarChart3, label: 'Insights' },
     { path: '/leaderboard', icon: Trophy, label: 'Ranks' },

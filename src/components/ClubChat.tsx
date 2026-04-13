@@ -88,7 +88,7 @@ const ClubChat = ({ clubId, clubName }: ClubChatProps) => {
         )}
         {messages?.map((msg, i) => {
           const isOwn = msg.user_id === user?.id;
-          const profile = msg.profiles as any;
+          const profile = msg.profile as any;
           const mediaUrl = (msg as any).media_url;
           const msgType = (msg as any).message_type || 'text';
 
