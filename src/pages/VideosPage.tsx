@@ -1,10 +1,10 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Video, Upload, Trash2, Eye, Clock, MapPin, Crown, Play, X, User } from 'lucide-react';
+import { Video, Upload, Trash2, Eye, Clock, MapPin, Play, User, Heart, MessageCircle, Send, X } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/hooks/useAuth';
-import { useVideos, useUploadVideo, useDeleteVideo, useRecordVideoView } from '@/hooks/useVideos';
+import { useVideos, useUploadVideo, useDeleteVideo, useRecordVideoView, useVideoLikes, useToggleLike, useVideoComments, usePostComment, useDeleteComment } from '@/hooks/useVideos';
 import { useClubs } from '@/hooks/useClubs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,17 +23,159 @@ const item = {
   show: { opacity: 1, scale: 1 },
 };
 
+const VideoCard = ({ video, clubs }: { video: any; clubs: any[] | undefined }) => {
+  const { user } = useAuth();
+  const deleteVideo = useDeleteVideo();
+  const recordView = useRecordVideoView();
+  const { data: likeData } = useVideoLikes(video.id);
+  const toggleLike = useToggleLike();
+  const { data: comments } = useVideoComments(video.id);
+  const postComment = usePostComment();
+  const deleteComment = useDeleteComment();
+  const [playing, setPlaying] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [commentText, setCommentText] = useState('');
+
+  const club = clubs?.find((c: any) => c.id === video.club_id);
+  const isOwner = user?.id === video.user_id;
+  const profile = video.profile;
+
+  const handlePlay = () => {
+    setPlaying(true);
+    recordView.mutate(video.id);
+  };
+
+  const handleLike = () => {
+    if (!user) return toast.error('Sign in to like videos');
+    toggleLike.mutate({ videoId: video.id, liked: likeData?.userLiked || false });
+  };
+
+  const handleComment = () => {
+    if (!commentText.trim()) return;
+    if (!user) return toast.error('Sign in to comment');
+    postComment.mutate({ videoId: video.id, content: commentText.trim() });
+    setCommentText('');
+  };
+
+  return (
+    <motion.div variants={item} className="glass rounded-xl overflow-hidden group">
+      {/* Video Player / Thumbnail */}
+      <div className="relative aspect-video bg-black/50 cursor-pointer" onClick={handlePlay}>
+        {playing ? (
+          <video src={video.video_url} controls autoPlay className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <motion.div whileHover={{ scale: 1.2 }} className="w-14 h-14 rounded-full bg-primary/80 flex items-center justify-center backdrop-blur-sm">
+              <Play className="w-6 h-6 text-primary-foreground ml-1" />
+            </motion.div>
+          </div>
+        )}
+        {isOwner && (
+          <button
+            onClick={e => { e.stopPropagation(); deleteVideo.mutate(video.id); toast.success('Video deleted'); }}
+            className="absolute top-2 right-2 w-8 h-8 rounded-full bg-destructive/80 flex items-center justify-center hover:bg-destructive transition-colors"
+          >
+            <Trash2 className="w-4 h-4 text-white" />
+          </button>
+        )}
+      </div>
+
+      {/* Info + Actions */}
+      <div className="p-3 space-y-2">
+        {video.caption && <p className="text-sm text-foreground font-medium line-clamp-2">{video.caption}</p>}
+
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <span className="flex items-center gap-1"><User className="w-3 h-3" /> {profile?.username || 'Anon'}</span>
+            {club && (
+              <Link to={`/club/${club.id}`} className="flex items-center gap-0.5 hover:text-primary transition-colors">
+                <MapPin className="w-3 h-3" /> {club.name}
+              </Link>
+            )}
+          </div>
+          <span className="flex items-center gap-0.5"><Eye className="w-3 h-3" /> {video.view_count}</span>
+        </div>
+
+        {/* Like & Comment buttons */}
+        <div className="flex items-center gap-3 pt-1 border-t border-border/20">
+          <motion.button
+            whileTap={{ scale: 0.85 }}
+            onClick={handleLike}
+            className={`flex items-center gap-1 text-xs transition-colors ${likeData?.userLiked ? 'text-red-500' : 'text-muted-foreground hover:text-red-400'}`}
+          >
+            <Heart className={`w-4 h-4 ${likeData?.userLiked ? 'fill-current' : ''}`} />
+            {likeData?.count || video.like_count || 0}
+          </motion.button>
+          <button
+            onClick={() => setShowComments(!showComments)}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <MessageCircle className="w-4 h-4" /> {comments?.length || 0}
+          </button>
+          <span className="ml-auto text-[10px] text-muted-foreground/60 flex items-center gap-1">
+            <Clock className="w-3 h-3" /> {format(new Date(video.created_at), 'MMM d · h:mm a')}
+          </span>
+        </div>
+
+        {/* Comments Section */}
+        <AnimatePresence>
+          {showComments && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="space-y-2 pt-2 border-t border-border/20"
+            >
+              <div className="max-h-32 overflow-y-auto space-y-1.5">
+                {comments?.length === 0 && <p className="text-xs text-muted-foreground text-center py-2">No comments yet</p>}
+                {comments?.map((c: any) => (
+                  <div key={c.id} className="flex items-start gap-2 bg-muted/20 rounded-lg px-2 py-1.5">
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[11px] font-semibold text-foreground">{c.profile?.username || 'Anon'}</span>
+                      <p className="text-xs text-muted-foreground">{c.content}</p>
+                    </div>
+                    {user?.id === c.user_id && (
+                      <button
+                        onClick={() => deleteComment.mutate({ commentId: c.id, videoId: video.id })}
+                        className="text-destructive/60 hover:text-destructive shrink-0"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {user && (
+                <div className="flex gap-1.5">
+                  <Input
+                    value={commentText}
+                    onChange={e => setCommentText(e.target.value)}
+                    placeholder="Add a comment..."
+                    className="h-8 text-xs bg-muted/30 border-border/30"
+                    maxLength={300}
+                    onKeyDown={e => e.key === 'Enter' && handleComment()}
+                  />
+                  <Button size="sm" onClick={handleComment} className="h-8 w-8 p-0 gradient-primary">
+                    <Send className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </motion.div>
+  );
+};
+
 const VideosPage = () => {
   const { user } = useAuth();
   const { data: videos, isLoading } = useVideos();
   const { data: clubs } = useClubs();
   const uploadVideo = useUploadVideo();
-  const deleteVideo = useDeleteVideo();
-  const recordView = useRecordVideoView();
   const [caption, setCaption] = useState('');
   const [clubId, setClubId] = useState('');
   const [file, setFile] = useState<File | null>(null);
-  const [playingId, setPlayingId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleUpload = async () => {
@@ -50,20 +192,6 @@ const VideosPage = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteVideo.mutateAsync(id);
-      toast.success('Video deleted');
-    } catch {
-      toast.error('Could not delete');
-    }
-  };
-
-  const handlePlay = (videoId: string) => {
-    setPlayingId(videoId);
-    recordView.mutate(videoId);
-  };
-
   return (
     <div className="min-h-screen gradient-dark">
       <Navbar />
@@ -72,12 +200,9 @@ const VideosPage = () => {
           <h1 className="font-display font-bold text-3xl text-foreground flex items-center justify-center gap-3">
             <Video className="w-8 h-8 text-primary" /> SCENE Videos
           </h1>
-          <p className="text-muted-foreground mt-1 flex items-center justify-center gap-1">
-            <Crown className="w-4 h-4 text-yellow-400" /> Premium feature — record & share your night
-          </p>
+          <p className="text-muted-foreground mt-1">Record & share your night 🎬</p>
         </motion.div>
 
-        {/* Upload */}
         {user && (
           <Dialog>
             <DialogTrigger asChild>
@@ -90,13 +215,7 @@ const VideosPage = () => {
             <DialogContent className="glass border-border/50">
               <DialogHeader><DialogTitle className="text-foreground">Post Video</DialogTitle></DialogHeader>
               <div className="space-y-3">
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="video/*"
-                  className="hidden"
-                  onChange={e => setFile(e.target.files?.[0] || null)}
-                />
+                <input ref={fileRef} type="file" accept="video/*" className="hidden" onChange={e => setFile(e.target.files?.[0] || null)} />
                 <Button variant="outline" onClick={() => fileRef.current?.click()} className="w-full border-border/50 text-muted-foreground gap-2">
                   <Video className="w-4 h-4" /> {file ? file.name : 'Select Video'}
                 </Button>
@@ -115,7 +234,6 @@ const VideosPage = () => {
           </Dialog>
         )}
 
-        {/* Video Grid */}
         {isLoading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -125,82 +243,9 @@ const VideosPage = () => {
         )}
 
         <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {videos?.map(video => {
-            const club = clubs?.find(c => c.id === video.club_id);
-            const isOwner = user?.id === video.user_id;
-            const profile = (video as any).profile;
-
-            return (
-              <motion.div key={video.id} variants={item} className="glass rounded-xl overflow-hidden group">
-                {/* Video Player / Thumbnail */}
-                <div className="relative aspect-video bg-black/50 cursor-pointer" onClick={() => handlePlay(video.id)}>
-                  {playingId === video.id ? (
-                    <video
-                      src={video.video_url}
-                      controls
-                      autoPlay
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <motion.div
-                        whileHover={{ scale: 1.2 }}
-                        className="w-14 h-14 rounded-full bg-primary/80 flex items-center justify-center backdrop-blur-sm"
-                      >
-                        <Play className="w-6 h-6 text-primary-foreground ml-1" />
-                      </motion.div>
-                    </div>
-                  )}
-
-                  {/* Premium badge */}
-                  {video.is_premium && (
-                    <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-yellow-500/90 text-xs font-bold text-black flex items-center gap-1">
-                      <Crown className="w-3 h-3" /> Premium
-                    </div>
-                  )}
-
-                  {/* Delete button for owner */}
-                  {isOwner && (
-                    <button
-                      onClick={e => { e.stopPropagation(); handleDelete(video.id); }}
-                      className="absolute top-2 right-2 w-8 h-8 rounded-full bg-destructive/80 flex items-center justify-center hover:bg-destructive transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4 text-white" />
-                    </button>
-                  )}
-                </div>
-
-                {/* Info */}
-                <div className="p-3 space-y-1.5">
-                  {video.caption && (
-                    <p className="text-sm text-foreground font-medium line-clamp-2">{video.caption}</p>
-                  )}
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <span className="flex items-center gap-1">
-                        <User className="w-3 h-3" /> {profile?.username || 'Anon'}
-                      </span>
-                      {club && (
-                        <Link to={`/club/${club.id}`} className="flex items-center gap-0.5 hover:text-primary transition-colors">
-                          <MapPin className="w-3 h-3" /> {club.name}
-                        </Link>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="flex items-center gap-0.5">
-                        <Eye className="w-3 h-3" /> {video.view_count}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground/60">
-                    <Clock className="w-3 h-3" />
-                    {format(new Date(video.created_at), 'MMM d, yyyy · h:mm a')}
-                    <span className="ml-1">({formatDistanceToNow(new Date(video.created_at), { addSuffix: true })})</span>
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
+          {videos?.map(video => (
+            <VideoCard key={video.id} video={video} clubs={clubs} />
+          ))}
         </motion.div>
 
         {!isLoading && (!videos || videos.length === 0) && (
