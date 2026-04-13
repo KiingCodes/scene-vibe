@@ -786,6 +786,67 @@ export type Database = {
           },
         ]
       }
+      video_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_comments_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_likes: {
+        Row: {
+          created_at: string
+          id: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_likes_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       video_views: {
         Row: {
           device_id: string
@@ -822,6 +883,7 @@ export type Database = {
           created_at: string
           id: string
           is_premium: boolean
+          like_count: number
           user_id: string
           video_url: string
           view_count: number
@@ -832,6 +894,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_premium?: boolean
+          like_count?: number
           user_id: string
           video_url: string
           view_count?: number
@@ -842,6 +905,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_premium?: boolean
+          like_count?: number
           user_id?: string
           video_url?: string
           view_count?: number
