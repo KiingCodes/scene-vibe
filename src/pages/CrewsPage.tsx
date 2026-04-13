@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Plus, Copy, LogOut, Vote, MapPin, Flame } from 'lucide-react';
+import { Users, Plus, Copy, LogOut, Vote, MapPin, Flame, Navigation } from 'lucide-react';
+import CrewLocationMap from '@/components/CrewLocationMap';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/hooks/useAuth';
@@ -237,6 +238,9 @@ const CrewDetail = ({ crewId }: { crewId: string }) => {
           </div>
         </motion.div>
       )}
+
+      {/* Live Location Map */}
+      <CrewLocationMap crewId={crewId} />
     </motion.div>
   );
 };
