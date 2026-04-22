@@ -57,8 +57,8 @@ const HeroCarousel = ({ clubs, vibeCounts = {} }: HeroCarouselProps) => {
 
   return (
     <section
-      className="relative w-full overflow-hidden rounded-3xl mb-10"
-      style={{ minHeight: '520px' }}
+      className="relative w-full overflow-hidden rounded-3xl mb-10 border border-border/30"
+      style={{ minHeight: '560px' }}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onTouchStart={onTouchStart}
@@ -70,29 +70,36 @@ const HeroCarousel = ({ clubs, vibeCounts = {} }: HeroCarouselProps) => {
       <div
         className="absolute inset-0"
         style={{
-          backgroundImage: `url(${heroBg})`,
+          backgroundImage: `url(${clubs[index]?.image_url || heroBg})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          filter: 'blur(28px) brightness(0.45) saturate(1.2)',
-          transform: 'scale(1.15)',
+          filter: 'blur(40px) brightness(0.35) saturate(1.4)',
+          transform: 'scale(1.2)',
+          transition: 'background-image 1.2s ease-in-out',
         }}
         aria-hidden
       />
       {/* Dark overlay */}
-      <div className="absolute inset-0 bg-background/70" aria-hidden />
+      <div className="absolute inset-0 bg-background/75" aria-hidden />
+      {/* Vignette */}
+      <div
+        className="absolute inset-0"
+        style={{ background: 'radial-gradient(ellipse at center, transparent 30%, hsl(var(--background) / 0.7) 100%)' }}
+        aria-hidden
+      />
       {/* Color glows */}
       <div
-        className="absolute -top-32 -left-32 w-[420px] h-[420px] rounded-full opacity-40 blur-[100px]"
+        className="absolute -top-32 -left-32 w-[420px] h-[420px] rounded-full opacity-50 blur-[110px] animate-pulse"
         style={{ background: 'hsl(270 90% 55%)' }}
         aria-hidden
       />
       <div
-        className="absolute -bottom-40 -right-32 w-[480px] h-[480px] rounded-full opacity-40 blur-[110px]"
+        className="absolute -bottom-40 -right-32 w-[480px] h-[480px] rounded-full opacity-50 blur-[120px] animate-pulse"
         style={{ background: 'hsl(210 100% 55%)' }}
         aria-hidden
       />
       <div
-        className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[300px] h-[300px] rounded-full opacity-25 blur-[80px]"
+        className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[300px] h-[300px] rounded-full opacity-30 blur-[90px]"
         style={{ background: 'hsl(330 100% 60%)' }}
         aria-hidden
       />
