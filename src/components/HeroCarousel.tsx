@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Flame, MapPin, TrendingUp } from 'lucide-react';
+import { Flame, MapPin, TrendingUp, ChevronLeft, ChevronRight, Navigation, Heart } from 'lucide-react';
 import heroBg from '@/assets/nightlife-hero.jpg';
 import type { Club } from '@/hooks/useClubs';
 
@@ -16,17 +16,17 @@ const HeroCarousel = ({ clubs, vibeCounts = {} }: HeroCarouselProps) => {
   const touchStartX = useRef<number | null>(null);
   const total = clubs.length;
 
-  // Autoplay: advance every 2.8s
+  // Autoplay: advance every 3.2s for a more relaxed, premium pace
   useEffect(() => {
     if (paused || total < 2) return;
-    const id = window.setInterval(() => setIndex((i) => (i + 1) % total), 2800);
+    const id = window.setInterval(() => setIndex((i) => (i + 1) % total), 3200);
     return () => window.clearInterval(id);
   }, [paused, total]);
 
-  // Resume autoplay 4s after user interaction
+  // Resume autoplay 5s after user interaction
   useEffect(() => {
     if (!paused) return;
-    const id = window.setTimeout(() => setPaused(false), 4000);
+    const id = window.setTimeout(() => setPaused(false), 5000);
     return () => window.clearTimeout(id);
   }, [paused, index]);
 
