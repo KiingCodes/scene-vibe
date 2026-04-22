@@ -47,6 +47,7 @@ const AppContent = () => {
       <InstallPrompt />
       <Routes>
         <Route path="/" element={<Index />} />
+        <Route path="/index" element={<Navigate to="/" replace />} />
         <Route path="/auth" element={<AuthGuard><AuthPage /></AuthGuard>} />
         <Route path="/map" element={<MapPage />} />
         <Route path="/chat" element={<ChatPage />} />
