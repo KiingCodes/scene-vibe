@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Flame, MapPin, TrendingUp } from 'lucide-react';
+import { Flame, MapPin, TrendingUp, ChevronLeft, ChevronRight, Navigation, Heart } from 'lucide-react';
 import heroBg from '@/assets/nightlife-hero.jpg';
 import type { Club } from '@/hooks/useClubs';
 
@@ -16,17 +16,17 @@ const HeroCarousel = ({ clubs, vibeCounts = {} }: HeroCarouselProps) => {
   const touchStartX = useRef<number | null>(null);
   const total = clubs.length;
 
-  // Autoplay: advance every 2.8s
+  // Autoplay: advance every 3.2s for a more relaxed, premium pace
   useEffect(() => {
     if (paused || total < 2) return;
-    const id = window.setInterval(() => setIndex((i) => (i + 1) % total), 2800);
+    const id = window.setInterval(() => setIndex((i) => (i + 1) % total), 3200);
     return () => window.clearInterval(id);
   }, [paused, total]);
 
-  // Resume autoplay 4s after user interaction
+  // Resume autoplay 5s after user interaction
   useEffect(() => {
     if (!paused) return;
-    const id = window.setTimeout(() => setPaused(false), 4000);
+    const id = window.setTimeout(() => setPaused(false), 5000);
     return () => window.clearTimeout(id);
   }, [paused, index]);
 
@@ -57,8 +57,8 @@ const HeroCarousel = ({ clubs, vibeCounts = {} }: HeroCarouselProps) => {
 
   return (
     <section
-      className="relative w-full overflow-hidden rounded-3xl mb-10"
-      style={{ minHeight: '520px' }}
+      className="relative w-full overflow-hidden rounded-3xl mb-10 border border-border/30"
+      style={{ minHeight: '560px' }}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onTouchStart={onTouchStart}
@@ -70,29 +70,36 @@ const HeroCarousel = ({ clubs, vibeCounts = {} }: HeroCarouselProps) => {
       <div
         className="absolute inset-0"
         style={{
-          backgroundImage: `url(${heroBg})`,
+          backgroundImage: `url(${clubs[index]?.image_url || heroBg})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          filter: 'blur(28px) brightness(0.45) saturate(1.2)',
-          transform: 'scale(1.15)',
+          filter: 'blur(40px) brightness(0.35) saturate(1.4)',
+          transform: 'scale(1.2)',
+          transition: 'background-image 1.2s ease-in-out',
         }}
         aria-hidden
       />
       {/* Dark overlay */}
-      <div className="absolute inset-0 bg-background/70" aria-hidden />
+      <div className="absolute inset-0 bg-background/75" aria-hidden />
+      {/* Vignette */}
+      <div
+        className="absolute inset-0"
+        style={{ background: 'radial-gradient(ellipse at center, transparent 30%, hsl(var(--background) / 0.7) 100%)' }}
+        aria-hidden
+      />
       {/* Color glows */}
       <div
-        className="absolute -top-32 -left-32 w-[420px] h-[420px] rounded-full opacity-40 blur-[100px]"
+        className="absolute -top-32 -left-32 w-[420px] h-[420px] rounded-full opacity-50 blur-[110px] animate-pulse"
         style={{ background: 'hsl(270 90% 55%)' }}
         aria-hidden
       />
       <div
-        className="absolute -bottom-40 -right-32 w-[480px] h-[480px] rounded-full opacity-40 blur-[110px]"
+        className="absolute -bottom-40 -right-32 w-[480px] h-[480px] rounded-full opacity-50 blur-[120px] animate-pulse"
         style={{ background: 'hsl(210 100% 55%)' }}
         aria-hidden
       />
       <div
-        className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[300px] h-[300px] rounded-full opacity-25 blur-[80px]"
+        className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[300px] h-[300px] rounded-full opacity-30 blur-[90px]"
         style={{ background: 'hsl(330 100% 60%)' }}
         aria-hidden
       />
@@ -115,18 +122,19 @@ const HeroCarousel = ({ clubs, vibeCounts = {} }: HeroCarouselProps) => {
       </div>
 
       {/* Carousel stage */}
-      <div className="relative z-10 h-[380px] flex items-center justify-center" style={{ perspective: '1200px' }}>
+      <div className="relative z-10 h-[400px] flex items-center justify-center" style={{ perspective: '1400px' }}>
         {clubs.map((club, i) => {
           const offset = getOffset(i);
           const abs = Math.abs(offset);
           if (abs > 2) return null;
 
           const isCenter = offset === 0;
-          const x = offset * 180; // horizontal spread
-          const scale = isCenter ? 1 : abs === 1 ? 0.88 : 0.74;
-          const opacity = isCenter ? 1 : abs === 1 ? 0.6 : 0.25;
-          const rotateY = offset * -8;
-          const z = -abs * 40;
+          const x = offset * 200; // wider horizontal spread for premium feel
+          const scale = isCenter ? 1 : abs === 1 ? 0.82 : 0.66;
+          const opacity = isCenter ? 1 : abs === 1 ? 0.5 : 0.18;
+          const rotateY = offset * -12;
+          const z = -abs * 60;
+          const blur = isCenter ? 0 : abs === 1 ? 1.5 : 4;
           const vibeCount = vibeCounts[club.id] || 0;
           const isTrending = vibeCount >= 3;
 
@@ -139,9 +147,10 @@ const HeroCarousel = ({ clubs, vibeCounts = {} }: HeroCarouselProps) => {
                 opacity,
                 rotateY,
                 z,
+                filter: `blur(${blur}px)`,
               }}
-              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute w-[260px] sm:w-[280px]"
+              transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute w-[270px] sm:w-[300px]"
               style={{ transformStyle: 'preserve-3d', zIndex: 10 - abs }}
             >
               <Link
@@ -156,49 +165,101 @@ const HeroCarousel = ({ clubs, vibeCounts = {} }: HeroCarouselProps) => {
                 className="block"
               >
                 <div
-                  className={`glass rounded-2xl overflow-hidden border ${
-                    isCenter ? 'border-primary/60 neon-border' : 'border-border/40'
-                  } transition-all`}
+                  className={`glass rounded-3xl overflow-hidden border transition-all duration-500 ${
+                    isCenter
+                      ? 'border-primary/70 shadow-[0_20px_60px_-15px_hsl(var(--primary)/0.5)]'
+                      : 'border-border/30'
+                  }`}
                 >
-                  <div className="relative h-[220px] overflow-hidden">
+                  <div className="relative h-[240px] overflow-hidden">
                     <img
                       src={club.image_url || '/placeholder.svg'}
                       alt={club.name}
                       className="w-full h-full object-cover"
                       loading="lazy"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
                     {isTrending && (
-                      <div className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 rounded-full gradient-secondary text-secondary-foreground text-[10px] font-bold">
+                      <div className="absolute top-3 left-3 flex items-center gap-1 px-2.5 py-1 rounded-full gradient-secondary text-secondary-foreground text-[10px] font-bold shadow-lg">
                         <TrendingUp className="w-3 h-3" /> TRENDING
                       </div>
                     )}
                     {vibeCount > 0 && (
-                      <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full bg-background/70 backdrop-blur-md border border-primary/40 text-xs font-bold text-primary">
+                      <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full bg-background/70 backdrop-blur-md border border-primary/40 text-xs font-bold text-primary shadow-lg">
                         <Flame className="w-3 h-3" /> {vibeCount}
                       </div>
                     )}
-                  </div>
-                  <div className="p-4 space-y-1">
-                    <h3 className="font-display font-bold text-lg text-foreground truncate">
-                      {club.name}
-                    </h3>
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <MapPin className="w-3 h-3 text-primary/70" />
-                      <span className="truncate">{club.area}</span>
-                      {club.genre && (
-                        <>
-                          <span className="text-border">•</span>
-                          <span className="truncate">{club.genre}</span>
-                        </>
-                      )}
+                    {/* Bottom name overlay for premium look */}
+                    <div className="absolute bottom-0 left-0 right-0 p-4">
+                      <h3 className="font-display font-bold text-xl text-foreground drop-shadow-lg truncate">
+                        {club.name}
+                      </h3>
+                      <div className="flex items-center gap-1.5 text-xs text-foreground/80 mt-0.5">
+                        <MapPin className="w-3 h-3 text-primary" />
+                        <span className="truncate">{club.area}</span>
+                        {club.genre && (
+                          <>
+                            <span className="text-foreground/40">•</span>
+                            <span className="truncate">{club.genre}</span>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
+                  {/* Card actions — only on center card */}
+                  {isCenter && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2, duration: 0.4 }}
+                      className="flex items-center gap-2 p-3 bg-background/40 backdrop-blur-md"
+                    >
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (club.lat && club.lng) {
+                            window.open(`https://www.google.com/maps/dir/?api=1&destination=${club.lat},${club.lng}`, '_blank');
+                          }
+                        }}
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl gradient-primary text-primary-foreground text-xs font-semibold hover:scale-[1.03] active:scale-95 transition-transform"
+                      >
+                        <Navigation className="w-3.5 h-3.5" /> Pull Up
+                      </button>
+                      <Link
+                        to={`/club/${club.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-background/70 border border-primary/40 text-primary text-xs font-semibold hover:bg-primary/10 transition-colors"
+                      >
+                        <Heart className="w-3.5 h-3.5" /> View Club
+                      </Link>
+                    </motion.div>
+                  )}
                 </div>
               </Link>
             </motion.div>
           );
         })}
+
+        {/* Side nav arrows — desktop premium control */}
+        {total > 1 && (
+          <>
+            <button
+              onClick={() => go(-1)}
+              aria-label="Previous slide"
+              className="hidden sm:flex absolute left-3 top-1/2 -translate-y-1/2 z-20 items-center justify-center w-10 h-10 rounded-full bg-background/50 backdrop-blur-md border border-border/40 text-foreground hover:bg-primary/20 hover:border-primary/60 transition-all"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => go(1)}
+              aria-label="Next slide"
+              className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 z-20 items-center justify-center w-10 h-10 rounded-full bg-background/50 backdrop-blur-md border border-border/40 text-foreground hover:bg-primary/20 hover:border-primary/60 transition-all"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </>
+        )}
       </div>
 
       {/* Indicators */}
