@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Flame, TrendingUp, Star, Sparkles, Cake, Clock } from 'lucide-react';
+import { Search, Flame, TrendingUp, Star, Sparkles, Cake } from 'lucide-react';
 import { useClubs } from '@/hooks/useClubs';
 import { useAllVibes } from '@/hooks/useVibes';
 import { useAllPullingUp } from '@/hooks/usePullingUp';
@@ -159,20 +159,6 @@ const Index = () => {
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Show all clubs below curated when no search */}
-        {showCurated && !isLoading && filteredClubs && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
-            <h2 className="font-display font-bold text-xl text-foreground mb-4 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-muted-foreground" /> All Clubs
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredClubs.map((club, i) => (
-                <ClubCard key={club.id} club={club} vibeCount={vibeCounts?.[club.id] || 0} pullingUpCount={pullingUpCounts?.[club.id] || 0} index={i} />
-              ))}
-            </div>
-          </motion.div>
-        )}
 
         {filteredClubs?.length === 0 && !isLoading && (
           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-16">
