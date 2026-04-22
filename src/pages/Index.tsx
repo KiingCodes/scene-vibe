@@ -7,6 +7,7 @@ import { useAllPullingUp } from '@/hooks/usePullingUp';
 import ClubCard from '@/components/ClubCard';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import HeroCarousel from '@/components/HeroCarousel';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
@@ -70,25 +71,10 @@ const Index = () => {
       <Navbar />
       
       <main className="container mx-auto px-4 pt-24 pb-8">
-        {/* Hero */}
-        <motion.div
-          initial={{ opacity: 0, y: 30, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="text-center mb-8 space-y-3"
-        >
-          <h1 className="font-display font-bold text-4xl sm:text-5xl">
-            <span className="text-primary neon-text"></span>
-          </h1>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="text-muted-foreground text-lg max-w-md mx-auto"
-          >
-            What's the scene in your city?
-          </motion.p>
-        </motion.div>
+        {/* Auto-moving hero carousel */}
+        {mostVibed.length > 0 && (
+          <HeroCarousel clubs={mostVibed.length >= 3 ? mostVibed : (clubs || []).slice(0, 6)} vibeCounts={vibeCounts} />
+        )}
 
         {/* Search & Filters */}
         <motion.div
