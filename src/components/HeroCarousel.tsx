@@ -153,16 +153,15 @@ const HeroCarousel = ({ clubs, vibeCounts = {} }: HeroCarouselProps) => {
               className="absolute w-[270px] sm:w-[300px]"
               style={{ transformStyle: 'preserve-3d', zIndex: 10 - abs }}
             >
-              <Link
-                to={`/club/${club.id}`}
-                onClick={(e) => {
+              <div
+                role={!isCenter ? 'button' : undefined}
+                onClick={() => {
                   if (!isCenter) {
-                    e.preventDefault();
                     setPaused(true);
                     setIndex(i);
                   }
                 }}
-                className="block"
+                className="block cursor-pointer"
               >
                 <div
                   className={`glass rounded-3xl overflow-hidden border transition-all duration-500 ${
@@ -171,7 +170,13 @@ const HeroCarousel = ({ clubs, vibeCounts = {} }: HeroCarouselProps) => {
                       : 'border-border/30'
                   }`}
                 >
-                  <div className="relative h-[240px] overflow-hidden">
+                  <Link
+                    to={`/club/${club.id}`}
+                    onClick={(e) => {
+                      if (!isCenter) e.preventDefault();
+                    }}
+                    className="relative block h-[240px] overflow-hidden"
+                  >
                     <img
                       src={club.image_url || '/placeholder.svg'}
                       alt={club.name}
@@ -205,7 +210,7 @@ const HeroCarousel = ({ clubs, vibeCounts = {} }: HeroCarouselProps) => {
                         )}
                       </div>
                     </div>
-                  </div>
+                  </Link>
                   {/* Card actions — only on center card */}
                   {isCenter && (
                     <motion.div
@@ -236,7 +241,7 @@ const HeroCarousel = ({ clubs, vibeCounts = {} }: HeroCarouselProps) => {
                     </motion.div>
                   )}
                 </div>
-              </Link>
+              </div>
             </motion.div>
           );
         })}
