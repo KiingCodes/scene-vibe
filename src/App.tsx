@@ -6,7 +6,9 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useTrendingNotifications } from "@/hooks/useTrendingNotifications";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { useWhatsNew } from "@/hooks/useWhatsNew";
 import InstallPrompt from "./components/InstallPrompt";
+import SplashScreen from "./components/SplashScreen";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
 import MapPage from "./pages/MapPage";
@@ -41,9 +43,11 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
 const AppContent = () => {
   useTrendingNotifications();
   usePushNotifications();
+  useWhatsNew();
 
   return (
     <BrowserRouter>
+      <SplashScreen />
       <InstallPrompt />
       <Routes>
         <Route path="/" element={<Index />} />

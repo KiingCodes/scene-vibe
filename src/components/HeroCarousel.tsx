@@ -35,6 +35,18 @@ const HeroCarousel = ({ clubs, vibeCounts = {} }: HeroCarouselProps) => {
     setIndex((i) => (i + dir + total) % total);
   };
 
+  // Keyboard navigation (← / →)
+  useEffect(() => {
+    if (total < 2) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') go(-1);
+      else if (e.key === 'ArrowRight') go(1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [total]);
+
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
   };
