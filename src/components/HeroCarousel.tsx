@@ -30,8 +30,14 @@ const HeroCarousel = ({ clubs, vibeCounts = {} }: HeroCarouselProps) => {
     return () => window.clearTimeout(id);
   }, [paused, index]);
 
+  const go = (dir: -1 | 1) => {
+    setPaused(true);
+    setIndex((i) => (i + dir + total) % total);
+  };
+
   // Keyboard navigation (← / →)
   useEffect(() => {
+    if (total < 2) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft') go(-1);
       else if (e.key === 'ArrowRight') go(1);
@@ -40,11 +46,6 @@ const HeroCarousel = ({ clubs, vibeCounts = {} }: HeroCarouselProps) => {
     return () => window.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [total]);
-
-  const go = (dir: -1 | 1) => {
-    setPaused(true);
-    setIndex((i) => (i + dir + total) % total);
-  };
 
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
