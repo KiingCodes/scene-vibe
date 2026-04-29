@@ -148,9 +148,36 @@ const Index = () => {
         <AnimatePresence mode="wait">
           {filteredClubs && (search || filter !== 'all') && (
             <motion.div key="filtered" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-              <h2 className="font-display font-bold text-xl text-foreground mb-4">
-                {filter === 'all' ? 'Search Results' : filter === 'trending' ? 'Trending Now' : 'Currently Vibing'}
-              </h2>
+              <div className="glass rounded-2xl border border-border/40 p-4 mb-5 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  {filter === 'trending' ? (
+                    <TrendingUp className="w-5 h-5 text-secondary shrink-0" />
+                  ) : filter === 'vibing' ? (
+                    <Flame className="w-5 h-5 text-primary shrink-0" />
+                  ) : (
+                    <Search className="w-5 h-5 text-primary shrink-0" />
+                  )}
+                  <div className="min-w-0">
+                    <h2 className="font-display font-bold text-lg text-foreground truncate">
+                      {filter === 'all' ? 'Search Results' : filter === 'trending' ? 'Trending Now' : 'Currently Vibing'}
+                    </h2>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {filteredClubs.length} {filteredClubs.length === 1 ? 'spot' : 'spots'}
+                      {search && <> matching “{search}”</>}
+                    </p>
+                  </div>
+                </div>
+                {(search || filter !== 'all') && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => { setSearch(''); setFilter('all'); }}
+                    className="text-xs text-muted-foreground hover:text-foreground shrink-0"
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredClubs.map((club, i) => (
                   <ClubCard key={club.id} club={club} vibeCount={vibeCounts?.[club.id] || 0} pullingUpCount={pullingUpCounts?.[club.id] || 0} index={i} />

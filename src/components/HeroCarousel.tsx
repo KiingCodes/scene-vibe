@@ -30,6 +30,17 @@ const HeroCarousel = ({ clubs, vibeCounts = {} }: HeroCarouselProps) => {
     return () => window.clearTimeout(id);
   }, [paused, index]);
 
+  // Keyboard navigation (← / →)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') go(-1);
+      else if (e.key === 'ArrowRight') go(1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [total]);
+
   const go = (dir: -1 | 1) => {
     setPaused(true);
     setIndex((i) => (i + dir + total) % total);

@@ -28,7 +28,12 @@ export const useTrendingNotifications = () => {
           // If club just hit 3 vibes and we haven't notified yet
           if (count === 3 && !notifiedClubs.current.has(clubId)) {
             notifiedClubs.current.add(clubId);
-            
+
+            // Haptic feedback for trending alerts
+            if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+              try { navigator.vibrate([60, 40, 120, 40, 60]); } catch {}
+            }
+
             // Fetch club name
             const { data: club } = await supabase
               .from('clubs')
@@ -46,6 +51,10 @@ export const useTrendingNotifications = () => {
 
           // Also show a subtle notification for any vibe
           if (count && count > 0 && count < 3) {
+            // Soft haptic tick on every fresh vibe
+            if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+              try { navigator.vibrate(25); } catch {}
+            }
             const { data: club } = await supabase
               .from('clubs')
               .select('name')
