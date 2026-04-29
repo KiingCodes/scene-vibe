@@ -57,6 +57,36 @@
 
   body {
     @apply bg-background text-foreground font-body antialiased;
+    position: relative;
+    min-height: 100vh;
+  }
+
+  /* Global atmospheric background — applied to every page */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    background-image: url('/global-bg.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    filter: blur(14px) brightness(0.35) saturate(1.25);
+    transform: scale(1.1);
+    pointer-events: none;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse at 15% 10%, hsl(270 90% 55% / 0.28), transparent 55%),
+      radial-gradient(ellipse at 85% 90%, hsl(210 100% 55% / 0.28), transparent 55%),
+      radial-gradient(ellipse at center, transparent 30%, hsl(var(--background) / 0.85) 100%),
+      linear-gradient(180deg, hsl(var(--background) / 0.55), hsl(var(--background) / 0.7));
   }
 
   h1, h2, h3, h4, h5, h6 {
