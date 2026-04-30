@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Heart } from 'lucide-react';
+import jewelIqLogo from '@/assets/jeweliq-logo.png';
 
 const Footer = () => (
   <footer className="border-t border-border/30 bg-card/30 backdrop-blur-sm mt-12">
@@ -44,6 +45,26 @@ const Footer = () => (
       <div className="border-t border-border/20 pt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">© 2026 SCENE. Built for the culture.</p>
         <p className="text-xs text-muted-foreground flex items-center gap-1">Made with <Heart className="w-3 h-3 text-secondary" /> for nightlife lovers</p>
+      </div>
+
+      <div className="border-t border-border/20 mt-6 pt-6 flex flex-col items-center justify-center gap-3">
+        <p className="text-base sm:text-lg font-display font-semibold text-muted-foreground tracking-wide">
+          Designed by
+        </p>
+        <a
+          href="https://jeweliq.co.za"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block transition-transform hover:scale-105"
+          aria-label="JewelIQ"
+        >
+          <img
+            src={jewelIqLogo}
+            alt="JewelIQ — Designed by JewelIQ"
+            className="h-20 sm:h-28 md:h-32 w-auto object-contain drop-shadow-[0_0_20px_rgba(56,189,248,0.35)]"
+            loading="lazy"
+          />
+        </a>
       </div>
     </div>
   </footer>
