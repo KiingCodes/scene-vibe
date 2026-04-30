@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
 import {
   Dialog,
@@ -12,23 +12,58 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { APP_VERSION, VERSION_HISTORY } from "@/lib/version";
 
+const SEEN_VERSION_KEY = "scene_last_seen_version";
+
 interface Props {
   trigger?: React.ReactNode;
 }
 
 const WhatsNewDialog = ({ trigger }: Props) => {
   const [open, setOpen] = useState(false);
+  const [hasNew, setHasNew] = useState(false);
+
+  useEffect(() => {
+    try {
+      const seen = localStorage.getItem(SEEN_VERSION_KEY);
+      setHasNew(seen !== APP_VERSION);
+    } catch {
+      setHasNew(true);
+    }
+  }, []);
+
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (next && hasNew) {
+      try {
+        localStorage.setItem(SEEN_VERSION_KEY, APP_VERSION);
+      } catch {
+        /* ignore */
+      }
+      setHasNew(false);
+    }
+  };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {trigger ?? (
           <button
             type="button"
-            className="text-[10px] text-muted-foreground/70 mt-2 font-mono hover:text-primary transition-colors underline-offset-4 hover:underline"
+            className="relative text-[10px] text-muted-foreground/70 mt-2 font-mono hover:text-primary transition-colors underline-offset-4 hover:underline inline-flex items-center gap-2"
             aria-label="View what's new"
           >
-            SCENE v{APP_VERSION}
+            <span>SCENE v{APP_VERSION}</span>
+            {hasNew && (
+              <span className="relative flex h-2 w-2" aria-label="New update available">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+              </span>
+            )}
+            {hasNew && (
+              <span className="text-[9px] uppercase tracking-wider text-primary font-semibold">
+                New
+              </span>
+            )}
           </button>
         )}
       </DialogTrigger>
