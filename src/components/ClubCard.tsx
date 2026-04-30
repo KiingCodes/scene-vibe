@@ -10,6 +10,8 @@ import PullingUpButton from '@/components/PullingUpButton';
 import { toast } from 'sonner';
 import type { Club } from '@/hooks/useClubs';
 import CrowdLevel from './CrowdLevel';
+import { getOpenStatus } from '@/lib/openHours';
+import { useEffect, useState } from 'react';
 
 interface ClubCardProps {
   club: Club;
@@ -27,6 +29,14 @@ const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardPr
   const toggleFav = useToggleFavorite();
   const isTrending = vibeCount >= 3;
   const isFav = favorites?.has(club.id) || false;
+
+  // Tick every minute to keep open/closed badge fresh
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  const status = getOpenStatus(club.opening_hours, now);
 
   const handleFavorite = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -104,6 +114,17 @@ const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardPr
             <button onClick={handleFavorite} className="absolute top-3 right-3 p-1.5 rounded-full bg-background/60 backdrop-blur-sm border border-border/50 hover:scale-110 transition-transform">
               <Heart className={`w-4 h-4 ${isFav ? 'text-secondary fill-secondary' : 'text-muted-foreground'}`} />
             </button>
+
+            {status && (
+              <div className={`absolute bottom-3 left-3 flex items-center gap-1.5 px-2 py-1 rounded-full backdrop-blur-md border text-[10px] font-bold uppercase tracking-wide ${
+                status.isOpen
+                  ? 'bg-emerald-500/20 border-emerald-400/50 text-emerald-300'
+                  : 'bg-red-500/20 border-red-400/50 text-red-300'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${status.isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
+                {status.label}
+              </div>
+            )}
 
             <div className="absolute bottom-3 right-3 flex gap-1.5">
               <PullingUpButton clubId={club.id} pullingUpCount={pullingUpCount} />
