@@ -21,10 +21,12 @@ interface Props {
 const WhatsNewDialog = ({ trigger }: Props) => {
   const [open, setOpen] = useState(false);
   const [hasNew, setHasNew] = useState(false);
+  const [lastSeen, setLastSeen] = useState<string | null>(null);
 
   useEffect(() => {
     try {
       const seen = localStorage.getItem(SEEN_VERSION_KEY);
+      setLastSeen(seen);
       setHasNew(seen !== APP_VERSION);
     } catch {
       setHasNew(true);
@@ -110,6 +112,17 @@ const WhatsNewDialog = ({ trigger }: Props) => {
             ))}
           </div>
         </ScrollArea>
+        <div className="border-t border-border/30 pt-3 mt-2 flex items-center justify-between text-[10px] font-mono text-muted-foreground/80">
+          <span>
+            Last seen:{" "}
+            <span className="text-foreground/90">
+              {lastSeen ? `v${lastSeen}` : "never"}
+            </span>
+          </span>
+          <span>
+            Current: <span className="text-primary">v{APP_VERSION}</span>
+          </span>
+        </div>
       </DialogContent>
     </Dialog>
   );
