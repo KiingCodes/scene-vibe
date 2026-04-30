@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Heart } from 'lucide-react';
 import jewelIqLogo from '@/assets/jeweliq-logo.png';
-import { APP_VERSION } from '@/lib/version';
+import WhatsNewDialog from '@/components/WhatsNewDialog';
 
 const Footer = () => (
   <footer className="border-t border-border/30 bg-card/30 backdrop-blur-sm mt-12">
@@ -66,9 +66,7 @@ const Footer = () => (
             loading="lazy"
           />
         </a>
-        <p className="text-[10px] text-muted-foreground/70 mt-2 font-mono">
-          SCENE v{APP_VERSION}
-        </p>
+        <WhatsNewDialog />
       </div>
     </div>
   </footer>
