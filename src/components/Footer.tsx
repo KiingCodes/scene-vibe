@@ -48,11 +48,11 @@ const Footer = () => (
       </div>
 
       <div className="border-t border-border/20 mt-6 pt-6 flex flex-col items-center justify-center gap-3">
-        <p className="text-base sm:text-lg font-display font-semibold text-muted-foreground tracking-wide">
+        <p className="text-xs sm:text-sm font-display font-medium text-muted-foreground tracking-wide">
           Designed by
         </p>
         <a
-          href="https://jeweliq.co.za"
+          href="https://jeweliq.tech"
           target="_blank"
           rel="noopener noreferrer"
           className="block transition-transform hover:scale-105"
@@ -61,10 +61,13 @@ const Footer = () => (
           <img
             src={jewelIqLogo}
             alt="JewelIQ — Designed by JewelIQ"
-            className="h-20 sm:h-28 md:h-32 w-auto object-contain drop-shadow-[0_0_20px_rgba(56,189,248,0.35)]"
+            className="h-14 sm:h-16 md:h-20 w-auto object-contain drop-shadow-[0_0_20px_rgba(56,189,248,0.35)]"
             loading="lazy"
           />
         </a>
+        <p className="text-[10px] text-muted-foreground/70 mt-2 font-mono">
+          SCENE v{__APP_VERSION__}
+        </p>
       </div>
     </div>
   </footer>
