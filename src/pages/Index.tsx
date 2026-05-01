@@ -10,6 +10,7 @@ import Footer from '@/components/Footer';
 import HeroCarousel from '@/components/HeroCarousel';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useTypewriter } from '@/hooks/useTypewriter';
 
 const container = {
   hidden: { opacity: 0 },
@@ -22,6 +23,13 @@ const Index = () => {
   const { data: pullingUpCounts } = useAllPullingUp();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'trending' | 'vibing'>('all');
+  const placeholder = useTypewriter([
+    'Search clubs, areas, genres...',
+    "Find tonight's vibe...",
+    'Try "Sandton" or "Amapiano"...',
+    'Discover trending spots...',
+    'Where are we going tonight?',
+  ]);
 
   const filteredClubs = clubs?.filter(club => {
     const matchesSearch = club.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -85,7 +93,12 @@ const Index = () => {
         >
           <div className="relative max-w-md mx-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search clubs, areas, genres..." className="pl-10 bg-muted/50 border-border/50" />
+            <Input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder={placeholder || 'Search...'}
+              className="pl-10 bg-muted/50 border-border/50"
+            />
           </div>
           <div className="flex justify-center gap-2">
             {[
