@@ -1,9 +1,8 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, MapPin, Clock, Music, Flame, TrendingUp, Navigation, Globe, Instagram, Car } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Music, Flame, TrendingUp, Navigation, Globe, Instagram, Car, MessageCircle } from 'lucide-react';
 import PullingUpButton from '@/components/PullingUpButton';
 import Navbar from '@/components/Navbar';
-import ClubChat from '@/components/ClubChat';
 import ClubReviews from '@/components/ClubReviews';
 import ClubDjMusicRating from '@/components/ClubDjMusicRating';
 import ClubMap from '@/components/ClubMap';
@@ -190,7 +189,20 @@ const ClubDetailPage = () => {
 
           {/* Right column */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="space-y-4">
-            <ClubChat clubId={club.id} clubName={club.name} />
+            <Link
+              to="/chat"
+              className="block glass rounded-xl p-4 border border-border/40 hover:border-primary/50 transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center shrink-0">
+                  <MessageCircle className="w-5 h-5 text-primary-foreground" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">Join Community Chat</p>
+                  <p className="text-xs text-muted-foreground">Talk to everyone on SCENE in one live room</p>
+                </div>
+              </div>
+            </Link>
             <ClubDjMusicRating clubId={club.id} />
             <ClubReviews clubId={club.id} />
           </motion.div>

@@ -1,8 +1,9 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Video, Upload, Trash2, Eye, Clock, MapPin, Play, User, Heart, MessageCircle, Send, X } from 'lucide-react';
+import { Video, Upload, Trash2, Eye, Clock, MapPin, Play, User, Heart, MessageCircle, Send, X, Camera } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import VideoRecorder from '@/components/VideoRecorder';
 import { useAuth } from '@/hooks/useAuth';
 import { useVideos, useUploadVideo, useDeleteVideo, useRecordVideoView, useVideoLikes, useToggleLike, useVideoComments, usePostComment, useDeleteComment } from '@/hooks/useVideos';
 import { useClubs } from '@/hooks/useClubs';
@@ -10,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { formatDistanceToNow, format } from 'date-fns';
 import { Link } from 'react-router-dom';
@@ -176,16 +178,19 @@ const VideosPage = () => {
   const [caption, setCaption] = useState('');
   const [clubId, setClubId] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [open, setOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleUpload = async () => {
     if (!file) return toast.error('Select a video file');
     if (!user) return toast.error('Sign in to post videos');
+    if (file.size > 50 * 1024 * 1024) return toast.error('Max 50MB');
     try {
       await uploadVideo.mutateAsync({ file, clubId: clubId || undefined, caption });
       setFile(null);
       setCaption('');
       setClubId('');
+      setOpen(false);
       toast.success('Video posted! 🎬');
     } catch {
       toast.error('Could not upload video');
@@ -204,21 +209,45 @@ const VideosPage = () => {
         </motion.div>
 
         {user && (
-          <Dialog>
+          <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="mb-6">
-                <Button className="w-full gradient-primary text-primary-foreground gap-2 py-6 text-base">
-                  <Upload className="w-5 h-5" /> Post a Video
-                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button className="gradient-primary text-primary-foreground gap-2 py-6 text-base" onClick={() => setOpen(true)}>
+                    <Camera className="w-5 h-5" /> Record
+                  </Button>
+                  <Button variant="outline" className="border-border/50 gap-2 py-6 text-base" onClick={() => setOpen(true)}>
+                    <Upload className="w-5 h-5" /> Upload
+                  </Button>
+                </div>
               </motion.div>
             </DialogTrigger>
-            <DialogContent className="glass border-border/50">
+            <DialogContent className="glass border-border/50 max-w-lg">
               <DialogHeader><DialogTitle className="text-foreground">Post Video</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <input ref={fileRef} type="file" accept="video/*" className="hidden" onChange={e => setFile(e.target.files?.[0] || null)} />
-                <Button variant="outline" onClick={() => fileRef.current?.click()} className="w-full border-border/50 text-muted-foreground gap-2">
-                  <Video className="w-4 h-4" /> {file ? file.name : 'Select Video'}
-                </Button>
+              <Tabs defaultValue="record" className="w-full">
+                <TabsList className="grid grid-cols-2 w-full mb-3">
+                  <TabsTrigger value="record"><Camera className="w-4 h-4 mr-1.5" /> Record</TabsTrigger>
+                  <TabsTrigger value="upload"><Upload className="w-4 h-4 mr-1.5" /> Upload</TabsTrigger>
+                </TabsList>
+                <TabsContent value="record" className="space-y-3">
+                  {!file ? (
+                    <VideoRecorder onRecorded={(f) => setFile(f)} maxSeconds={30} />
+                  ) : (
+                    <div className="space-y-2">
+                      <video src={URL.createObjectURL(file)} controls className="w-full rounded-lg" />
+                      <Button variant="outline" size="sm" onClick={() => setFile(null)} className="w-full">Retake</Button>
+                    </div>
+                  )}
+                </TabsContent>
+                <TabsContent value="upload" className="space-y-3">
+                  <input ref={fileRef} type="file" accept="video/*" className="hidden" onChange={e => setFile(e.target.files?.[0] || null)} />
+                  <Button variant="outline" onClick={() => fileRef.current?.click()} className="w-full border-border/50 text-muted-foreground gap-2">
+                    <Video className="w-4 h-4" /> {file ? file.name : 'Select Video'}
+                  </Button>
+                </TabsContent>
+              </Tabs>
+
+              <div className="space-y-3 mt-3 pt-3 border-t border-border/30">
                 <Input value={caption} onChange={e => setCaption(e.target.value)} placeholder="Caption (optional)" className="bg-muted/50 border-border/50" maxLength={200} />
                 <Select value={clubId} onValueChange={setClubId}>
                   <SelectTrigger className="bg-muted/50 border-border/50"><SelectValue placeholder="Tag a club (optional)" /></SelectTrigger>
@@ -227,7 +256,7 @@ const VideosPage = () => {
                   </SelectContent>
                 </Select>
                 <Button onClick={handleUpload} disabled={uploadVideo.isPending || !file} className="w-full gradient-primary text-primary-foreground">
-                  {uploadVideo.isPending ? 'Uploading...' : 'Post'}
+                  {uploadVideo.isPending ? 'Uploading...' : file ? 'Post Video' : 'Record or upload first'}
                 </Button>
               </div>
             </DialogContent>

@@ -10,9 +10,20 @@
 //        { version, date: "YYYY-MM-DD", highlights: ["...", "..."] }
 //   3. Keep highlights short, user-facing, and benefit-led (no jargon).
 //   4. The footer "What's New" modal auto-reads from this file — no other edits needed.
-export const APP_VERSION = "1.4.0";
+export const APP_VERSION = "1.5.0";
 
 export const VERSION_HISTORY: { version: string; date: string; highlights: string[] }[] = [
+  {
+    version: "1.5.0",
+    date: "2026-05-01",
+    highlights: [
+      "Community Chat — one live room for everyone on SCENE",
+      "Per-user color bubbles, emojis, photo & voice notes",
+      "Report inappropriate messages, admins moderate",
+      "Record videos directly in-app (front/back camera, 30s)",
+      "Typewriter animation on the search bar",
+    ],
+  },
   {
     version: "1.4.0",
     date: "2026-04-30",

@@ -335,32 +335,62 @@ export type Database = {
           },
         ]
       }
-      messages: {
+      message_flags: {
         Row: {
-          club_id: string
-          content: string
           created_at: string
           id: string
+          message_id: string
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_id: string
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_id?: string
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          club_id: string | null
+          content: string
+          created_at: string
+          flag_count: number
+          id: string
+          is_hidden: boolean
           is_pinned: boolean
           media_url: string | null
           message_type: string
           user_id: string
         }
         Insert: {
-          club_id: string
+          club_id?: string | null
           content: string
           created_at?: string
+          flag_count?: number
           id?: string
+          is_hidden?: boolean
           is_pinned?: boolean
           media_url?: string | null
           message_type?: string
           user_id: string
         }
         Update: {
-          club_id?: string
+          club_id?: string | null
           content?: string
           created_at?: string
+          flag_count?: number
           id?: string
+          is_hidden?: boolean
           is_pinned?: boolean
           media_url?: string | null
           message_type?: string
