@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
-import { MapPin, MessageCircle, Home, User, LogOut, Heart, Shield, BarChart3, Trophy, Users, Calendar, Video, Moon } from 'lucide-react';
+import { MapPin, MessageCircle, Home, User, LogOut, Heart, Shield, BarChart3, Trophy, Users, Calendar, Video, Moon, Sparkles } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
 import { Button } from '@/components/ui/button';
+import NotificationBell from '@/components/NotificationBell';
 import logo from '@/assets/logo.png';
 import "@fontsource/poppins/800.css";
 
@@ -18,6 +19,7 @@ const Navbar = () => {
     { path: '/chat', icon: MessageCircle, label: 'Chat' },
     { path: '/crews', icon: Users, label: 'Crews' },
     { path: '/events', icon: Calendar, label: 'Events' },
+    { path: '/experiences', icon: Sparkles, label: 'Discover' },
     { path: '/videos', icon: Video, label: 'Videos' },
     { path: '/night-replay', icon: Moon, label: 'Replay' },
     { path: '/saved', icon: Heart, label: 'Saved' },
@@ -59,6 +61,7 @@ const Navbar = () => {
 
           {user ? (
             <>
+              <NotificationBell />
               {isAdmin && (
                 <Link to="/admin">
                   <Button variant="ghost" size="sm" className={`gap-1 h-9 px-1.5 sm:px-2.5 text-[11px] sm:text-xs ${location.pathname === '/admin' ? 'text-primary neon-text' : 'text-muted-foreground hover:text-foreground'}`}>

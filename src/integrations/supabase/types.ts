@@ -234,37 +234,157 @@ export type Database = {
       }
       events: {
         Row: {
-          club_id: string
+          address: string | null
+          area: string | null
+          category: string
+          club_id: string | null
           created_at: string
           description: string | null
+          end_date: string | null
           event_date: string
+          gallery: Json
           id: string
           image_url: string | null
           is_boosted: boolean
+          last_synced_at: string | null
+          lat: number | null
+          lng: number | null
+          price_info: string | null
           promoter_id: string
+          source_url: string | null
+          ticket_url: string | null
           title: string
         }
         Insert: {
-          club_id: string
+          address?: string | null
+          area?: string | null
+          category?: string
+          club_id?: string | null
           created_at?: string
           description?: string | null
+          end_date?: string | null
           event_date: string
+          gallery?: Json
           id?: string
           image_url?: string | null
           is_boosted?: boolean
+          last_synced_at?: string | null
+          lat?: number | null
+          lng?: number | null
+          price_info?: string | null
           promoter_id: string
+          source_url?: string | null
+          ticket_url?: string | null
           title: string
         }
         Update: {
-          club_id?: string
+          address?: string | null
+          area?: string | null
+          category?: string
+          club_id?: string | null
           created_at?: string
           description?: string | null
+          end_date?: string | null
           event_date?: string
+          gallery?: Json
           id?: string
           image_url?: string | null
           is_boosted?: boolean
+          last_synced_at?: string | null
+          lat?: number | null
+          lng?: number | null
+          price_info?: string | null
           promoter_id?: string
+          source_url?: string | null
+          ticket_url?: string | null
           title?: string
+        }
+        Relationships: []
+      }
+      experiences: {
+        Row: {
+          address: string | null
+          area: string
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_date: string | null
+          gallery: Json
+          id: string
+          image_url: string | null
+          instagram: string | null
+          is_community_added: boolean
+          last_synced_at: string | null
+          lat: number | null
+          lng: number | null
+          name: string
+          opening_hours: string | null
+          phone: string | null
+          price_info: string | null
+          recurrence: string | null
+          registration_url: string | null
+          source_url: string | null
+          start_date: string | null
+          status: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          area: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          gallery?: Json
+          id?: string
+          image_url?: string | null
+          instagram?: string | null
+          is_community_added?: boolean
+          last_synced_at?: string | null
+          lat?: number | null
+          lng?: number | null
+          name: string
+          opening_hours?: string | null
+          phone?: string | null
+          price_info?: string | null
+          recurrence?: string | null
+          registration_url?: string | null
+          source_url?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          area?: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          gallery?: Json
+          id?: string
+          image_url?: string | null
+          instagram?: string | null
+          is_community_added?: boolean
+          last_synced_at?: string | null
+          lat?: number | null
+          lng?: number | null
+          name?: string
+          opening_hours?: string | null
+          phone?: string | null
+          price_info?: string | null
+          recurrence?: string | null
+          registration_url?: string | null
+          source_url?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          website?: string | null
         }
         Relationships: []
       }
@@ -515,6 +635,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          meta: Json
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          meta?: Json
+          read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          meta?: Json
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       pending_clubs: {
         Row: {

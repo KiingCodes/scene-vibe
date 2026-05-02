@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Camera, Square, RotateCcw, Check, X, SwitchCamera } from 'lucide-react';
+import { Camera, Square, RotateCcw, Check, SwitchCamera, Pause, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
@@ -16,6 +16,7 @@ const VideoRecorder = ({ onRecorded, maxSeconds = 30 }: VideoRecorderProps) => {
   const chunksRef = useRef<Blob[]>([]);
 
   const [recording, setRecording] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [recordedFile, setRecordedFile] = useState<File | null>(null);
@@ -46,11 +47,11 @@ const VideoRecorder = ({ onRecorded, maxSeconds = 30 }: VideoRecorderProps) => {
   }, []);
 
   useEffect(() => {
-    if (!recording) return;
+    if (!recording || paused) return;
     setSeconds(0);
     const t = setInterval(() => setSeconds(s => s + 1), 1000);
     return () => clearInterval(t);
-  }, [recording]);
+  }, [recording, paused]);
 
   useEffect(() => {
     if (recording && seconds >= maxSeconds) stop();
@@ -87,6 +88,15 @@ const VideoRecorder = ({ onRecorded, maxSeconds = 30 }: VideoRecorderProps) => {
 
   const stop = () => {
     if (recorderRef.current?.state === 'recording') recorderRef.current.stop();
+    if (recorderRef.current?.state === 'paused') recorderRef.current.stop();
+    setPaused(false);
+  };
+
+  const togglePause = () => {
+    const mr = recorderRef.current;
+    if (!mr) return;
+    if (mr.state === 'recording') { mr.pause(); setPaused(true); }
+    else if (mr.state === 'paused') { mr.resume(); setPaused(false); }
   };
 
   const reset = () => {
@@ -109,10 +119,21 @@ const VideoRecorder = ({ onRecorded, maxSeconds = 30 }: VideoRecorderProps) => {
           <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
         )}
         {recording && (
-          <div className="absolute top-3 left-3 flex items-center gap-2 px-2.5 py-1 rounded-full bg-destructive/90 text-white text-xs font-semibold">
-            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-            REC {seconds}s / {maxSeconds}s
-          </div>
+          <>
+            <div className="absolute top-3 left-3 flex items-center gap-2 px-2.5 py-1 rounded-full bg-destructive/90 text-white text-xs font-semibold">
+              <span className={`w-2 h-2 rounded-full bg-white ${paused ? '' : 'animate-pulse'}`} />
+              {paused ? 'PAUSED' : 'REC'} {seconds}s / {maxSeconds}s
+            </div>
+            {/* Countdown ring */}
+            <svg className="absolute top-2 right-2 w-10 h-10 -rotate-90" viewBox="0 0 36 36">
+              <circle cx="18" cy="18" r="16" stroke="rgba(255,255,255,0.2)" strokeWidth="3" fill="none" />
+              <circle
+                cx="18" cy="18" r="16" fill="none" strokeWidth="3"
+                stroke="hsl(var(--primary))" strokeLinecap="round"
+                strokeDasharray={`${(seconds / maxSeconds) * 100} 100`}
+              />
+            </svg>
+          </>
         )}
         {!previewUrl && !recording && (
           <button onClick={switchCamera} className="absolute top-3 right-3 p-2 rounded-full bg-black/60 text-white hover:bg-black/80" title="Flip camera">
@@ -128,13 +149,24 @@ const VideoRecorder = ({ onRecorded, maxSeconds = 30 }: VideoRecorderProps) => {
             <Button onClick={confirm} className="gradient-primary text-primary-foreground gap-1.5"><Check className="w-4 h-4" /> Use this</Button>
           </>
         ) : recording ? (
-          <motion.button
-            whileTap={{ scale: 0.92 }}
-            onClick={stop}
-            className="w-14 h-14 rounded-full bg-destructive flex items-center justify-center shadow-lg ring-4 ring-destructive/30"
-          >
-            <Square className="w-6 h-6 text-white fill-current" />
-          </motion.button>
+          <>
+            <motion.button
+              whileTap={{ scale: 0.92 }}
+              onClick={togglePause}
+              className="w-11 h-11 rounded-full bg-muted flex items-center justify-center shadow-lg"
+              title={paused ? 'Resume' : 'Pause'}
+            >
+              {paused ? <Play className="w-5 h-5 text-foreground" /> : <Pause className="w-5 h-5 text-foreground" />}
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.92 }}
+              onClick={stop}
+              className="w-14 h-14 rounded-full bg-destructive flex items-center justify-center shadow-lg ring-4 ring-destructive/30"
+              title="Stop & use"
+            >
+              <Square className="w-6 h-6 text-white fill-current" />
+            </motion.button>
+          </>
         ) : (
           <motion.button
             whileTap={{ scale: 0.92 }}

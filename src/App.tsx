@@ -24,6 +24,7 @@ import ProfilePage from "./pages/ProfilePage";
 import CrewsPage from "./pages/CrewsPage";
 import EventsPage from "./pages/EventsPage";
 import VideosPage from "./pages/VideosPage";
+import ExperiencesPage from "./pages/ExperiencesPage";
 import NightReplayPage from "./pages/NightReplayPage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
@@ -58,6 +59,7 @@ const AppContent = () => {
         <Route path="/crews" element={<CrewsPage />} />
         <Route path="/events" element={<EventsPage />} />
         <Route path="/videos" element={<VideosPage />} />
+        <Route path="/experiences" element={<ExperiencesPage />} />
         <Route path="/night-replay" element={<NightReplayPage />} />
         <Route path="/club/:id" element={<ClubDetailPage />} />
         <Route path="/suggest" element={<SuggestSpotPage />} />
