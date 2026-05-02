@@ -10,36 +10,30 @@
 //        { version, date: "YYYY-MM-DD", highlights: ["...", "..."] }
 //   3. Keep highlights short, user-facing, and benefit-led (no jargon).
 //   4. The footer "What's New" modal auto-reads from this file — no other edits needed.
-export const APP_VERSION = "1.5.0";
+export const APP_VERSION = "1.6.0";
+export const APP_RELEASED_AT = "2026-05-02T20:30:00Z";
 
-export const VERSION_HISTORY: { version: string; date: string; highlights: string[] }[] = [
+export type VersionEntry = {
+  version: string;
+  date: string;
+  releasedAt: string;
+  highlights: string[];
+};
+
+// Only the latest version is kept — older entries are intentionally pruned.
+export const VERSION_HISTORY: VersionEntry[] = [
   {
-    version: "1.5.0",
-    date: "2026-05-01",
+    version: "1.6.0",
+    date: "2026-05-02",
+    releasedAt: APP_RELEASED_AT,
     highlights: [
-      "Community Chat — one live room for everyone on SCENE",
-      "Per-user color bubbles, emojis, photo & voice notes",
-      "Report inappropriate messages, admins moderate",
-      "Record videos directly in-app (front/back camera, 30s)",
-      "Typewriter animation on the search bar",
+      "Realtime streaming chat — new messages appear instantly",
+      "Infinite scroll back through chat history",
+      "Notification center 🔔 — chats, version updates & more",
+      "Smarter video recorder UX with countdown ring & pause",
+      "Beyond clubs: discover Parties, Workshops, Pop-ups, Markets, Food & Lounges",
+      "Background sync keeps venue hours, images & info fresh",
+      "Typewriter search across the app, including chat",
     ],
-  },
-  {
-    version: "1.4.0",
-    date: "2026-04-30",
-    highlights: [
-      "Real-time Open/Closed status on club cards",
-      "JewelIQ footer branding + version control",
-    ],
-  },
-  {
-    version: "1.3.0",
-    date: "2026-04",
-    highlights: ["Global background image", "Splash screen redesign"],
-  },
-  {
-    version: "1.2.0",
-    date: "2026-04",
-    highlights: ["Carousel keyboard nav", "What's New notifications", "Trending toasts"],
   },
 ];
