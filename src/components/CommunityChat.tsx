@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Trash2, Image as ImageIcon, Mic, Square, Flag, X, Smile, Loader2 } from 'lucide-react';
+import { Send, Trash2, Image as ImageIcon, Mic, Square, Flag, X, Smile, Loader2, Search, ArrowUp } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
 import {
@@ -16,6 +16,7 @@ import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { getUserColor } from '@/lib/userColor';
+import { useTypewriter } from '@/hooks/useTypewriter';
 
 const QUICK_EMOJIS = ['🔥','🎉','💃','🕺','🎵','😍','🙌','👀','💀','😂','🥂','🎧','⚡','🌃','✨'];
 const MAX_IMAGE_MB = 5;
@@ -24,7 +25,7 @@ const MAX_AUDIO_MB = 8;
 const CommunityChat = () => {
   const { user } = useAuth();
   const { data: isAdmin } = useIsAdmin();
-  const { data: messages, isLoading } = useCommunityMessages();
+  const { messages, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useCommunityMessages();
   const sendMessage = useSendCommunityMessage();
   const deleteMessage = useDeleteCommunityMessage();
   const flagMessage = useFlagMessage();
@@ -34,17 +35,54 @@ const CommunityChat = () => {
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [previewFile, setPreviewFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const searchPlaceholder = useTypewriter([
+    'Search the chat...',
+    'Find a vibe...',
+    'Try "amapiano" or a name...',
+    'Look back at tonight...',
+  ]);
 
   const [recording, setRecording] = useState(false);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const prevScrollHeight = useRef<number>(0);
+  const stickToBottom = useRef<boolean>(true);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Auto-scroll to bottom only when user is already near the bottom.
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    const el = scrollRef.current;
+    if (!el) return;
+    if (stickToBottom.current) {
+      el.scrollTop = el.scrollHeight;
+    } else if (prevScrollHeight.current) {
+      // Preserve scroll position after older messages were prepended.
+      el.scrollTop = el.scrollHeight - prevScrollHeight.current;
+      prevScrollHeight.current = 0;
+    }
   }, [messages]);
+
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    if (el.scrollTop < 60 && hasNextPage && !isFetchingNextPage) {
+      prevScrollHeight.current = el.scrollHeight;
+      fetchNextPage();
+    }
+  };
+
+  const filteredMessages = useMemo(() => {
+    if (!search.trim()) return messages;
+    const q = search.toLowerCase();
+    return messages.filter(m =>
+      (m.content || '').toLowerCase().includes(q) ||
+      (m.profile?.username || '').toLowerCase().includes(q)
+    );
+  }, [messages, search]);
 
   useEffect(() => {
     if (!previewFile) { setPreviewUrl(null); return; }
@@ -144,7 +182,12 @@ const CommunityChat = () => {
   };
 
   const handleDelete = async (id: string) => {
-    try { await deleteMessage.mutateAsync(id); toast.success('Removed'); }
+    // Enforce client-side rule: only own message OR admin can delete. (DB RLS also enforces.)
+    const msg = messages.find(m => m.id === id);
+    if (!msg) return;
+    const isOwn = msg.user_id === user?.id;
+    if (!isOwn && !isAdmin) { toast.error('Only admins can remove others\u2019 messages'); return; }
+    try { await deleteMessage.mutateAsync(id); toast.success(isAdmin && !isOwn ? 'Removed by admin' : 'Removed'); }
     catch { toast.error('Could not remove'); }
   };
 
@@ -178,16 +221,44 @@ const CommunityChat = () => {
         </div>
       </div>
 
+      {/* Search bar */}
+      <div className="px-3 py-2 border-b border-border/30 bg-background/30">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder={searchPlaceholder || 'Search...'}
+            className="pl-8 h-8 text-xs bg-muted/40 border-border/40"
+          />
+        </div>
+      </div>
+
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-4 space-y-3 bg-background/40">
+      <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto px-3 py-4 space-y-3 bg-background/40">
+        {isFetchingNextPage && (
+          <p className="text-muted-foreground text-[11px] text-center flex items-center justify-center gap-1">
+            <Loader2 className="w-3 h-3 animate-spin" /> Loading older messages...
+          </p>
+        )}
+        {hasNextPage && !isFetchingNextPage && (
+          <button
+            onClick={() => { prevScrollHeight.current = scrollRef.current?.scrollHeight ?? 0; fetchNextPage(); }}
+            className="text-[11px] text-primary mx-auto block hover:underline flex items-center gap-1"
+          >
+            <ArrowUp className="w-3 h-3" /> Load older
+          </button>
+        )}
         {isLoading && <p className="text-muted-foreground text-xs text-center">Loading the scene...</p>}
-        {messages?.length === 0 && !isLoading && (
+        {filteredMessages?.length === 0 && !isLoading && (
           <div className="text-center py-12">
-            <p className="text-muted-foreground text-sm">It's quiet... be the first to drop a vibe 🔥</p>
+            <p className="text-muted-foreground text-sm">
+              {search ? 'No messages match your search.' : "It's quiet... be the first to drop a vibe 🔥"}
+            </p>
           </div>
         )}
         <AnimatePresence initial={false}>
-        {messages?.map((msg) => {
+        {filteredMessages?.map((msg) => {
           const isOwn = msg.user_id === user?.id;
           const profile = (msg as any).profile;
           const username = profile?.username || 'Anon';
