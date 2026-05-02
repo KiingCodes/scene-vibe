@@ -4,6 +4,7 @@ import { MapPin, MessageCircle, Home, User, LogOut, Heart, Shield, BarChart3, Tr
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
 import { Button } from '@/components/ui/button';
+import NotificationBell from '@/components/NotificationBell';
 import logo from '@/assets/logo.png';
 import "@fontsource/poppins/800.css";
 
@@ -59,6 +60,7 @@ const Navbar = () => {
 
           {user ? (
             <>
+              <NotificationBell />
               {isAdmin && (
                 <Link to="/admin">
                   <Button variant="ghost" size="sm" className={`gap-1 h-9 px-1.5 sm:px-2.5 text-[11px] sm:text-xs ${location.pathname === '/admin' ? 'text-primary neon-text' : 'text-muted-foreground hover:text-foreground'}`}>
