@@ -25,6 +25,7 @@ import CrewsPage from "./pages/CrewsPage";
 import EventsPage from "./pages/EventsPage";
 import VideosPage from "./pages/VideosPage";
 import ExperiencesPage from "./pages/ExperiencesPage";
+import SubmitExperiencePage from "./pages/SubmitExperiencePage";
 import NightReplayPage from "./pages/NightReplayPage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
@@ -60,6 +61,7 @@ const AppContent = () => {
         <Route path="/events" element={<EventsPage />} />
         <Route path="/videos" element={<VideosPage />} />
         <Route path="/experiences" element={<ExperiencesPage />} />
+        <Route path="/experiences/submit" element={<SubmitExperiencePage />} />
         <Route path="/night-replay" element={<NightReplayPage />} />
         <Route path="/club/:id" element={<ClubDetailPage />} />
         <Route path="/suggest" element={<SuggestSpotPage />} />

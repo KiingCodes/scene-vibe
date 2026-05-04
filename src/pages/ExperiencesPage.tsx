@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, MapPin, Calendar, ExternalLink, Coffee, Palette, ShoppingBag, Music2, Wine, Code2 } from 'lucide-react';
+import { Sparkles, MapPin, Calendar, ExternalLink, Coffee, Palette, ShoppingBag, Music2, Wine, Code2, Plus, Navigation } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useExperiences } from '@/hooks/useExperiences';
@@ -21,18 +22,45 @@ const CATEGORIES = [
 const ExperiencesPage = () => {
   const [cat, setCat] = useState<string>('all');
   const { data: experiences, isLoading } = useExperiences(cat);
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+
+  useEffect(() => {
+    if (!('geolocation' in navigator)) return;
+    navigator.geolocation.getCurrentPosition(
+      pos => setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {},
+      { timeout: 4000 }
+    );
+  }, []);
+
+  const sorted = useMemo(() => {
+    if (!experiences) return experiences;
+    if (!coords) return experiences;
+    const dist = (a: number | null, b: number | null) =>
+      a == null || b == null ? Number.POSITIVE_INFINITY :
+      Math.hypot(a - coords.lat, b - coords.lng);
+    return [...experiences].sort((a, b) => dist(a.lat, a.lng) - dist(b.lat, b.lng));
+  }, [experiences, coords]);
 
   return (
     <div className="min-h-screen gradient-dark">
       <Navbar />
       <main className="container mx-auto px-4 pt-24 pb-8 max-w-5xl">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-5">
-          <h1 className="font-display font-bold text-2xl text-foreground mb-1 flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-primary" /> Experiences
-          </h1>
-          <p className="text-muted-foreground text-sm">
-            Beyond clubs — workshops, pop-ups, markets, food spots, lounges & street events.
-          </p>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-5 flex items-start justify-between gap-3">
+          <div>
+            <h1 className="font-display font-bold text-2xl text-foreground mb-1 flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-primary" /> Experiences
+            </h1>
+            <p className="text-muted-foreground text-sm">
+              Beyond clubs — workshops, pop-ups, markets, food spots, lounges & street events.
+              {coords && <span className="ml-1 inline-flex items-center gap-1 text-primary/80"><Navigation className="w-3 h-3" /> sorted by distance</span>}
+            </p>
+          </div>
+          <Link to="/experiences/submit">
+            <Button size="sm" className="gradient-primary text-primary-foreground gap-1">
+              <Plus className="w-4 h-4" /> Submit
+            </Button>
+          </Link>
         </motion.div>
 
         <div className="flex flex-wrap gap-2 mb-6">
@@ -59,13 +87,24 @@ const ExperiencesPage = () => {
               <div key={i} className="glass rounded-xl h-56 animate-pulse" />
             ))}
           </div>
-        ) : experiences?.length === 0 ? (
-          <div className="glass rounded-xl p-10 text-center">
-            <p className="text-muted-foreground text-sm">Nothing here yet — the background sync will surface real events as they appear.</p>
+        ) : sorted?.length === 0 ? (
+          <div className="glass rounded-xl p-10 text-center space-y-4">
+            <Sparkles className="w-8 h-8 text-primary mx-auto" />
+            <div>
+              <p className="font-display font-semibold text-foreground">Nothing here yet</p>
+              <p className="text-muted-foreground text-sm mt-1">
+                The background sync pulls real spots every 6 hours. Know one we're missing?
+              </p>
+            </div>
+            <Link to="/experiences/submit">
+              <Button className="gradient-primary text-primary-foreground gap-1">
+                <Plus className="w-4 h-4" /> Add an experience
+              </Button>
+            </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {experiences?.map((x, i) => (
+            {sorted?.map((x, i) => (
               <motion.div
                 key={x.id}
                 initial={{ opacity: 0, y: 12 }}
