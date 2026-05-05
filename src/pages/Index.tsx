@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Flame, TrendingUp, Star, Sparkles, Cake, Coffee, Palette, ShoppingBag, Music2, Wine, Code2, MapPin, Calendar, ArrowRight, ExternalLink } from 'lucide-react';
+import { Search, Flame, TrendingUp, Star, Sparkles, Cake, Coffee, Palette, ShoppingBag, Music2, Wine, Code2, MapPin, Calendar, ArrowRight } from 'lucide-react';
 import { useClubs } from '@/hooks/useClubs';
 import { useAllVibes } from '@/hooks/useVibes';
 import { useAllPullingUp } from '@/hooks/usePullingUp';
