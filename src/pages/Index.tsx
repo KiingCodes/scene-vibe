@@ -29,10 +29,10 @@ const Index = () => {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'trending' | 'vibing'>('all');
   const placeholder = useTypewriter([
-    'Search clubs, areas, genres...',
+    'Search clubs, food, workshops, markets...',
     "Find tonight's vibe...",
     'Try "Sandton" or "Amapiano"...',
-    'Discover trending spots...',
+    'Pop-ups, lounges, street events...',
     'Where are we going tonight?',
   ]);
 
@@ -46,6 +46,19 @@ const Index = () => {
     if (filter === 'vibing') return count > 0;
     return true;
   });
+
+  const filteredExperiences = useMemo(() => {
+    if (!experiences) return [];
+    if (filter !== 'all') return []; // experiences don't have vibe trending
+    const q = search.toLowerCase().trim();
+    if (!q) return [];
+    return experiences.filter(x =>
+      x.name.toLowerCase().includes(q) ||
+      x.area.toLowerCase().includes(q) ||
+      x.category.toLowerCase().includes(q) ||
+      (x.description?.toLowerCase().includes(q))
+    );
+  }, [experiences, search, filter]);
 
   const trendingCount = clubs?.filter(c => (vibeCounts?.[c.id] || 0) >= 3).length || 0;
 
@@ -283,13 +296,50 @@ const Index = () => {
                   <ClubCard key={club.id} club={club} vibeCount={vibeCounts?.[club.id] || 0} pullingUpCount={pullingUpCounts?.[club.id] || 0} index={i} />
                 ))}
               </div>
+
+              {filteredExperiences.length > 0 && (
+                <div className="mt-8">
+                  <h3 className="font-display font-bold text-lg text-foreground mb-3 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-primary" /> Experiences
+                    <span className="text-xs text-muted-foreground font-normal">({filteredExperiences.length})</span>
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredExperiences.map((x, i) => (
+                      <motion.div
+                        key={x.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.03 }}
+                        className="glass rounded-xl overflow-hidden border border-border/40 hover:border-primary/40 transition-colors"
+                      >
+                        <Link to="/experiences" className="block">
+                          {x.image_url && <img src={x.image_url} alt={x.name} loading="lazy" className="w-full h-36 object-cover" />}
+                          <div className="p-3 space-y-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <h4 className="font-display font-semibold text-foreground text-sm leading-tight">{x.name}</h4>
+                              <Badge variant="secondary" className="text-[9px] uppercase shrink-0">{x.category}</Badge>
+                            </div>
+                            {x.description && <p className="text-xs text-muted-foreground line-clamp-2">{x.description}</p>}
+                            <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                              <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {x.area}</span>
+                              {x.start_date && (
+                                <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {format(new Date(x.start_date), 'd MMM')}</span>
+                              )}
+                            </div>
+                          </div>
+                        </Link>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {filteredClubs?.length === 0 && !isLoading && (
+        {filteredClubs?.length === 0 && filteredExperiences.length === 0 && (search || filter !== 'all') && !isLoading && (
           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-16">
-            <p className="text-muted-foreground text-lg">No clubs found matching your search.</p>
+            <p className="text-muted-foreground text-lg">Nothing found matching “{search}”.</p>
           </motion.div>
         )}
       </main>
