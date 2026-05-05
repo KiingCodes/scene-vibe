@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, MapPin, Calendar, ExternalLink, Coffee, Palette, ShoppingBag, Music2, Wine, Code2, Plus, Navigation } from 'lucide-react';
+import { Sparkles, MapPin, Calendar, ExternalLink, Coffee, Palette, ShoppingBag, Music2, Wine, Code2, Plus, Navigation, RefreshCw, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { useExperiences } from '@/hooks/useExperiences';
+import { useExperiences, useExperiencesSyncStatus, useTriggerSync } from '@/hooks/useExperiences';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
+import { toast } from 'sonner';
 
 const CATEGORIES = [
   { key: 'all', label: 'All', icon: Sparkles },
@@ -21,7 +22,9 @@ const CATEGORIES = [
 
 const ExperiencesPage = () => {
   const [cat, setCat] = useState<string>('all');
-  const { data: experiences, isLoading } = useExperiences(cat);
+  const { data: experiences, isLoading, isError, error, refetch } = useExperiences(cat);
+  const { data: syncStatus } = useExperiencesSyncStatus();
+  const triggerSync = useTriggerSync();
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
@@ -32,6 +35,16 @@ const ExperiencesPage = () => {
       { timeout: 4000 }
     );
   }, []);
+
+  const handleSync = async () => {
+    try {
+      const res: any = await triggerSync.mutateAsync();
+      const n = res?.inserted_count ?? 0;
+      toast.success(n > 0 ? `✨ Synced ${n} new spots` : 'Sync complete — no new spots');
+    } catch (e: any) {
+      toast.error(e?.message || 'Sync failed. Try again.');
+    }
+  };
 
   const sorted = useMemo(() => {
     if (!experiences) return experiences;
@@ -63,6 +76,37 @@ const ExperiencesPage = () => {
           </Link>
         </motion.div>
 
+        {/* Sync status bar */}
+        <div className="glass rounded-xl p-3 mb-4 flex items-center justify-between gap-3 border border-border/40">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
+            {syncStatus?.lastSyncedAt ? (
+              <>
+                <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span className="truncate">
+                  Last synced {formatDistanceToNow(new Date(syncStatus.lastSyncedAt), { addSuffix: true })}
+                  {' · '}
+                  <span className="text-foreground/80">{syncStatus.approvedCount} spots</span>
+                </span>
+              </>
+            ) : (
+              <>
+                <Clock className="w-3.5 h-3.5 shrink-0" />
+                <span>Not synced yet</span>
+              </>
+            )}
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleSync}
+            disabled={triggerSync.isPending}
+            className="border-border/50 gap-1.5 shrink-0"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${triggerSync.isPending ? 'animate-spin' : ''}`} />
+            {triggerSync.isPending ? 'Syncing…' : 'Sync now'}
+          </Button>
+        </div>
+
         <div className="flex flex-wrap gap-2 mb-6">
           {CATEGORIES.map(c => {
             const Icon = c.icon;
@@ -87,20 +131,42 @@ const ExperiencesPage = () => {
               <div key={i} className="glass rounded-xl h-56 animate-pulse" />
             ))}
           </div>
+        ) : isError ? (
+          <div className="glass rounded-xl p-10 text-center space-y-4 border border-destructive/30">
+            <AlertCircle className="w-8 h-8 text-destructive mx-auto" />
+            <div>
+              <p className="font-display font-semibold text-foreground">Couldn't load experiences</p>
+              <p className="text-muted-foreground text-sm mt-1">
+                {(error as any)?.message || 'Network error. Check your connection and try again.'}
+              </p>
+            </div>
+            <Button onClick={() => refetch()} variant="outline" className="gap-1.5">
+              <RefreshCw className="w-4 h-4" /> Retry
+            </Button>
+          </div>
         ) : sorted?.length === 0 ? (
           <div className="glass rounded-xl p-10 text-center space-y-4">
             <Sparkles className="w-8 h-8 text-primary mx-auto" />
             <div>
-              <p className="font-display font-semibold text-foreground">Nothing here yet</p>
+              <p className="font-display font-semibold text-foreground">
+                {cat === 'all' ? 'Nothing here yet' : `No ${cat.replace('_', ' ')} spots yet`}
+              </p>
               <p className="text-muted-foreground text-sm mt-1">
-                The background sync pulls real spots every 6 hours. Know one we're missing?
+                {cat === 'all'
+                  ? "The background sync pulls real spots every 6 hours. Trigger one now or add your own."
+                  : 'Try another category, run a sync, or submit one.'}
               </p>
             </div>
-            <Link to="/experiences/submit">
-              <Button className="gradient-primary text-primary-foreground gap-1">
-                <Plus className="w-4 h-4" /> Add an experience
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              <Button onClick={handleSync} disabled={triggerSync.isPending} variant="outline" className="gap-1.5">
+                <RefreshCw className={`w-4 h-4 ${triggerSync.isPending ? 'animate-spin' : ''}`} /> Sync now
               </Button>
-            </Link>
+              <Link to="/experiences/submit">
+                <Button className="gradient-primary text-primary-foreground gap-1">
+                  <Plus className="w-4 h-4" /> Add an experience
+                </Button>
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

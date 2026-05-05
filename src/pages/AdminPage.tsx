@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion';
-import { Shield, Check, X, MapPin, Clock, Music, Users, ArrowLeft, Loader2, Megaphone, DollarSign } from 'lucide-react';
+import { Shield, Check, X, MapPin, Clock, Music, Users, ArrowLeft, Loader2, Megaphone, DollarSign, Sparkles } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin, usePendingClubs, useApproveClub, useRejectClub } from '@/hooks/useAdmin';
 import { usePendingPromotions, useApprovePromotion, useRejectPromotion } from '@/hooks/usePromotions';
+import { usePendingExperiences, useModerateExperience } from '@/hooks/useExperiences';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +19,8 @@ const AdminPage = () => {
   const { data: pendingPromos } = usePendingPromotions();
   const approvePromo = useApprovePromotion();
   const rejectPromo = useRejectPromotion();
+  const { data: pendingExperiences } = usePendingExperiences();
+  const moderateExperience = useModerateExperience();
 
   if (authLoading || adminLoading) {
     return <div className="min-h-screen gradient-dark flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
@@ -35,6 +38,12 @@ const AdminPage = () => {
   };
   const handleRejectPromo = async (id: string) => {
     try { await rejectPromo.mutateAsync({ id }); toast.success('Promotion rejected'); } catch { toast.error('Failed'); }
+  };
+  const handleModerateExp = async (id: string, action: 'approve' | 'reject', name: string) => {
+    try {
+      await moderateExperience.mutateAsync({ id, action });
+      toast.success(action === 'approve' ? `✅ ${name} approved` : `❌ ${name} rejected`);
+    } catch { toast.error('Failed'); }
   };
 
   return (
@@ -73,6 +82,45 @@ const AdminPage = () => {
                       <div className="flex gap-2">
                         <Button size="sm" onClick={() => handleApprovePromo(promo.id)} className="gap-1 gradient-primary text-primary-foreground"><Check className="w-3.5 h-3.5" /></Button>
                         <Button size="sm" variant="outline" onClick={() => handleRejectPromo(promo.id)} className="gap-1 border-destructive/30 text-destructive"><X className="w-3.5 h-3.5" /></Button>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Pending Experiences */}
+          {pendingExperiences && pendingExperiences.length > 0 && (
+            <div className="mb-8">
+              <h2 className="font-display font-semibold text-lg text-foreground mb-3 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary" /> Pending Experiences ({pendingExperiences.length})
+              </h2>
+              <div className="space-y-3">
+                {pendingExperiences.map((x, idx) => (
+                  <motion.div key={x.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.04 }}
+                    className="glass rounded-xl overflow-hidden">
+                    <div className="flex flex-col sm:flex-row">
+                      {x.image_url && <img src={x.image_url} alt={x.name} className="w-full sm:w-40 h-32 sm:h-auto object-cover" />}
+                      <div className="p-4 flex-1 space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <h3 className="font-display font-bold text-base text-foreground">{x.name}</h3>
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                              <MapPin className="w-3 h-3" /> {x.area}{x.address ? ` — ${x.address}` : ''}
+                            </p>
+                          </div>
+                          <Badge variant="secondary" className="text-[10px] uppercase shrink-0">{x.category}</Badge>
+                        </div>
+                        {x.description && <p className="text-xs text-muted-foreground line-clamp-2">{x.description}</p>}
+                        <div className="flex gap-2 pt-1">
+                          <Button size="sm" disabled={moderateExperience.isPending}
+                            onClick={() => handleModerateExp(x.id, 'approve', x.name)}
+                            className="gap-1.5 gradient-primary text-primary-foreground"><Check className="w-3.5 h-3.5" /> Approve</Button>
+                          <Button size="sm" variant="outline" disabled={moderateExperience.isPending}
+                            onClick={() => handleModerateExp(x.id, 'reject', x.name)}
+                            className="gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10"><X className="w-3.5 h-3.5" /> Reject</Button>
+                        </div>
                       </div>
                     </div>
                   </motion.div>
