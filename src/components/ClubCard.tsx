@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Flame, TrendingUp, MapPin, Clock, Music, Users, Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useHasVibed, useVibe } from '@/hooks/useVibes';
+import { useHasVibed, useVibe, useVibeFreshness } from '@/hooks/useVibes';
 import { useFeedbackSummary, FEEDBACK_OPTIONS } from '@/hooks/useReviews';
 import { useFavorites, useToggleFavorite } from '@/hooks/useFavorites';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,7 @@ const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardPr
   const vibeMutation = useVibe();
   const { data: summary } = useFeedbackSummary(club.id);
   const { data: favorites } = useFavorites();
+  const { data: freshness } = useVibeFreshness();
   const toggleFav = useToggleFavorite();
   const isTrending = vibeCount >= 3;
   const isFav = favorites?.has(club.id) || false;
@@ -37,6 +38,16 @@ const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardPr
     return () => clearInterval(id);
   }, []);
   const status = getOpenStatus(club.opening_hours, now);
+
+  const lastVibeAt = freshness?.[club.id];
+  const freshnessLabel = (() => {
+    if (!lastVibeAt || vibeCount === 0) return null;
+    const diffSec = Math.max(0, Math.floor((now.getTime() - new Date(lastVibeAt).getTime()) / 1000));
+    if (diffSec < 60) return 'just now';
+    const m = Math.floor(diffSec / 60);
+    return `${m}m ago`;
+  })();
+  const isFresh = lastVibeAt ? (now.getTime() - new Date(lastVibeAt).getTime()) < 10 * 60 * 1000 : false;
 
   const handleFavorite = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -171,6 +182,13 @@ const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardPr
               </div>
               <CrowdLevel vibeCount={vibeCount} size="sm" showLabel={false} />
             </div>
+
+            {freshnessLabel && (
+              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                <span className={`w-1.5 h-1.5 rounded-full ${isFresh ? 'bg-emerald-400 animate-pulse' : 'bg-muted-foreground/50'}`} />
+                <span>Crowd updated {freshnessLabel}</span>
+              </div>
+            )}
 
             {club.is_community_added && (
               <div className="flex items-center gap-1 text-xs text-secondary font-semibold">
