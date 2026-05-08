@@ -5,21 +5,17 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Map Google Places "types" to our experience categories
-const TYPE_TO_CATEGORY: Record<string, string> = {
-  restaurant: "food",
-  cafe: "food",
-  bakery: "food",
-  meal_takeaway: "food",
-  bar: "lounge",
-  night_club: "lounge",
-  food: "food",
+// Google Places v1 "includedTypes" for each of our experience buckets.
+// Workshops/pop-ups/markets/street_events have no perfect 1:1 in Places, so
+// we pick the closest physical-venue analogues so the categories aren't empty.
+const CATEGORY_TYPES: Record<string, string[]> = {
+  food: ["restaurant", "cafe", "bakery", "meal_takeaway"],
+  lounge: ["bar", "night_club"],
+  market: ["market", "shopping_mall"],
+  popup: ["art_gallery", "tourist_attraction"],
+  workshop: ["performing_arts_theater", "community_center", "library"],
+  street_event: ["amusement_park", "park", "tourist_attraction"],
 };
-
-function pickCategory(types: string[]): string {
-  for (const t of types) if (TYPE_TO_CATEGORY[t]) return TYPE_TO_CATEGORY[t];
-  return "food";
-}
 
 /**
  * Pulls real food spots, cafés and lounges from Google Places (Nearby Search v1)
@@ -50,14 +46,17 @@ Deno.serve(async (req) => {
     { lat: -25.7479, lng: 28.2293, area: "Pretoria CBD" },
     { lat: -25.7479, lng: 28.2378, area: "Hatfield" },
   ];
-  const radius = body.radius ?? 1500;
-  const includedTypes: string[] = body.includedTypes ?? ["restaurant", "cafe", "bar", "bakery"];
+  const radius = body.radius ?? 2500;
+  const targetCategories: string[] = body.categories ?? Object.keys(CATEGORY_TYPES);
 
   const inserted: string[] = [];
   const skipped: string[] = [];
 
   for (const loc of locations) {
-    try {
+    for (const category of targetCategories) {
+      const includedTypes = CATEGORY_TYPES[category];
+      if (!includedTypes?.length) continue;
+      try {
       const res = await fetch("https://places.googleapis.com/v1/places:searchNearby", {
         method: "POST",
         headers: {
@@ -68,14 +67,14 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({
           includedTypes,
-          maxResultCount: 15,
+          maxResultCount: 10,
           locationRestriction: { circle: { center: { latitude: loc.lat, longitude: loc.lng }, radius } },
         }),
       });
 
       if (!res.ok) {
         const t = await res.text();
-        console.error("places error", res.status, t);
+        console.error("places error", category, loc.area, res.status, t);
         continue;
       }
       const json = await res.json();
@@ -84,7 +83,6 @@ Deno.serve(async (req) => {
       for (const p of places) {
         const name = p.displayName?.text;
         if (!name) { skipped.push("no-name"); continue; }
-        const category = pickCategory(p.types ?? []);
         const lat = p.location?.latitude ?? null;
         const lng = p.location?.longitude ?? null;
         const address = p.formattedAddress ?? null;
@@ -129,8 +127,9 @@ Deno.serve(async (req) => {
           inserted.push(name);
         }
       }
-    } catch (e) {
-      console.error("loc error", loc.area, e);
+      } catch (e) {
+        console.error("loc error", loc.area, category, e);
+      }
     }
   }
 

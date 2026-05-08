@@ -150,3 +150,16 @@
   }
 }
 
+
+/* Shimmer for skeletons */
+@keyframes shimmer-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.shimmer-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.12), transparent);
+  animation: shimmer-slide 1.6s infinite;
+}
