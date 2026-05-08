@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { getUserColor } from '@/lib/userColor';
 import { useTypewriter } from '@/hooks/useTypewriter';
+import { useDeviceId } from '@/hooks/useDeviceId';
 
 const QUICK_EMOJIS = ['🔥','🎉','💃','🕺','🎵','😍','🙌','👀','💀','😂','🥂','🎧','⚡','🌃','✨'];
 const MAX_IMAGE_MB = 5;
@@ -25,6 +26,8 @@ const MAX_AUDIO_MB = 8;
 const CommunityChat = () => {
   const { user } = useAuth();
   const { data: isAdmin } = useIsAdmin();
+  const deviceId = useDeviceId();
+  const [onlineCount, setOnlineCount] = useState(1);
   const { messages, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useCommunityMessages();
   const sendMessage = useSendCommunityMessage();
   const deleteMessage = useDeleteCommunityMessage();
@@ -51,6 +54,26 @@ const CommunityChat = () => {
   const prevScrollHeight = useRef<number>(0);
   const stickToBottom = useRef<boolean>(true);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Realtime presence — count distinct users currently in the chat room.
+  useEffect(() => {
+    const key = user?.id || deviceId || `anon-${Math.random().toString(36).slice(2)}`;
+    if (!key) return;
+    const channel = supabase.channel('community-chat-presence', {
+      config: { presence: { key } },
+    });
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        setOnlineCount(Object.keys(state).length || 1);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({ online_at: new Date().toISOString() });
+        }
+      });
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.id, deviceId]);
 
   // Auto-scroll to bottom only when user is already near the bottom.
   useEffect(() => {
@@ -217,7 +240,16 @@ const CommunityChat = () => {
             </h3>
             <p className="text-[11px] text-muted-foreground mt-0.5">Live · messages auto-clear after 24h</p>
           </div>
-          {messages && <span className="text-[11px] text-muted-foreground">{messages.length} msgs</span>}
+          <div className="flex flex-col items-end gap-0.5">
+            <span className="text-[11px] font-semibold text-emerald-400 flex items-center gap-1">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
+              </span>
+              {onlineCount} online
+            </span>
+            {messages && <span className="text-[10px] text-muted-foreground">{messages.length} msgs</span>}
+          </div>
         </div>
       </div>
 
