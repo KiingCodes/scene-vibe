@@ -98,6 +98,41 @@ export const useAllVibes = () => {
   return query;
 };
 
+// Latest vibe timestamp per club (for "updated Xm ago" freshness UI).
+export const useVibeFreshness = () => {
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
+    queryKey: ['vibe-freshness'],
+    queryFn: async () => {
+      const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+      const { data, error } = await supabase
+        .from('vibes')
+        .select('club_id, created_at')
+        .gte('created_at', thirtyMinutesAgo)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      const latest: Record<string, string> = {};
+      data?.forEach((v: any) => {
+        if (!latest[v.club_id]) latest[v.club_id] = v.created_at;
+      });
+      return latest;
+    },
+  });
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('vibe-freshness-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'vibes' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['vibe-freshness'] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
+
+  return query;
+};
+
 
 // Global cooldown: device can only vibe once every 30 minutes
 export const useHasVibed = (clubId: string) => {
