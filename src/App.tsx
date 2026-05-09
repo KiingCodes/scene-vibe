@@ -7,8 +7,10 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useTrendingNotifications } from "@/hooks/useTrendingNotifications";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useWhatsNew } from "@/hooks/useWhatsNew";
+import { useReminderNotifications } from "@/hooks/useReminderNotifications";
 import InstallPrompt from "./components/InstallPrompt";
 import SplashScreen from "./components/SplashScreen";
+import TermsGate from "./components/TermsGate";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
 import MapPage from "./pages/MapPage";
@@ -46,10 +48,12 @@ const AppContent = () => {
   useTrendingNotifications();
   usePushNotifications();
   useWhatsNew();
+  useReminderNotifications();
 
   return (
     <BrowserRouter>
       <SplashScreen />
+      <TermsGate />
       <InstallPrompt />
       <Routes>
         <Route path="/" element={<Index />} />
