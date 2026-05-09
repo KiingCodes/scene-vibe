@@ -21,7 +21,7 @@ const REMINDERS = [
   { title: '🌃 The scene awaits', body: "See who's vibing tonight — pick your spot." },
   { title: '🔥 Trending now', body: 'New vibes have dropped since you were last here.' },
   { title: '🎧 Friday energy', body: "Plan your night — the city's waking up." },
-  { title: '✨ Don't miss out', body: 'Pop-ups, parties & food spots refreshed for you.' },
+  { title: '✨ Don\'t miss out', body: 'Pop-ups, parties & food spots refreshed for you.' },
 ];
 
 const isStandalone = () => {
