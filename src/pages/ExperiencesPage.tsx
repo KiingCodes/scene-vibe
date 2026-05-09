@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, MapPin, Calendar, ExternalLink, Coffee, Palette, ShoppingBag, Music2, Wine, Code2, Plus, Navigation, RefreshCw, AlertCircle, CheckCircle2, Clock, Search, X, Bookmark, BookmarkPlus } from 'lucide-react';
+import { Sparkles, MapPin, Calendar, ExternalLink, Coffee, Palette, ShoppingBag, Music2, Wine, Code2, Plus, Navigation, RefreshCw, AlertCircle, CheckCircle2, Clock, Search, X, Bookmark, BookmarkPlus, DoorOpen, DoorClosed } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -13,6 +13,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import wallpaper from '@/assets/experiences-wallpaper.jpg';
 import logoUrl from '@/assets/scene-logo.jpg';
+import { getOpenStatus } from '@/lib/openHours';
 
 const CATEGORIES = [
   { key: 'all', label: 'All', icon: Sparkles },
@@ -73,6 +74,17 @@ const ExperiencesPage = () => {
     );
   }, []);
 
+  // Auto-sync silently if data is stale (>6h) or never synced. Removes need for manual button.
+  useEffect(() => {
+    if (!syncStatus) return;
+    const last = syncStatus.lastSyncedAt ? new Date(syncStatus.lastSyncedAt).getTime() : 0;
+    const stale = Date.now() - last > 6 * 60 * 60 * 1000;
+    if (stale && !triggerSync.isPending) {
+      triggerSync.mutateAsync().catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [syncStatus?.lastSyncedAt]);
+
   const persistSaved = (next: string[]) => {
     setSaved(next);
     localStorage.setItem(SAVED_KEY, JSON.stringify(next));
@@ -85,16 +97,6 @@ const ExperiencesPage = () => {
     toast.success('Search saved');
   };
   const removeSaved = (s: string) => persistSaved(saved.filter(x => x !== s));
-
-  const handleSync = async () => {
-    try {
-      const res: any = await triggerSync.mutateAsync();
-      const n = res?.inserted_count ?? 0;
-      toast.success(n > 0 ? `✨ Synced ${n} new spots` : 'Sync complete — no new spots');
-    } catch (e: any) {
-      toast.error(e?.message || 'Sync failed. Try again.');
-    }
-  };
 
   const results = useMemo(() => {
     if (!experiences) return [];
@@ -194,26 +196,15 @@ const ExperiencesPage = () => {
           )}
         </div>
 
-        {/* Sync status bar */}
-        <div className="glass rounded-xl p-3 mb-4 flex items-center justify-between gap-3 border border-border/40">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
-            {syncStatus?.lastSyncedAt ? (
-              <>
-                <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />
-                <span className="truncate">
-                  Last synced {formatDistanceToNow(new Date(syncStatus.lastSyncedAt), { addSuffix: true })}
-                  {' · '}
-                  <span className="text-foreground/80">{results.length} of {syncStatus.approvedCount} shown</span>
-                </span>
-              </>
-            ) : (
-              <><Clock className="w-3.5 h-3.5 shrink-0" /><span>Not synced yet</span></>
-            )}
-          </div>
-          <Button size="sm" variant="outline" onClick={handleSync} disabled={triggerSync.isPending} className="border-border/50 gap-1.5 shrink-0">
-            <RefreshCw className={`w-3.5 h-3.5 ${triggerSync.isPending ? 'animate-spin' : ''}`} />
-            {triggerSync.isPending ? 'Syncing…' : 'Sync now'}
-          </Button>
+        {/* Sync status (auto, no manual button) */}
+        <div className="rounded-xl px-3 py-1.5 mb-4 flex items-center gap-2 text-[11px] text-muted-foreground">
+          {triggerSync.isPending ? (
+            <><RefreshCw className="w-3 h-3 animate-spin text-primary" /> Refreshing in background…</>
+          ) : syncStatus?.lastSyncedAt ? (
+            <><CheckCircle2 className="w-3 h-3 text-primary" /> Auto-synced {formatDistanceToNow(new Date(syncStatus.lastSyncedAt), { addSuffix: true })} · {syncStatus.approvedCount} spots</>
+          ) : (
+            <><Clock className="w-3 h-3" /> Preparing fresh data…</>
+          )}
         </div>
 
         <div className="flex flex-wrap gap-2 mb-6">
@@ -263,10 +254,7 @@ const ExperiencesPage = () => {
                   : 'The background sync pulls real spots every 6 hours. Trigger one now or add your own.'}
               </p>
             </div>
-            <div className="flex items-center justify-center gap-2 flex-wrap">
-              <Button onClick={handleSync} disabled={triggerSync.isPending} variant="outline" className="gap-1.5">
-                <RefreshCw className={`w-4 h-4 ${triggerSync.isPending ? 'animate-spin' : ''}`} /> Sync now
-              </Button>
+            <div className="flex items-center justify-center">
               <Link to="/experiences/submit">
                 <Button className="gradient-primary text-primary-foreground gap-1">
                   <Plus className="w-4 h-4" /> Add an experience
@@ -278,6 +266,7 @@ const ExperiencesPage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {results.map((x, i) => {
               const d = distLabel(x.lat, x.lng);
+              const open = getOpenStatus(x.opening_hours);
               return (
                 <motion.div
                   key={x.id}
@@ -296,6 +285,12 @@ const ExperiencesPage = () => {
                       </h3>
                       <Badge variant="secondary" className="text-[9px] uppercase shrink-0">{x.category}</Badge>
                     </div>
+                    {open && (
+                      <div className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${open.isOpen ? 'bg-emerald-500/15 text-emerald-400' : 'bg-destructive/15 text-destructive'}`}>
+                        {open.isOpen ? <DoorOpen className="w-3 h-3" /> : <DoorClosed className="w-3 h-3" />}
+                        {open.label}
+                      </div>
+                    )}
                     {x.description && (
                       <p className="text-xs text-muted-foreground line-clamp-2">
                         <Highlight text={x.description} q={search} />

@@ -10,8 +10,8 @@
 //        { version, date: "YYYY-MM-DD", highlights: ["...", "..."] }
 //   3. Keep highlights short, user-facing, and benefit-led (no jargon).
 //   4. The footer "What's New" modal auto-reads from this file — no other edits needed.
-export const APP_VERSION = "1.6.0";
-export const APP_RELEASED_AT = "2026-05-02T20:30:00Z";
+export const APP_VERSION = "1.7.0";
+export const APP_RELEASED_AT = "2026-05-09T18:00:00Z";
 
 export type VersionEntry = {
   version: string;
@@ -22,6 +22,19 @@ export type VersionEntry = {
 
 // Only the latest version is kept — older entries are intentionally pruned.
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.7.0",
+    date: "2026-05-09",
+    releasedAt: APP_RELEASED_AT,
+    highlights: [
+      "Loading skeletons across the app — smoother feel everywhere",
+      "Open / Closed status now shown on every experience",
+      "Background sync — manual refresh button removed",
+      "Daily reminders if you've installed SCENE — never miss a vibe",
+      "Refreshed legal pages with mandatory first-open agreement",
+      "Install banner now shows the SCENE logo for clarity",
+    ],
+  },
   {
     version: "1.6.0",
     date: "2026-05-02",

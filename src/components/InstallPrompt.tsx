@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import logoUrl from '@/assets/scene-logo.jpg';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -67,8 +68,8 @@ const InstallPrompt = () => {
       >
         <div className="glass rounded-2xl p-4 border border-primary/30 shadow-lg shadow-primary/10">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shrink-0">
-              <Download className="w-5 h-5 text-primary-foreground" />
+            <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 ring-2 ring-primary/40 shadow-lg shadow-primary/20">
+              <img src={logoUrl} alt="SCENE" className="w-full h-full object-cover" />
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-display font-bold text-sm text-foreground">
