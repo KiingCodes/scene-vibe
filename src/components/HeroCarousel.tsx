@@ -12,26 +12,17 @@ interface HeroCarouselProps {
 
 const HeroCarousel = ({ clubs, vibeCounts = {} }: HeroCarouselProps) => {
   const [index, setIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const total = clubs.length;
 
-  // Autoplay: advance every 3.2s for a more relaxed, premium pace
+  // Continuous autoplay — never pauses on hover/touch/keyboard
   useEffect(() => {
-    if (paused || total < 2) return;
+    if (total < 2) return;
     const id = window.setInterval(() => setIndex((i) => (i + 1) % total), 3200);
     return () => window.clearInterval(id);
-  }, [paused, total]);
-
-  // Resume autoplay 5s after user interaction
-  useEffect(() => {
-    if (!paused) return;
-    const id = window.setTimeout(() => setPaused(false), 5000);
-    return () => window.clearTimeout(id);
-  }, [paused, index]);
+  }, [total]);
 
   const go = (dir: -1 | 1) => {
-    setPaused(true);
     setIndex((i) => (i + dir + total) % total);
   };
 
@@ -71,8 +62,6 @@ const HeroCarousel = ({ clubs, vibeCounts = {} }: HeroCarouselProps) => {
     <section
       className="relative w-full overflow-hidden rounded-3xl mb-10 border border-border/30"
       style={{ minHeight: '560px' }}
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
       aria-roledescription="carousel"
