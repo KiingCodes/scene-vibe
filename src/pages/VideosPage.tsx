@@ -1,17 +1,21 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Video, Upload, Trash2, Eye, Clock, MapPin, Play, User, Heart, MessageCircle, Send, X, Camera } from 'lucide-react';
+import { Video, Upload, Trash2, Eye, Clock, MapPin, Play, User, Heart, MessageCircle, Send, X, Camera, UserPlus, UserCheck, Sparkles } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import VideoRecorder from '@/components/VideoRecorder';
 import { useAuth } from '@/hooks/useAuth';
 import { useVideos, useUploadVideo, useDeleteVideo, useRecordVideoView, useVideoLikes, useToggleLike, useVideoComments, usePostComment, useDeleteComment } from '@/hooks/useVideos';
+import { useIsFollowing, useToggleFollow, useFollowCounts } from '@/hooks/useFollows';
+import { useVideoReactions, useToggleReaction, REACTION_EMOJIS } from '@/hooks/useVideoReactions';
 import { useClubs } from '@/hooks/useClubs';
+import { SkeletonBlock } from '@/components/BrandedSkeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { formatDistanceToNow, format } from 'date-fns';
 import { Link } from 'react-router-dom';
@@ -25,6 +29,69 @@ const item = {
   show: { opacity: 1, scale: 1 },
 };
 
+const FollowButton = ({ targetId }: { targetId: string }) => {
+  const { user } = useAuth();
+  const { data: isFollowing } = useIsFollowing(targetId);
+  const toggleFollow = useToggleFollow();
+  if (!user || user.id === targetId) return null;
+  return (
+    <motion.button
+      whileTap={{ scale: 0.92 }}
+      onClick={(e) => {
+        e.preventDefault(); e.stopPropagation();
+        toggleFollow.mutate(
+          { targetId, isFollowing: !!isFollowing },
+          {
+            onSuccess: () => toast.success(isFollowing ? 'Unfollowed' : 'Following ✨'),
+            onError: (err: any) => toast.error(err?.message || 'Could not update follow'),
+          },
+        );
+      }}
+      disabled={toggleFollow.isPending}
+      className={`flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full transition-all border ${
+        isFollowing
+          ? 'bg-primary/10 border-primary/40 text-primary'
+          : 'gradient-primary text-primary-foreground border-transparent'
+      }`}
+    >
+      {isFollowing ? <><UserCheck className="w-3 h-3" /> Following</> : <><UserPlus className="w-3 h-3" /> Follow</>}
+    </motion.button>
+  );
+};
+
+const ReactionBar = ({ videoId }: { videoId: string }) => {
+  const { user } = useAuth();
+  const { data } = useVideoReactions(videoId);
+  const toggle = useToggleReaction();
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      {REACTION_EMOJIS.map((e) => {
+        const count = data?.counts[e] || 0;
+        const mine = data?.mine.has(e) || false;
+        return (
+          <motion.button
+            key={e}
+            whileTap={{ scale: 0.85 }}
+            whileHover={{ scale: 1.12 }}
+            onClick={() => {
+              if (!user) return toast.error('Sign in to react');
+              toggle.mutate({ videoId, emoji: e, on: mine });
+            }}
+            className={`flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border transition-all ${
+              mine
+                ? 'bg-primary/15 border-primary/40 text-primary'
+                : 'bg-muted/20 border-border/30 text-muted-foreground hover:border-primary/30'
+            }`}
+          >
+            <span className="text-sm leading-none">{e}</span>
+            {count > 0 && <span className="font-semibold">{count}</span>}
+          </motion.button>
+        );
+      })}
+    </div>
+  );
+};
+
 const VideoCard = ({ video, clubs }: { video: any; clubs: any[] | undefined }) => {
   const { user } = useAuth();
   const deleteVideo = useDeleteVideo();
@@ -34,6 +101,7 @@ const VideoCard = ({ video, clubs }: { video: any; clubs: any[] | undefined }) =
   const { data: comments } = useVideoComments(video.id);
   const postComment = usePostComment();
   const deleteComment = useDeleteComment();
+  const { data: followCounts } = useFollowCounts(video.user_id);
   const [playing, setPlaying] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -41,6 +109,8 @@ const VideoCard = ({ video, clubs }: { video: any; clubs: any[] | undefined }) =
   const club = clubs?.find((c: any) => c.id === video.club_id);
   const isOwner = user?.id === video.user_id;
   const profile = video.profile;
+  const username = profile?.username || 'Anon';
+  const initials = username.slice(0, 2).toUpperCase();
 
   const handlePlay = () => {
     setPlaying(true);
@@ -60,7 +130,30 @@ const VideoCard = ({ video, clubs }: { video: any; clubs: any[] | undefined }) =
   };
 
   return (
-    <motion.div variants={item} className="glass rounded-xl overflow-hidden group">
+    <motion.div
+      variants={item}
+      className="glass rounded-xl overflow-hidden group border border-border/30 hover:border-primary/40 transition-colors"
+    >
+      {/* Author header */}
+      <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-border/20">
+        <div className="flex items-center gap-2 min-w-0">
+          <Avatar className="w-8 h-8 ring-2 ring-primary/30">
+            <AvatarImage src={profile?.avatar_url || undefined} alt={username} />
+            <AvatarFallback className="bg-muted text-[10px] font-bold">{initials}</AvatarFallback>
+          </Avatar>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground truncate flex items-center gap-1">
+              @{username}
+              <Sparkles className="w-3 h-3 text-secondary/70" />
+            </p>
+            <p className="text-[10px] text-muted-foreground">
+              {followCounts?.followers || 0} followers · {formatDistanceToNow(new Date(video.created_at), { addSuffix: true })}
+            </p>
+          </div>
+        </div>
+        <FollowButton targetId={video.user_id} />
+      </div>
+
       {/* Video Player / Thumbnail */}
       <div className="relative aspect-video bg-black/50 cursor-pointer" onClick={handlePlay}>
         {playing ? (
@@ -88,7 +181,6 @@ const VideoCard = ({ video, clubs }: { video: any; clubs: any[] | undefined }) =
 
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1"><User className="w-3 h-3" /> {profile?.username || 'Anon'}</span>
             {club && (
               <Link to={`/club/${club.id}`} className="flex items-center gap-0.5 hover:text-primary transition-colors">
                 <MapPin className="w-3 h-3" /> {club.name}
@@ -97,6 +189,9 @@ const VideoCard = ({ video, clubs }: { video: any; clubs: any[] | undefined }) =
           </div>
           <span className="flex items-center gap-0.5"><Eye className="w-3 h-3" /> {video.view_count}</span>
         </div>
+
+        {/* Emoji reactions */}
+        <ReactionBar videoId={video.id} />
 
         {/* Like & Comment buttons */}
         <div className="flex items-center gap-3 pt-1 border-t border-border/20">
