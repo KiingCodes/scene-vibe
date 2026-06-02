@@ -158,7 +158,6 @@ const HeroCarousel = ({ clubs, vibeCounts = {} }: HeroCarouselProps) => {
                 role={!isCenter ? 'button' : undefined}
                 onClick={() => {
                   if (!isCenter) {
-                    setPaused(true);
                     setIndex(i);
                   }
                 }}
@@ -274,7 +273,6 @@ const HeroCarousel = ({ clubs, vibeCounts = {} }: HeroCarouselProps) => {
           <button
             key={i}
             onClick={() => {
-              setPaused(true);
               setIndex(i);
             }}
             aria-label={`Go to slide ${i + 1}`}
