@@ -898,6 +898,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
       user_points: {
         Row: {
           id: string
@@ -1032,6 +1053,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      video_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: []
       }
       video_views: {
         Row: {
