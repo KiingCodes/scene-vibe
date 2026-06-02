@@ -80,7 +80,16 @@ function parseSegments(input: string): Segment[] {
   return segs;
 }
 
-export interface OpenStatus { isOpen: boolean; label: string; }
+export interface OpenStatus { isOpen: boolean; label: string; detail?: string; }
+
+function formatMin(m: number): string {
+  const wrapped = ((m % (24 * 60)) + 24 * 60) % (24 * 60);
+  let h = Math.floor(wrapped / 60);
+  const min = wrapped % 60;
+  const mer = h >= 12 ? "PM" : "AM";
+  h = h % 12; if (h === 0) h = 12;
+  return min === 0 ? `${h} ${mer}` : `${h}:${String(min).padStart(2, "0")} ${mer}`;
+}
 
 export function getOpenStatus(openingHours: string | null | undefined, now: Date = new Date()): OpenStatus | null {
   if (!openingHours) return null;
@@ -102,15 +111,37 @@ export function getOpenStatus(openingHours: string | null | undefined, now: Date
   for (const seg of segs) {
     // Check today's segment
     if (seg.days.includes(today) && nowMin >= seg.open && nowMin < seg.close) {
-      return { isOpen: true, label: "Open Now" };
+      return { isOpen: true, label: "Open Now", detail: `Closes ${formatMin(seg.close)}` };
     }
     // Check yesterday's overnight segment that extends past midnight
     if (seg.close > 24 * 60) {
       const yesterday = (today + 6) % 7;
       if (seg.days.includes(yesterday) && nowMin + 24 * 60 < seg.close && nowMin + 24 * 60 >= seg.open) {
-        return { isOpen: true, label: "Open Now" };
+        return { isOpen: true, label: "Open Now", detail: `Closes ${formatMin(seg.close)}` };
       }
     }
   }
-  return { isOpen: false, label: "Closed" };
+  // Find next opening across the week
+  let nextOpen: { day: number; open: number } | null = null;
+  let bestDelta = Infinity;
+  for (let dOff = 0; dOff < 7; dOff++) {
+    const d = (today + dOff) % 7;
+    for (const seg of segs) {
+      if (!seg.days.includes(d)) continue;
+      const delta = dOff * 24 * 60 + seg.open - nowMin;
+      if (delta > 0 && delta < bestDelta) {
+        bestDelta = delta;
+        nextOpen = { day: d, open: seg.open };
+      }
+    }
+  }
+  let detail: string | undefined;
+  if (nextOpen) {
+    const dayName = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][nextOpen.day];
+    const isToday = nextOpen.day === today;
+    const isTomorrow = nextOpen.day === (today + 1) % 7;
+    const when = isToday ? "today" : isTomorrow ? "tomorrow" : dayName;
+    detail = `Opens ${when} ${formatMin(nextOpen.open)}`;
+  }
+  return { isOpen: false, label: "Closed", detail };
 }
