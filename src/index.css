@@ -163,3 +163,23 @@
   background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.12), transparent);
   animation: shimmer-slide 1.6s infinite;
 }
+
+/* Map marker labels (always-visible names) */
+.leaflet-tooltip.club-label,
+.leaflet-tooltip.exp-label {
+  background: hsl(240 10% 6% / 0.85);
+  color: hsl(0 0% 98%);
+  border: 1px solid hsl(174 100% 50% / 0.4);
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px hsl(0 0% 0% / 0.5);
+  white-space: nowrap;
+  backdrop-filter: blur(6px);
+}
+.leaflet-tooltip.exp-label {
+  border-color: hsl(310 100% 60% / 0.5);
+}
+.leaflet-tooltip.club-label::before,
+.leaflet-tooltip.exp-label::before { display: none; }

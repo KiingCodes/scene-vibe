@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Link } from 'react-router-dom';
-import { Navigation, Flame } from 'lucide-react';
+import { Navigation, Flame, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Club } from '@/hooks/useClubs';
+import type { Experience } from '@/hooks/useExperiences';
 
 // Fix default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -35,10 +36,43 @@ const createClubIcon = (isTrending: boolean) => {
   });
 };
 
+const CATEGORY_COLOR: Record<string, string> = {
+  workshop: 'hsl(45,100%,55%)',
+  popup: 'hsl(310,100%,60%)',
+  market: 'hsl(150,80%,50%)',
+  food: 'hsl(20,100%,55%)',
+  lounge: 'hsl(260,90%,65%)',
+  street_event: 'hsl(190,100%,55%)',
+};
+
+const createExperienceIcon = (category: string) => {
+  const color = CATEGORY_COLOR[category] || 'hsl(280,100%,65%)';
+  return L.divIcon({
+    className: 'custom-marker',
+    html: `<div style="
+      width: 26px; height: 26px; border-radius: 8px;
+      background: ${color};
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 10px ${color};
+      border: 2px solid white;
+      transform: rotate(45deg);
+    ">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="white" style="transform: rotate(-45deg);">
+        <path d="M12 2l2.4 7.4H22l-6 4.4 2.3 7.2L12 16.6 5.7 21l2.3-7.2-6-4.4h7.6z"/>
+      </svg>
+    </div>`,
+    iconSize: [26, 26],
+    iconAnchor: [13, 26],
+    popupAnchor: [0, -26],
+  });
+};
+
 interface ClubMapProps {
   clubs: Club[];
   vibeCounts?: Record<string, number>;
   selectedClubId?: string;
+  experiences?: Experience[];
+  showLabels?: boolean;
 }
 
 const FlyToClub = ({ club }: { club: Club | undefined }) => {
@@ -51,7 +85,7 @@ const FlyToClub = ({ club }: { club: Club | undefined }) => {
   return null;
 };
 
-const ClubMap = ({ clubs, vibeCounts = {}, selectedClubId }: ClubMapProps) => {
+const ClubMap = ({ clubs, vibeCounts = {}, selectedClubId, experiences = [], showLabels = true }: ClubMapProps) => {
   const selectedClub = clubs.find(c => c.id === selectedClubId);
 
   const getDirectionsUrl = (club: Club) => {
@@ -75,6 +109,16 @@ const ClubMap = ({ clubs, vibeCounts = {}, selectedClubId }: ClubMapProps) => {
           const isTrending = (vibeCounts[club.id] || 0) >= 3;
           return (
             <Marker key={club.id} position={[club.lat, club.lng]} icon={createClubIcon(isTrending)}>
+              {showLabels && (
+                <Tooltip
+                  direction="top"
+                  offset={[0, -28]}
+                  permanent
+                  className="club-label"
+                >
+                  {club.name}
+                </Tooltip>
+              )}
               <Popup className="club-popup">
                 <div className="p-1 min-w-[200px]">
                   <h3 className="font-bold text-sm mb-1">{club.name}</h3>
@@ -100,6 +144,36 @@ const ClubMap = ({ clubs, vibeCounts = {}, selectedClubId }: ClubMapProps) => {
             </Marker>
           );
         })}
+        {experiences.filter(e => e.lat != null && e.lng != null).map(exp => (
+          <Marker
+            key={exp.id}
+            position={[exp.lat as number, exp.lng as number]}
+            icon={createExperienceIcon(exp.category)}
+          >
+            {showLabels && (
+              <Tooltip direction="top" offset={[0, -22]} permanent className="exp-label">
+                {exp.name}
+              </Tooltip>
+            )}
+            <Popup className="club-popup">
+              <div className="p-1 min-w-[200px]">
+                <h3 className="font-bold text-sm mb-1 flex items-center gap-1">
+                  <span style={{ textTransform: 'capitalize' }}>{exp.category.replace('_', ' ')}</span>
+                </h3>
+                <p className="text-xs text-gray-700 font-medium">{exp.name}</p>
+                <p className="text-xs text-gray-600 mb-2">{exp.area}</p>
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${exp.lat},${exp.lng}`}
+                  target="_blank" rel="noopener noreferrer"
+                >
+                  <button className="text-xs px-2 py-1 bg-gray-200 text-black rounded font-semibold flex items-center gap-1">
+                    <Navigation className="w-3 h-3" /> Directions
+                  </button>
+                </a>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
       </MapContainer>
     </div>
   );

@@ -3,6 +3,10 @@ import { Trophy, Medal, Star, Zap, Crown } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/hooks/useAuth';
 import { useLeaderboard, useUserPoints, useUserBadges, BADGE_DEFINITIONS, getLevelFromPoints } from '@/hooks/useGamification';
+import { useFollowCounts, useIsFollowing, useToggleFollow } from '@/hooks/useFollows';
+import { SkeletonBlock } from '@/components/BrandedSkeleton';
+import { toast } from 'sonner';
+import { UserPlus, UserCheck } from 'lucide-react';
 
 const container = {
   hidden: { opacity: 0 },
@@ -13,11 +17,37 @@ const item = {
   show: { opacity: 1, y: 0 },
 };
 
+const RowFollowBtn = ({ targetId }: { targetId: string }) => {
+  const { user } = useAuth();
+  const { data: isFollowing } = useIsFollowing(targetId);
+  const toggle = useToggleFollow();
+  if (!user || user.id === targetId) return null;
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        toggle.mutate(
+          { targetId, isFollowing: !!isFollowing },
+          { onSuccess: () => toast.success(isFollowing ? 'Unfollowed' : 'Following ✨') },
+        );
+      }}
+      className={`text-[10px] font-bold px-2 py-1 rounded-full border transition-all ${
+        isFollowing
+          ? 'bg-primary/15 border-primary/40 text-primary'
+          : 'gradient-primary text-primary-foreground border-transparent'
+      }`}
+    >
+      {isFollowing ? <UserCheck className="w-3 h-3 inline" /> : <UserPlus className="w-3 h-3 inline" />}
+    </button>
+  );
+};
+
 const LeaderboardPage = () => {
   const { user } = useAuth();
   const { data: leaderboard, isLoading } = useLeaderboard();
   const { data: myPoints } = useUserPoints();
   const { data: myBadges } = useUserBadges();
+  const { data: myCounts } = useFollowCounts(user?.id);
 
   const levelInfo = getLevelFromPoints(myPoints?.points || 0);
   const progressPct = myPoints ? Math.min(((myPoints.points) / (levelInfo.next)) * 100, 100) : 0;
@@ -65,6 +95,18 @@ const LeaderboardPage = () => {
                   transition={{ duration: 1, ease: 'easeOut' }}
                   className="h-full gradient-primary rounded-full"
                 />
+              </div>
+            </div>
+
+            {/* Social counts */}
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border/20">
+              <div className="bg-muted/20 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-foreground">{myCounts?.followers ?? 0}</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Followers</p>
+              </div>
+              <div className="bg-muted/20 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-foreground">{myCounts?.following ?? 0}</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Following</p>
               </div>
             </div>
 
@@ -124,7 +166,11 @@ const LeaderboardPage = () => {
           <h3 className="font-display font-semibold text-foreground mb-4 flex items-center gap-2">
             <Medal className="w-5 h-5 text-yellow-400" /> Top Players
           </h3>
-          {isLoading && <p className="text-muted-foreground text-sm animate-pulse">Loading...</p>}
+          {isLoading && (
+            <div className="space-y-2">
+              {Array.from({ length: 5 }).map((_, i) => <SkeletonBlock key={i} className="h-12" />)}
+            </div>
+          )}
           <div className="space-y-2">
             {leaderboard?.map((entry, i) => {
               const lvl = getLevelFromPoints(entry.points);
@@ -148,9 +194,12 @@ const LeaderboardPage = () => {
                     </p>
                     <p className="text-xs text-muted-foreground">Lv.{lvl.level} {lvl.title}</p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex items-center gap-2">
+                    <RowFollowBtn targetId={entry.user_id} />
+                    <div>
                     <p className="text-sm font-bold text-primary">{entry.points}</p>
                     <p className="text-[10px] text-muted-foreground">pts</p>
+                    </div>
                   </div>
                 </motion.div>
               );
