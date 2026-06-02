@@ -361,7 +361,7 @@ const VideosPage = () => {
         {isLoading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="glass rounded-xl aspect-video animate-pulse" />
+              <SkeletonBlock key={i} className="aspect-video" />
             ))}
           </div>
         )}
