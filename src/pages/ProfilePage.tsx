@@ -1,15 +1,16 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { User, Crown, Flame, Star, MessageCircle, Heart, Trophy, LogOut, Calendar, MapPin, Edit3, Trash2, Shield, CheckCircle } from 'lucide-react';
+import { User, Crown, Flame, Star, MessageCircle, Heart, Trophy, LogOut, Calendar, MapPin, Edit3, Trash2, Shield, CheckCircle, Camera, Loader2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPoints, useUserBadges, BADGE_DEFINITIONS, getLevelFromPoints } from '@/hooks/useGamification';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
@@ -54,6 +55,7 @@ const useRecentActivity = () => {
 const ProfilePage = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: points } = useUserPoints();
   const { data: badges } = useUserBadges();
   const { data: stats } = useProfileStats();
@@ -62,6 +64,42 @@ const ProfilePage = () => {
   const [newUsername, setNewUsername] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState('');
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: profile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data } = await supabase.from('profiles').select('avatar_url, username').eq('user_id', user.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const handleAvatarUpload = async (file: File) => {
+    if (!user) return;
+    if (!file.type.startsWith('image/')) return toast.error('Pick an image file');
+    if (file.size > 5 * 1024 * 1024) return toast.error('Max 5MB');
+    setUploadingAvatar(true);
+    try {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, {
+        contentType: file.type, upsert: true,
+      });
+      if (upErr) throw upErr;
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
+      const { error: dbErr } = await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('user_id', user.id);
+      if (dbErr) throw dbErr;
+      queryClient.invalidateQueries({ queryKey: ['profile', user.id] });
+      toast.success('Profile photo updated ✨');
+    } catch (e: any) {
+      toast.error(e?.message || 'Could not upload photo');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   const levelInfo = getLevelFromPoints(points?.points || 0);
   const progressPct = points ? Math.min((points.points / levelInfo.next) * 100, 100) : 0;
@@ -128,8 +166,34 @@ const ProfilePage = () => {
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-2xl p-6 mb-6 text-center">
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
-            className={`w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-4 ${isVerified ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''} gradient-primary`}>
-            <span className="text-3xl font-bold text-primary-foreground">{username[0]?.toUpperCase()}</span>
+            className={`relative w-24 h-24 mx-auto mb-4 ${isVerified ? 'ring-2 ring-primary ring-offset-2 ring-offset-background rounded-full' : ''}`}>
+            <Avatar className="w-24 h-24">
+              <AvatarImage src={profile?.avatar_url || undefined} alt={username} />
+              <AvatarFallback className="text-3xl font-bold text-primary-foreground gradient-primary">
+                {username[0]?.toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleAvatarUpload(f);
+                e.target.value = '';
+              }}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingAvatar}
+              aria-label="Change profile photo"
+              className="absolute bottom-0 right-0 w-8 h-8 rounded-full gradient-primary flex items-center justify-center border-2 border-background shadow-lg hover:scale-110 transition-transform"
+            >
+              {uploadingAvatar
+                ? <Loader2 className="w-4 h-4 text-primary-foreground animate-spin" />
+                : <Camera className="w-4 h-4 text-primary-foreground" />}
+            </button>
           </motion.div>
 
           <div className="flex items-center justify-center gap-2">
