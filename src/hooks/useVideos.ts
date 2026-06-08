@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useDeviceId } from './useDeviceId';
+import { useAwardPoints } from './useGamification';
 
 export const useVideos = (clubId?: string) => {
   return useQuery({
@@ -29,6 +30,7 @@ export const useVideos = (clubId?: string) => {
 export const useUploadVideo = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const award = useAwardPoints();
 
   return useMutation({
     mutationFn: async ({ file, clubId, caption }: { file: File; clubId?: string; caption?: string }) => {
@@ -51,6 +53,7 @@ export const useUploadVideo = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['videos'] });
+      award.mutate({ action: 'video_post' });
     },
   });
 };

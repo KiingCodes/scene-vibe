@@ -23,6 +23,9 @@ export const POINT_VALUES = {
   suggestion: 20,
   pulling_up: 5,
   favorite: 3,
+  video_post: 15,
+  video_like: 1,
+  comment: 2,
 };
 
 export const getLevelFromPoints = (points: number) => {
