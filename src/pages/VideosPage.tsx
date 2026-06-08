@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Video, Upload, Trash2, Eye, Clock, MapPin, Play, User, Heart, MessageCircle, Send, X, Camera, UserPlus, UserCheck, Sparkles } from 'lucide-react';
 import Navbar from '@/components/Navbar';
@@ -102,20 +102,44 @@ const VideoCard = ({ video, clubs }: { video: any; clubs: any[] | undefined }) =
   const postComment = usePostComment();
   const deleteComment = useDeleteComment();
   const { data: followCounts } = useFollowCounts(video.user_id);
-  const [playing, setPlaying] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
+  const [muted, setMuted] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const viewRecorded = useRef(false);
+
+  // Autoplay when in viewport
+  useEffect(() => {
+    const node = containerRef.current;
+    const v = videoRef.current;
+    if (!node || !v) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting && e.intersectionRatio > 0.55) {
+            v.play().catch(() => {});
+            if (!viewRecorded.current) {
+              viewRecorded.current = true;
+              recordView.mutate(video.id);
+            }
+          } else {
+            v.pause();
+          }
+        });
+      },
+      { threshold: [0, 0.55, 1] },
+    );
+    io.observe(node);
+    return () => io.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [video.id]);
 
   const club = clubs?.find((c: any) => c.id === video.club_id);
   const isOwner = user?.id === video.user_id;
   const profile = video.profile;
   const username = profile?.username || 'Anon';
   const initials = username.slice(0, 2).toUpperCase();
-
-  const handlePlay = () => {
-    setPlaying(true);
-    recordView.mutate(video.id);
-  };
 
   const handleLike = () => {
     if (!user) return toast.error('Sign in to like videos');
@@ -155,16 +179,23 @@ const VideoCard = ({ video, clubs }: { video: any; clubs: any[] | undefined }) =
       </div>
 
       {/* Video Player / Thumbnail */}
-      <div className="relative aspect-video bg-black/50 cursor-pointer" onClick={handlePlay}>
-        {playing ? (
-          <video src={video.video_url} controls autoPlay className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <motion.div whileHover={{ scale: 1.2 }} className="w-14 h-14 rounded-full bg-primary/80 flex items-center justify-center backdrop-blur-sm">
-              <Play className="w-6 h-6 text-primary-foreground ml-1" />
-            </motion.div>
-          </div>
-        )}
+      <div ref={containerRef} className="relative aspect-video bg-black/60">
+        <video
+          ref={videoRef}
+          src={video.video_url}
+          muted={muted}
+          loop
+          playsInline
+          preload="metadata"
+          className="w-full h-full object-cover"
+          onClick={() => setMuted((m) => !m)}
+        />
+        <button
+          onClick={() => setMuted((m) => !m)}
+          className="absolute bottom-2 right-2 px-2 py-1 rounded-full bg-background/70 backdrop-blur-md border border-border/40 text-[10px] font-semibold text-foreground"
+        >
+          {muted ? '🔇 Tap to unmute' : '🔊 Sound on'}
+        </button>
         {isOwner && (
           <button
             onClick={e => { e.stopPropagation(); deleteVideo.mutate(video.id); toast.success('Video deleted'); }}
