@@ -116,19 +116,23 @@ export const useVideoLikes = (videoId: string) => {
 export const useToggleLike = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const award = useAwardPoints();
 
   return useMutation({
     mutationFn: async ({ videoId, liked }: { videoId: string; liked: boolean }) => {
       if (!user) throw new Error('Must be signed in');
       if (liked) {
         await supabase.from('video_likes').delete().eq('video_id', videoId).eq('user_id', user.id);
+        return { awarded: false };
       } else {
         await supabase.from('video_likes').insert({ video_id: videoId, user_id: user.id });
+        return { awarded: true };
       }
     },
-    onSuccess: (_, { videoId }) => {
+    onSuccess: (res, { videoId }) => {
       queryClient.invalidateQueries({ queryKey: ['video-likes', videoId] });
       queryClient.invalidateQueries({ queryKey: ['videos'] });
+      if (res?.awarded) award.mutate({ action: 'video_like' });
     },
   });
 };
@@ -160,6 +164,7 @@ export const useVideoComments = (videoId: string) => {
 export const usePostComment = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const award = useAwardPoints();
 
   return useMutation({
     mutationFn: async ({ videoId, content }: { videoId: string; content: string }) => {
@@ -173,6 +178,7 @@ export const usePostComment = () => {
     },
     onSuccess: (_, { videoId }) => {
       queryClient.invalidateQueries({ queryKey: ['video-comments', videoId] });
+      award.mutate({ action: 'comment' });
     },
   });
 };
