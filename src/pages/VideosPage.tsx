@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Video, Upload, Trash2, Eye, Clock, MapPin, Play, User, Heart, MessageCircle, Send, X, Camera, UserPlus, UserCheck, Sparkles } from 'lucide-react';
+import { Video, Upload, Trash2, Eye, Clock, MapPin, Heart, MessageCircle, Send, X, Camera, UserPlus, UserCheck, Sparkles } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import VideoRecorder from '@/components/VideoRecorder';
