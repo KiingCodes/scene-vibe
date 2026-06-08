@@ -127,16 +127,13 @@ const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardPr
             </button>
 
             {status && (
-              <div className={`absolute bottom-3 left-3 flex items-center gap-1.5 px-2 py-1 rounded-full backdrop-blur-md border text-[10px] font-bold tracking-wide max-w-[60%] ${
+              <div className={`absolute bottom-3 left-3 flex items-center gap-1.5 px-2 py-1 rounded-full backdrop-blur-md border text-[10px] font-bold tracking-wide ${
                 status.isOpen
                   ? 'bg-emerald-500/20 border-emerald-400/50 text-emerald-300'
                   : 'bg-red-500/20 border-red-400/50 text-red-300'
               }`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${status.isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
-                <span className="uppercase">{status.label}</span>
-                {status.detail && (
-                  <span className="font-medium normal-case opacity-90 truncate">· {status.detail}</span>
-                )}
+                <span className="uppercase">{status.isOpen ? 'Open' : 'Closed'}</span>
               </div>
             )}
 
