@@ -85,7 +85,7 @@ const FlyToClub = ({ club }: { club: Club | undefined }) => {
   return null;
 };
 
-const ClubMap = ({ clubs, vibeCounts = {}, selectedClubId, experiences = [], showLabels = true }: ClubMapProps) => {
+const ClubMap = ({ clubs, vibeCounts = {}, selectedClubId, experiences = [], showLabels = false }: ClubMapProps) => {
   const selectedClub = clubs.find(c => c.id === selectedClubId);
 
   const getDirectionsUrl = (club: Club) => {
@@ -107,18 +107,18 @@ const ClubMap = ({ clubs, vibeCounts = {}, selectedClubId, experiences = [], sho
         {selectedClub && <FlyToClub club={selectedClub} />}
         {clubs.map(club => {
           const isTrending = (vibeCounts[club.id] || 0) >= 3;
+          // Only show permanent label for trending clubs or the selected one — reduces overcrowding
+          const labelPermanent = showLabels && (isTrending || club.id === selectedClubId);
           return (
             <Marker key={club.id} position={[club.lat, club.lng]} icon={createClubIcon(isTrending)}>
-              {showLabels && (
-                <Tooltip
-                  direction="top"
-                  offset={[0, -28]}
-                  permanent
-                  className="club-label"
-                >
-                  {club.name}
-                </Tooltip>
-              )}
+              <Tooltip
+                direction="top"
+                offset={[0, -28]}
+                permanent={labelPermanent}
+                className="club-label"
+              >
+                {club.name}
+              </Tooltip>
               <Popup className="club-popup">
                 <div className="p-1 min-w-[200px]">
                   <h3 className="font-bold text-sm mb-1">{club.name}</h3>
@@ -150,11 +150,9 @@ const ClubMap = ({ clubs, vibeCounts = {}, selectedClubId, experiences = [], sho
             position={[exp.lat as number, exp.lng as number]}
             icon={createExperienceIcon(exp.category)}
           >
-            {showLabels && (
-              <Tooltip direction="top" offset={[0, -22]} permanent className="exp-label">
-                {exp.name}
-              </Tooltip>
-            )}
+            <Tooltip direction="top" offset={[0, -22]} permanent={showLabels} className="exp-label">
+              {exp.name}
+            </Tooltip>
             <Popup className="club-popup">
               <div className="p-1 min-w-[200px]">
                 <h3 className="font-bold text-sm mb-1 flex items-center gap-1">
