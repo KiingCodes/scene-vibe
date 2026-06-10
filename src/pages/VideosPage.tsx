@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Video, Upload, Trash2, Eye, Clock, MapPin, Heart, MessageCircle, Send, X, Camera, UserPlus, UserCheck, Sparkles } from 'lucide-react';
+import { Video, Upload, Trash2, Eye, Clock, MapPin, Heart, MessageCircle, Send, X, Camera, UserPlus, UserCheck, Sparkles, Volume2, VolumeX, Maximize2 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import VideoRecorder from '@/components/VideoRecorder';
@@ -105,11 +105,12 @@ const VideoCard = ({ video, clubs }: { video: any; clubs: any[] | undefined }) =
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [muted, setMuted] = useState(true);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRecorded = useRef(false);
 
-  // Autoplay when in viewport
+  // Autoplay when in viewport — pause when lightbox open so it doesn't double-play
   useEffect(() => {
     const node = containerRef.current;
     const v = videoRef.current;
@@ -117,7 +118,7 @@ const VideoCard = ({ video, clubs }: { video: any; clubs: any[] | undefined }) =
     const io = new IntersectionObserver(
       (entries) => {
         entries.forEach((e) => {
-          if (e.isIntersecting && e.intersectionRatio > 0.55) {
+          if (e.isIntersecting && e.intersectionRatio > 0.55 && !lightboxOpen) {
             v.play().catch(() => {});
             if (!viewRecorded.current) {
               viewRecorded.current = true;
@@ -133,7 +134,7 @@ const VideoCard = ({ video, clubs }: { video: any; clubs: any[] | undefined }) =
     io.observe(node);
     return () => io.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [video.id]);
+  }, [video.id, lightboxOpen]);
 
   const club = clubs?.find((c: any) => c.id === video.club_id);
   const isOwner = user?.id === video.user_id;
@@ -179,7 +180,7 @@ const VideoCard = ({ video, clubs }: { video: any; clubs: any[] | undefined }) =
       </div>
 
       {/* Video Player / Thumbnail */}
-      <div ref={containerRef} className="relative aspect-video bg-black/60">
+      <div ref={containerRef} className="relative aspect-video bg-black/60 cursor-pointer">
         <video
           ref={videoRef}
           src={video.video_url}
@@ -188,13 +189,21 @@ const VideoCard = ({ video, clubs }: { video: any; clubs: any[] | undefined }) =
           playsInline
           preload="metadata"
           className="w-full h-full object-cover"
-          onClick={() => setMuted((m) => !m)}
+          onClick={() => setLightboxOpen(true)}
         />
         <button
-          onClick={() => setMuted((m) => !m)}
-          className="absolute bottom-2 right-2 px-2 py-1 rounded-full bg-background/70 backdrop-blur-md border border-border/40 text-[10px] font-semibold text-foreground"
+          onClick={(e) => { e.stopPropagation(); setMuted((m) => !m); }}
+          className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-background/70 backdrop-blur-md border border-border/40 flex items-center justify-center text-foreground"
+          aria-label={muted ? 'Unmute' : 'Mute'}
         >
-          {muted ? '🔇 Tap to unmute' : '🔊 Sound on'}
+          {muted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); setLightboxOpen(true); }}
+          className="absolute bottom-2 left-2 w-8 h-8 rounded-full bg-background/70 backdrop-blur-md border border-border/40 flex items-center justify-center text-foreground"
+          aria-label="Open fullscreen"
+        >
+          <Maximize2 className="w-3.5 h-3.5" />
         </button>
         {isOwner && (
           <button
@@ -292,6 +301,63 @@ const VideoCard = ({ video, clubs }: { video: any; clubs: any[] | undefined }) =
           )}
         </AnimatePresence>
       </div>
+
+      {/* Instagram-style fullscreen lightbox */}
+      <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+        <DialogContent className="p-0 max-w-md w-full h-[90vh] bg-black border-border/30 overflow-hidden">
+          <div className="relative w-full h-full flex flex-col">
+            <button
+              onClick={() => setLightboxOpen(false)}
+              className="absolute top-3 right-3 z-20 w-9 h-9 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-white"
+              aria-label="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="relative flex-1 bg-black">
+              <video
+                src={video.video_url}
+                autoPlay
+                loop
+                playsInline
+                controls
+                className="w-full h-full object-contain"
+              />
+              {/* Right action rail (Instagram-style) */}
+              <div className="absolute right-2 bottom-20 z-10 flex flex-col items-center gap-4 text-white">
+                <button onClick={handleLike} className="flex flex-col items-center gap-0.5">
+                  <Heart className={`w-7 h-7 ${likeData?.userLiked ? 'fill-red-500 text-red-500' : ''}`} />
+                  <span className="text-[10px] font-semibold">{likeData?.count || 0}</span>
+                </button>
+                <button onClick={() => setShowComments(true)} className="flex flex-col items-center gap-0.5">
+                  <MessageCircle className="w-7 h-7" />
+                  <span className="text-[10px] font-semibold">{comments?.length || 0}</span>
+                </button>
+                <div className="flex flex-col items-center gap-0.5">
+                  <Eye className="w-6 h-6" />
+                  <span className="text-[10px] font-semibold">{video.view_count}</span>
+                </div>
+              </div>
+              {/* Bottom author overlay */}
+              <div className="absolute left-0 right-12 bottom-3 px-4 z-10 text-white">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Avatar className="w-8 h-8 ring-2 ring-white/30">
+                    <AvatarImage src={profile?.avatar_url || undefined} />
+                    <AvatarFallback className="text-[10px] bg-muted">{initials}</AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-bold">@{username}</span>
+                  <FollowButton targetId={video.user_id} />
+                </div>
+                {video.caption && <p className="text-xs leading-snug line-clamp-3 opacity-95">{video.caption}</p>}
+                {club && (
+                  <p className="text-[11px] mt-1 flex items-center gap-1 opacity-80">
+                    <MapPin className="w-3 h-3" /> {club.name}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 };
@@ -397,7 +463,7 @@ const VideosPage = () => {
           </div>
         )}
 
-        <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-1 max-w-md mx-auto gap-4">
           {videos?.map(video => (
             <VideoCard key={video.id} video={video} clubs={clubs} />
           ))}

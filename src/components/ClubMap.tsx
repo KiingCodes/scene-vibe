@@ -3,8 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, Tooltip, useMap } from 'react-l
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Link } from 'react-router-dom';
-import { Navigation, Flame, Sparkles } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Navigation, Flame, Plus, Minus, Locate } from 'lucide-react';
 import type { Club } from '@/hooks/useClubs';
 import type { Experience } from '@/hooks/useExperiences';
 
@@ -85,6 +84,44 @@ const FlyToClub = ({ club }: { club: Club | undefined }) => {
   return null;
 };
 
+/** Floating map density / zoom controls */
+const DensityControls = () => {
+  const map = useMap();
+  const locate = () => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => map.flyTo([pos.coords.latitude, pos.coords.longitude], 15, { duration: 1 }),
+      () => {},
+      { enableHighAccuracy: true, timeout: 8000 },
+    );
+  };
+  return (
+    <div className="absolute right-3 bottom-6 z-[500] flex flex-col gap-1.5">
+      <button
+        onClick={() => map.zoomIn()}
+        aria-label="Zoom in"
+        className="w-10 h-10 rounded-full glass border border-border/50 backdrop-blur-xl flex items-center justify-center text-foreground hover:bg-primary/15 transition-colors"
+      >
+        <Plus className="w-4 h-4" />
+      </button>
+      <button
+        onClick={() => map.zoomOut()}
+        aria-label="Zoom out"
+        className="w-10 h-10 rounded-full glass border border-border/50 backdrop-blur-xl flex items-center justify-center text-foreground hover:bg-primary/15 transition-colors"
+      >
+        <Minus className="w-4 h-4" />
+      </button>
+      <button
+        onClick={locate}
+        aria-label="Locate me"
+        className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-primary-foreground shadow-lg"
+      >
+        <Locate className="w-4 h-4" />
+      </button>
+    </div>
+  );
+};
+
 const ClubMap = ({ clubs, vibeCounts = {}, selectedClubId, experiences = [], showLabels = false }: ClubMapProps) => {
   const selectedClub = clubs.find(c => c.id === selectedClubId);
 
@@ -97,6 +134,7 @@ const ClubMap = ({ clubs, vibeCounts = {}, selectedClubId, experiences = [], sho
       <MapContainer
         center={[-26.15, 28.05]}
         zoom={11}
+        zoomControl={false}
         className="w-full h-full"
         style={{ background: 'hsl(240 10% 4%)' }}
       >
@@ -104,6 +142,7 @@ const ClubMap = ({ clubs, vibeCounts = {}, selectedClubId, experiences = [], sho
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         />
+        <DensityControls />
         {selectedClub && <FlyToClub club={selectedClub} />}
         {clubs.map(club => {
           const isTrending = (vibeCounts[club.id] || 0) >= 3;
