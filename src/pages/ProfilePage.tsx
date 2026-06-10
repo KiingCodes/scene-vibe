@@ -6,6 +6,8 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPoints, useUserBadges, BADGE_DEFINITIONS, getLevelFromPoints } from '@/hooks/useGamification';
+import { useIsAdmin } from '@/hooks/useAdmin';
+import { useFollowCounts } from '@/hooks/useFollows';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -60,6 +62,8 @@ const ProfilePage = () => {
   const { data: badges } = useUserBadges();
   const { data: stats } = useProfileStats();
   const { data: recentActivity } = useRecentActivity();
+  const { data: isAdmin } = useIsAdmin();
+  const { data: followCounts } = useFollowCounts(user?.id);
   const [editingUsername, setEditingUsername] = useState(false);
   const [newUsername, setNewUsername] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -84,12 +88,12 @@ const ProfilePage = () => {
     setUploadingAvatar(true);
     try {
       const ext = file.name.split('.').pop() || 'jpg';
-      const path = `${user.id}/avatar-${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, {
+      const path = `avatars/${user.id}/avatar-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('chat-media').upload(path, file, {
         contentType: file.type, upsert: true,
       });
       if (upErr) throw upErr;
-      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
+      const { data: { publicUrl } } = supabase.storage.from('chat-media').getPublicUrl(path);
       const { error: dbErr } = await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('user_id', user.id);
       if (dbErr) throw dbErr;
       queryClient.invalidateQueries({ queryKey: ['profile', user.id] });
@@ -105,7 +109,7 @@ const ProfilePage = () => {
   const progressPct = points ? Math.min((points.points / levelInfo.next) * 100, 100) : 0;
   const earnedBadgeTypes = new Set(badges?.map(b => b.badge_type) || []);
   const username = user?.user_metadata?.username || user?.email?.split('@')[0] || 'Anonymous';
-  const isVerified = levelInfo.level >= VERIFIED_LEVEL;
+  const isVerified = isAdmin || levelInfo.level >= VERIFIED_LEVEL;
 
   const handleUpdateUsername = async () => {
     if (!newUsername.trim() || newUsername.trim().length < 2) {
@@ -213,6 +217,19 @@ const ProfilePage = () => {
           </div>
           <p className="text-muted-foreground text-sm">{user.email}</p>
           {isVerified && <span className="inline-flex items-center gap-1 text-xs text-primary mt-1"><Shield className="w-3 h-3" /> Verified Profile</span>}
+
+          {/* Followers / Following */}
+          <div className="flex items-center justify-center gap-6 mt-3">
+            <div className="text-center">
+              <p className="text-lg font-bold text-foreground">{followCounts?.followers ?? 0}</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Followers</p>
+            </div>
+            <div className="w-px h-8 bg-border/40" />
+            <div className="text-center">
+              <p className="text-lg font-bold text-foreground">{followCounts?.following ?? 0}</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Following</p>
+            </div>
+          </div>
 
           <div className="flex items-center justify-center gap-2 mt-3">
             <Crown className="w-5 h-5 text-yellow-400" />

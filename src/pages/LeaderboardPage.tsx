@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useLeaderboard, useUserPoints, useUserBadges, BADGE_DEFINITIONS, getLevelFromPoints } from '@/hooks/useGamification';
 import { useFollowCounts, useIsFollowing, useToggleFollow } from '@/hooks/useFollows';
 import { SkeletonBlock } from '@/components/BrandedSkeleton';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { UserPlus, UserCheck } from 'lucide-react';
 
@@ -187,6 +188,12 @@ const LeaderboardPage = () => {
                   <span className="text-lg font-bold w-8 text-center">
                     {i < 3 ? medals[i] : <span className="text-muted-foreground">{i + 1}</span>}
                   </span>
+                  <Avatar className="w-9 h-9 ring-1 ring-border/50">
+                    <AvatarImage src={(entry.profile as any)?.avatar_url || undefined} alt={entry.profile?.username || 'user'} />
+                    <AvatarFallback className="text-[10px] font-bold bg-muted">
+                      {(entry.profile?.username || 'A').slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground truncate">
                       {entry.profile?.username || 'Anonymous'}
