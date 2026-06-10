@@ -126,7 +126,14 @@ export const useToggleLike = () => {
         return { awarded: false };
       } else {
         await supabase.from('video_likes').insert({ video_id: videoId, user_id: user.id });
-        return { awarded: true };
+        // Harden points: only award the first time this user ever likes this video
+        const key = `awarded:like:${user.id}:${videoId}`;
+        const already = typeof localStorage !== 'undefined' && localStorage.getItem(key);
+        if (!already) {
+          try { localStorage.setItem(key, '1'); } catch {}
+          return { awarded: true };
+        }
+        return { awarded: false };
       }
     },
     onSuccess: (res, { videoId }) => {
