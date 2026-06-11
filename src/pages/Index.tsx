@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { LogoSkeleton } from '@/components/BrandedSkeleton';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Flame, TrendingUp, Star, Sparkles, Cake, Coffee, Palette, ShoppingBag, Music2, Wine, Code2, MapPin, Calendar, ArrowRight } from 'lucide-react';
 import { useClubs } from '@/hooks/useClubs';
