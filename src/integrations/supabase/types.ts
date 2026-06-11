@@ -301,6 +301,41 @@ export type Database = {
         }
         Relationships: []
       }
+      experience_attendances: {
+        Row: {
+          created_at: string
+          device_id: string
+          experience_id: string
+          id: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_id: string
+          experience_id: string
+          id?: string
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_id?: string
+          experience_id?: string
+          id?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experience_attendances_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       experiences: {
         Row: {
           address: string | null
