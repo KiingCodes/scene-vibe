@@ -5,7 +5,7 @@ import { useClubs } from '@/hooks/useClubs';
 import { useExperiences } from '@/hooks/useExperiences';
 import { useAllVibes } from '@/hooks/useVibes';
 import { Flame, Sparkles } from 'lucide-react';
-import { SkeletonBlock } from '@/components/BrandedSkeleton';
+import { SkeletonBlock, LogoSkeleton } from '@/components/BrandedSkeleton';
 
 const MapPage = () => {
   const { data: clubs, isLoading: clubsLoading } = useClubs();
