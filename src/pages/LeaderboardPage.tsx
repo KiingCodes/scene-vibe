@@ -195,6 +195,7 @@ const LeaderboardPage = () => {
           </h3>
           {isLoading && (
             <div className="space-y-2">
+              <LogoSkeleton label="Tallying ranks…" />
               {Array.from({ length: 5 }).map((_, i) => <SkeletonBlock key={i} className="h-12" />)}
             </div>
           )}

@@ -456,7 +456,8 @@ const VideosPage = () => {
         )}
 
         {isLoading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-4 max-w-md mx-auto">
+            <LogoSkeleton label="Loading reels…" />
             {Array.from({ length: 4 }).map((_, i) => (
               <SkeletonBlock key={i} className="aspect-video" />
             ))}
