@@ -229,9 +229,12 @@ const ExperiencesPage = () => {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
-          </div>
+          <>
+            <LogoSkeleton className="mb-4" label="Pulling fresh experiences…" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+            </div>
+          </>
         ) : isError ? (
           <div className="glass rounded-xl p-10 text-center space-y-4 border border-destructive/30">
             <AlertCircle className="w-8 h-8 text-destructive mx-auto" />
@@ -271,6 +274,7 @@ const ExperiencesPage = () => {
             {results.map((x, i) => {
               const d = distLabel(x.lat, x.lng);
               const open = getOpenStatus(x.opening_hours);
+              const att = attendanceMap?.[x.id] ?? { checkin: 0, going: 0, interested: 0 };
               return (
                 <motion.div
                   key={x.id}
@@ -279,9 +283,16 @@ const ExperiencesPage = () => {
                   transition={{ delay: Math.min(i * 0.03, 0.3) }}
                   className="glass rounded-xl overflow-hidden border border-border/40 hover:border-primary/40 transition-colors"
                 >
-                  {x.image_url && (
-                    <img src={x.image_url} alt={x.name} loading="lazy" className="w-full h-36 object-cover" />
-                  )}
+                  <div className="relative w-full h-36 overflow-hidden bg-muted/30">
+                    <img
+                      src={x.image_url || logoUrl}
+                      alt={x.name}
+                      loading="lazy"
+                      className="w-full h-full object-cover"
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).src = logoUrl; }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent pointer-events-none" />
+                  </div>
                   <div className="p-3 space-y-2">
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="font-display font-semibold text-foreground text-sm leading-tight">
@@ -313,6 +324,7 @@ const ExperiencesPage = () => {
                         {x.registration_url ? 'Register' : 'Visit'} <ExternalLink className="w-3 h-3" />
                       </a>
                     )}
+                    <AttendanceBar experienceId={x.id} counts={att} />
                   </div>
                 </motion.div>
               );
