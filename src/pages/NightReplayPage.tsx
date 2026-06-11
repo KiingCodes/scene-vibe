@@ -5,6 +5,7 @@ import Footer from '@/components/Footer';
 import { useNightReplays } from '@/hooks/useNightReplays';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
+import { LogoSkeleton } from '@/components/BrandedSkeleton';
 
 const container = {
   hidden: { opacity: 0 },
@@ -43,6 +44,7 @@ const NightReplayPage = () => {
 
         {isLoading && (
           <div className="space-y-4">
+            <LogoSkeleton label="Rewinding last night…" />
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="glass rounded-xl h-40 animate-pulse" />
             ))}
