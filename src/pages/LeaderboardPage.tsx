@@ -4,7 +4,7 @@ import Navbar from '@/components/Navbar';
 import { useAuth } from '@/hooks/useAuth';
 import { useLeaderboard, useUserPoints, useUserBadges, BADGE_DEFINITIONS, getLevelFromPoints } from '@/hooks/useGamification';
 import { useFollowCounts, useIsFollowing, useToggleFollow } from '@/hooks/useFollows';
-import { SkeletonBlock } from '@/components/BrandedSkeleton';
+import { SkeletonBlock, LogoSkeleton } from '@/components/BrandedSkeleton';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { UserPlus, UserCheck } from 'lucide-react';

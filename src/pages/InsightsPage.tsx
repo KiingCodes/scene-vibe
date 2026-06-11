@@ -6,7 +6,7 @@ import { useClubs } from '@/hooks/useClubs';
 import { useAllVibes } from '@/hooks/useVibes';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { SkeletonBlock } from '@/components/BrandedSkeleton';
+import { SkeletonBlock, LogoSkeleton } from '@/components/BrandedSkeleton';
 
 const useInsightsData = () => {
   return useQuery({
