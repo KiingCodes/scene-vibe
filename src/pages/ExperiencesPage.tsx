@@ -57,6 +57,82 @@ const SkeletonCard = () => (
   </div>
 );
 
+const AttendanceBar = ({ experienceId, counts }: { experienceId: string; counts: { checkin: number; going: number; interested: number } }) => {
+  const deviceId = useDeviceId();
+  const toggle = useToggleAttendance(experienceId);
+  // Mine state derived from query cache via per-experience hook would re-render too often;
+  // instead, use simple per-button optimistic mirror via localStorage device markers.
+  const [mine, setMine] = useState<Set<AttendanceType>>(new Set());
+
+  const key = `att:${deviceId}:${experienceId}`;
+  useEffect(() => {
+    if (!deviceId) return;
+    try {
+      const raw = JSON.parse(localStorage.getItem(key) || '{}') as Record<string, number>;
+      const now = Date.now();
+      const live = new Set<AttendanceType>();
+      (['checkin', 'going', 'interested'] as AttendanceType[]).forEach(t => {
+        const ts = raw[t];
+        if (ts && now - ts < 30 * 60 * 1000) live.add(t);
+      });
+      setMine(live);
+    } catch { /* noop */ }
+  }, [deviceId, key]);
+
+  const onClick = async (type: AttendanceType) => {
+    const active = mine.has(type);
+    try {
+      await toggle.mutateAsync({ type, active });
+      const next = new Set(mine);
+      const stored = (() => { try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch { return {}; } })();
+      if (active) {
+        next.delete(type);
+        delete stored[type];
+        toast.success(`Removed ${type === 'checkin' ? 'check-in' : type}`);
+      } else {
+        next.add(type);
+        stored[type] = Date.now();
+        toast.success(type === 'checkin' ? '✅ Checked in' : type === 'going' ? '🙋 Going' : '⭐ Interested');
+      }
+      localStorage.setItem(key, JSON.stringify(stored));
+      setMine(next);
+    } catch (e: any) {
+      toast.error(e?.message || 'Could not update — try again');
+    }
+  };
+
+  const Btn = ({ type, icon, label, count }: { type: AttendanceType; icon: React.ReactNode; label: string; count: number }) => {
+    const active = mine.has(type);
+    return (
+      <button
+        onClick={() => onClick(type)}
+        disabled={toggle.isPending}
+        className={`flex-1 flex items-center justify-center gap-1 text-[10px] font-semibold py-1.5 rounded-md border transition-all ${
+          active
+            ? 'bg-primary/15 border-primary/50 text-primary shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.4)]'
+            : 'bg-muted/20 border-border/40 text-muted-foreground hover:text-foreground hover:bg-muted/30'
+        }`}
+        title={`${label} (live · 30m)`}
+      >
+        {icon}
+        <span>{label}</span>
+        <span className={`px-1 rounded ${active ? 'bg-primary/25 text-primary' : 'bg-background/40'}`}>{count}</span>
+      </button>
+    );
+  };
+
+  return (
+    <div className="pt-2 mt-1 border-t border-border/40 space-y-1.5">
+      <div className="flex items-center gap-1.5">
+        <Btn type="checkin" icon={<CheckCircle className="w-3 h-3" />} label="Check-in" count={counts.checkin} />
+        <Btn type="going" icon={<Users className="w-3 h-3" />} label="Going" count={counts.going} />
+        <Btn type="interested" icon={<Star className="w-3 h-3" />} label="Interested" count={counts.interested} />
+      </div>
+      <p className="text-[9px] text-muted-foreground/70 text-center">Live counts · auto-clear after 30 min · one tap per device</p>
+    </div>
+  );
+};
+
 const ExperiencesPage = () => {
   const [cat, setCat] = useState<string>('all');
   const [rawSearch, setRawSearch] = useState('');
