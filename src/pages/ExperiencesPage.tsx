@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, MapPin, Calendar, ExternalLink, Coffee, Palette, ShoppingBag, Music2, Wine, Code2, Plus, Navigation, RefreshCw, AlertCircle, CheckCircle2, Clock, Search, X, Bookmark, BookmarkPlus, DoorOpen, DoorClosed } from 'lucide-react';
+import { Sparkles, MapPin, Calendar, ExternalLink, Coffee, Palette, ShoppingBag, Music2, Wine, Code2, Plus, Navigation, RefreshCw, AlertCircle, CheckCircle2, Clock, Search, X, Bookmark, BookmarkPlus, DoorOpen, DoorClosed, CheckCircle, Star, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useExperiences, useExperiencesSyncStatus, useTriggerSync } from '@/hooks/useExperiences';
+import { useAllExperienceAttendance, useToggleAttendance, type AttendanceType } from '@/hooks/useExperienceAttendance';
+import { useDeviceId } from '@/hooks/useDeviceId';
+import { LogoSkeleton } from '@/components/BrandedSkeleton';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -65,6 +68,7 @@ const ExperiencesPage = () => {
   const { data: syncStatus } = useExperiencesSyncStatus();
   const triggerSync = useTriggerSync();
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const { data: attendanceMap } = useAllExperienceAttendance();
 
   useEffect(() => {
     if (!('geolocation' in navigator)) return;
