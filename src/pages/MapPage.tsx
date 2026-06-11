@@ -5,7 +5,7 @@ import { useClubs } from '@/hooks/useClubs';
 import { useExperiences } from '@/hooks/useExperiences';
 import { useAllVibes } from '@/hooks/useVibes';
 import { Flame, Sparkles } from 'lucide-react';
-import { SkeletonBlock } from '@/components/BrandedSkeleton';
+import { SkeletonBlock, LogoSkeleton } from '@/components/BrandedSkeleton';
 
 const MapPage = () => {
   const { data: clubs, isLoading: clubsLoading } = useClubs();
@@ -50,7 +50,12 @@ const MapPage = () => {
         {/* Full-screen map */}
         <div className="h-full w-full">
           {clubsLoading || !clubs ? (
-            <SkeletonBlock className="w-full h-full" />
+            <div className="w-full h-full relative">
+              <SkeletonBlock className="w-full h-full" />
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <LogoSkeleton label="Loading the map…" className="bg-background/60" />
+              </div>
+            </div>
           ) : (
             <ClubMap
               clubs={showClubs ? clubs : []}

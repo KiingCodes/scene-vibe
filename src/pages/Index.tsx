@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { LogoSkeleton } from '@/components/BrandedSkeleton';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Flame, TrendingUp, Star, Sparkles, Cake, Coffee, Palette, ShoppingBag, Music2, Wine, Code2, MapPin, Calendar, ArrowRight } from 'lucide-react';
 import { useClubs } from '@/hooks/useClubs';
@@ -251,6 +252,7 @@ const Index = () => {
         {/* Loading skeletons — themed for every category section */}
         {isLoading && (
           <div className="space-y-10">
+            <LogoSkeleton label="Loading the scene…" />
             {['Most Visited This Weekend', 'Top Rated in Johannesburg', 'Newly Added', 'Beyond the Club'].map((title) => (
               <section key={title}>
                 <div className="h-5 w-48 bg-muted/40 rounded animate-pulse mb-4" />

@@ -12,6 +12,7 @@ import type { Club } from '@/hooks/useClubs';
 import CrowdLevel from './CrowdLevel';
 import { getOpenStatus } from '@/lib/openHours';
 import { useEffect, useState } from 'react';
+import logoFallback from '@/assets/scene-logo.jpg';
 
 interface ClubCardProps {
   club: Club;
@@ -92,10 +93,11 @@ const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardPr
         <div className={`glass rounded-xl overflow-hidden group hover:border-primary/30 transition-all duration-300 ${isTrending ? 'trending-glow border-secondary/40' : ''}`}>
           <div className="relative h-48 overflow-hidden">
             <img
-              src={club.image_url || '/placeholder.svg'}
+              src={club.image_url || logoFallback}
               alt={club.name}
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
               loading="lazy"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).src = logoFallback; }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
 

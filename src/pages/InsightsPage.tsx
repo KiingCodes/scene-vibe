@@ -6,7 +6,7 @@ import { useClubs } from '@/hooks/useClubs';
 import { useAllVibes } from '@/hooks/useVibes';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { SkeletonBlock } from '@/components/BrandedSkeleton';
+import { SkeletonBlock, LogoSkeleton } from '@/components/BrandedSkeleton';
 
 const useInsightsData = () => {
   return useQuery({
@@ -147,6 +147,7 @@ const InsightsPage = () => {
 
         {isLoading && (
           <div className="space-y-4">
+            <LogoSkeleton label="Crunching the night data…" />
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {Array.from({ length: 4 }).map((_, i) => <SkeletonBlock key={i} className="h-24" />)}
             </div>

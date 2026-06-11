@@ -7,9 +7,10 @@ import { toast } from 'sonner';
 interface VideoRecorderProps {
   onRecorded: (file: File, previewUrl: string) => void;
   maxSeconds?: number;
+  fullScreen?: boolean;
 }
 
-const VideoRecorder = ({ onRecorded, maxSeconds = 30 }: VideoRecorderProps) => {
+const VideoRecorder = ({ onRecorded, maxSeconds = 30, fullScreen = true }: VideoRecorderProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -111,10 +112,12 @@ const VideoRecorder = ({ onRecorded, maxSeconds = 30 }: VideoRecorderProps) => {
   };
 
   return (
-    <div className="space-y-3">
-      <div className="relative aspect-video rounded-xl overflow-hidden bg-black border border-border/50">
+    <div className={fullScreen ? 'fixed inset-0 z-50 bg-black flex flex-col' : 'space-y-3'}>
+      <div className={fullScreen
+        ? 'relative flex-1 min-h-0 overflow-hidden bg-black'
+        : 'relative aspect-video rounded-xl overflow-hidden bg-black border border-border/50'}>
         {previewUrl ? (
-          <video src={previewUrl} controls className="w-full h-full object-cover" />
+          <video src={previewUrl} controls className={fullScreen ? 'w-full h-full object-contain' : 'w-full h-full object-cover'} />
         ) : (
           <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
         )}
@@ -142,7 +145,9 @@ const VideoRecorder = ({ onRecorded, maxSeconds = 30 }: VideoRecorderProps) => {
         )}
       </div>
 
-      <div className="flex items-center justify-center gap-3">
+      <div className={fullScreen
+        ? 'flex items-center justify-center gap-3 py-6 px-4 bg-black/90 backdrop-blur-md safe-bottom'
+        : 'flex items-center justify-center gap-3'}>
         {previewUrl ? (
           <>
             <Button variant="outline" onClick={reset} className="gap-1.5"><RotateCcw className="w-4 h-4" /> Retake</Button>

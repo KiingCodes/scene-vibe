@@ -9,7 +9,7 @@ import { useVideos, useUploadVideo, useDeleteVideo, useRecordVideoView, useVideo
 import { useIsFollowing, useToggleFollow, useFollowCounts } from '@/hooks/useFollows';
 import { useVideoReactions, useToggleReaction, REACTION_EMOJIS } from '@/hooks/useVideoReactions';
 import { useClubs } from '@/hooks/useClubs';
-import { SkeletonBlock } from '@/components/BrandedSkeleton';
+import { SkeletonBlock, LogoSkeleton } from '@/components/BrandedSkeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -456,7 +456,8 @@ const VideosPage = () => {
         )}
 
         {isLoading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-4 max-w-md mx-auto">
+            <LogoSkeleton label="Loading reels…" />
             {Array.from({ length: 4 }).map((_, i) => (
               <SkeletonBlock key={i} className="aspect-video" />
             ))}

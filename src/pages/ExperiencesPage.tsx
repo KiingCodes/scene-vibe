@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, MapPin, Calendar, ExternalLink, Coffee, Palette, ShoppingBag, Music2, Wine, Code2, Plus, Navigation, RefreshCw, AlertCircle, CheckCircle2, Clock, Search, X, Bookmark, BookmarkPlus, DoorOpen, DoorClosed } from 'lucide-react';
+import { Sparkles, MapPin, Calendar, ExternalLink, Coffee, Palette, ShoppingBag, Music2, Wine, Code2, Plus, Navigation, RefreshCw, AlertCircle, CheckCircle2, Clock, Search, X, Bookmark, BookmarkPlus, DoorOpen, DoorClosed, CheckCircle, Star, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useExperiences, useExperiencesSyncStatus, useTriggerSync } from '@/hooks/useExperiences';
+import { useAllExperienceAttendance, useToggleAttendance, type AttendanceType } from '@/hooks/useExperienceAttendance';
+import { useDeviceId } from '@/hooks/useDeviceId';
+import { LogoSkeleton } from '@/components/BrandedSkeleton';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -54,6 +57,82 @@ const SkeletonCard = () => (
   </div>
 );
 
+const AttendanceBar = ({ experienceId, counts }: { experienceId: string; counts: { checkin: number; going: number; interested: number } }) => {
+  const deviceId = useDeviceId();
+  const toggle = useToggleAttendance(experienceId);
+  // Mine state derived from query cache via per-experience hook would re-render too often;
+  // instead, use simple per-button optimistic mirror via localStorage device markers.
+  const [mine, setMine] = useState<Set<AttendanceType>>(new Set());
+
+  const key = `att:${deviceId}:${experienceId}`;
+  useEffect(() => {
+    if (!deviceId) return;
+    try {
+      const raw = JSON.parse(localStorage.getItem(key) || '{}') as Record<string, number>;
+      const now = Date.now();
+      const live = new Set<AttendanceType>();
+      (['checkin', 'going', 'interested'] as AttendanceType[]).forEach(t => {
+        const ts = raw[t];
+        if (ts && now - ts < 30 * 60 * 1000) live.add(t);
+      });
+      setMine(live);
+    } catch { /* noop */ }
+  }, [deviceId, key]);
+
+  const onClick = async (type: AttendanceType) => {
+    const active = mine.has(type);
+    try {
+      await toggle.mutateAsync({ type, active });
+      const next = new Set(mine);
+      const stored = (() => { try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch { return {}; } })();
+      if (active) {
+        next.delete(type);
+        delete stored[type];
+        toast.success(`Removed ${type === 'checkin' ? 'check-in' : type}`);
+      } else {
+        next.add(type);
+        stored[type] = Date.now();
+        toast.success(type === 'checkin' ? '✅ Checked in' : type === 'going' ? '🙋 Going' : '⭐ Interested');
+      }
+      localStorage.setItem(key, JSON.stringify(stored));
+      setMine(next);
+    } catch (e: any) {
+      toast.error(e?.message || 'Could not update — try again');
+    }
+  };
+
+  const Btn = ({ type, icon, label, count }: { type: AttendanceType; icon: React.ReactNode; label: string; count: number }) => {
+    const active = mine.has(type);
+    return (
+      <button
+        onClick={() => onClick(type)}
+        disabled={toggle.isPending}
+        className={`flex-1 flex items-center justify-center gap-1 text-[10px] font-semibold py-1.5 rounded-md border transition-all ${
+          active
+            ? 'bg-primary/15 border-primary/50 text-primary shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.4)]'
+            : 'bg-muted/20 border-border/40 text-muted-foreground hover:text-foreground hover:bg-muted/30'
+        }`}
+        title={`${label} (live · 30m)`}
+      >
+        {icon}
+        <span>{label}</span>
+        <span className={`px-1 rounded ${active ? 'bg-primary/25 text-primary' : 'bg-background/40'}`}>{count}</span>
+      </button>
+    );
+  };
+
+  return (
+    <div className="pt-2 mt-1 border-t border-border/40 space-y-1.5">
+      <div className="flex items-center gap-1.5">
+        <Btn type="checkin" icon={<CheckCircle className="w-3 h-3" />} label="Check-in" count={counts.checkin} />
+        <Btn type="going" icon={<Users className="w-3 h-3" />} label="Going" count={counts.going} />
+        <Btn type="interested" icon={<Star className="w-3 h-3" />} label="Interested" count={counts.interested} />
+      </div>
+      <p className="text-[9px] text-muted-foreground/70 text-center">Live counts · auto-clear after 30 min · one tap per device</p>
+    </div>
+  );
+};
+
 const ExperiencesPage = () => {
   const [cat, setCat] = useState<string>('all');
   const [rawSearch, setRawSearch] = useState('');
@@ -65,6 +144,7 @@ const ExperiencesPage = () => {
   const { data: syncStatus } = useExperiencesSyncStatus();
   const triggerSync = useTriggerSync();
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const { data: attendanceMap } = useAllExperienceAttendance();
 
   useEffect(() => {
     if (!('geolocation' in navigator)) return;
@@ -225,9 +305,12 @@ const ExperiencesPage = () => {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
-          </div>
+          <>
+            <LogoSkeleton className="mb-4" label="Pulling fresh experiences…" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+            </div>
+          </>
         ) : isError ? (
           <div className="glass rounded-xl p-10 text-center space-y-4 border border-destructive/30">
             <AlertCircle className="w-8 h-8 text-destructive mx-auto" />
@@ -267,6 +350,7 @@ const ExperiencesPage = () => {
             {results.map((x, i) => {
               const d = distLabel(x.lat, x.lng);
               const open = getOpenStatus(x.opening_hours);
+              const att = attendanceMap?.[x.id] ?? { checkin: 0, going: 0, interested: 0 };
               return (
                 <motion.div
                   key={x.id}
@@ -275,9 +359,16 @@ const ExperiencesPage = () => {
                   transition={{ delay: Math.min(i * 0.03, 0.3) }}
                   className="glass rounded-xl overflow-hidden border border-border/40 hover:border-primary/40 transition-colors"
                 >
-                  {x.image_url && (
-                    <img src={x.image_url} alt={x.name} loading="lazy" className="w-full h-36 object-cover" />
-                  )}
+                  <div className="relative w-full h-36 overflow-hidden bg-muted/30">
+                    <img
+                      src={x.image_url || logoUrl}
+                      alt={x.name}
+                      loading="lazy"
+                      className="w-full h-full object-cover"
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).src = logoUrl; }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent pointer-events-none" />
+                  </div>
                   <div className="p-3 space-y-2">
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="font-display font-semibold text-foreground text-sm leading-tight">
@@ -309,6 +400,7 @@ const ExperiencesPage = () => {
                         {x.registration_url ? 'Register' : 'Visit'} <ExternalLink className="w-3 h-3" />
                       </a>
                     )}
+                    <AttendanceBar experienceId={x.id} counts={att} />
                   </div>
                 </motion.div>
               );
