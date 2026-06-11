@@ -226,7 +226,7 @@ const CommunityChat = () => {
   const addEmoji = (emoji: string) => { setText(p => p + emoji); setShowEmojis(false); };
 
   return (
-    <div className="glass rounded-2xl flex flex-col h-[70vh] min-h-[500px] overflow-hidden border border-border/50 shadow-2xl">
+    <div className="glass rounded-2xl flex flex-col flex-1 min-h-0 h-full overflow-hidden border border-border/50 shadow-2xl">
       {/* Header */}
       <div className="px-4 py-3 border-b border-border/40 bg-gradient-to-r from-primary/15 via-secondary/10 to-accent/10 backdrop-blur">
         <div className="flex items-center justify-between">
