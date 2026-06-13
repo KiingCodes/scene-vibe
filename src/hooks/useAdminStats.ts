@@ -14,29 +14,30 @@ export const useAdminStats = () => {
       const d7  = since(7 * 24 * 3600_000);
       const d30 = since(30 * 24 * 3600_000);
 
-      const head = (q: any) => q.select('*', { count: 'exact', head: true });
+      const sb: any = supabase;
+      const head = (table: string) => sb.from(table).select('*', { count: 'exact', head: true });
       const [
         users, clubs, experiences, videos, vibes30, pulls30, attend30,
         flags, pendingClubs, pendingExp, pendingPromo,
         newUsers7, newUsers30, vibes24, attend24, videos24, follows24,
       ] = await Promise.all([
-        head(supabase.from('profiles')),
-        head(supabase.from('clubs')),
-        head(supabase.from('experiences') as any),
-        head(supabase.from('videos')),
-        head(supabase.from('vibes').gte('created_at', m30)),
-        head(supabase.from('pulling_up').gte('created_at', m30)),
-        head((supabase as any).from('experience_attendances').gte('created_at', m30)),
-        head(supabase.from('message_flags' as any)),
-        head(supabase.from('pending_clubs').eq('status', 'pending')),
-        head((supabase as any).from('experiences').eq('status', 'pending')),
-        head(supabase.from('promotions').eq('status', 'pending')),
-        head(supabase.from('profiles').gte('created_at' as any, d7)),
-        head(supabase.from('profiles').gte('created_at' as any, d30)),
-        head(supabase.from('vibes').gte('created_at', h24)),
-        head((supabase as any).from('experience_attendances').gte('created_at', h24)),
-        head(supabase.from('videos').gte('created_at', h24)),
-        head(supabase.from('user_follows').gte('created_at' as any, h24)),
+        head('profiles'),
+        head('clubs'),
+        head('experiences'),
+        head('videos'),
+        head('vibes').gte('created_at', m30),
+        head('pulling_up').gte('created_at', m30),
+        head('experience_attendances').gte('created_at', m30),
+        head('message_flags'),
+        head('pending_clubs').eq('status', 'pending'),
+        head('experiences').eq('status', 'pending'),
+        head('promotions').eq('status', 'pending'),
+        head('profiles').gte('created_at', d7),
+        head('profiles').gte('created_at', d30),
+        head('vibes').gte('created_at', h24),
+        head('experience_attendances').gte('created_at', h24),
+        head('videos').gte('created_at', h24),
+        head('user_follows').gte('created_at', h24),
       ]);
 
       return {
