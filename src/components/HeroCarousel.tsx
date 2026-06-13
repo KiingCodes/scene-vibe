@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Flame, MapPin, TrendingUp } from 'lucide-react';
 import heroBg from '@/assets/nightlife-hero.jpg';
+import logoFallback from '@/assets/scene-logo.jpg';
 import type { Club } from '@/hooks/useClubs';
 
 interface HeroCarouselProps {
@@ -93,10 +94,11 @@ const HeroCarousel = ({ clubs, vibeCounts = {} }: HeroCarouselProps) => {
               >
                 <div className="relative h-[300px] overflow-hidden">
                   <img
-                    src={club.image_url || '/placeholder.svg'}
+                    src={club.image_url || logoFallback}
                     alt={club.name}
                     className="w-full h-full object-cover"
                     loading="lazy"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = logoFallback; }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
                   {isTrending && (
