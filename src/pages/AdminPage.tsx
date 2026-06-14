@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import {
   Shield, Check, X, MapPin, Clock, Music, Users, ArrowLeft, Loader2, Megaphone,
   DollarSign, Sparkles, Activity, Flame, Search, AlertTriangle, BarChart3, Server,
-  TrendingUp, UserCheck, Eye, ShieldAlert, Database, Bell, Trophy,
+  TrendingUp, UserCheck, Eye, ShieldAlert, Database, Bell, Trophy, Ban, MoreVertical,
+  Settings2, AlertOctagon, History, Crown,
 } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
@@ -11,13 +12,17 @@ import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin, usePendingClubs, useApproveClub, useRejectClub } from '@/hooks/useAdmin';
 import { usePendingPromotions, useApprovePromotion, useRejectPromotion } from '@/hooks/usePromotions';
 import { usePendingExperiences, useModerateExperience } from '@/hooks/useExperiences';
-import { useAdminStats, useRecentActivity, useCheckinMonitor, useAdminUsers, useAdminAnalytics } from '@/hooks/useAdminStats';
+import { useAdminStats, useRecentActivity, useCheckinMonitor, useAdminUsers, useAdminAnalytics, useAdminUserActions, useAdminAuditLog } from '@/hooks/useAdminStats';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 
 /* ---------------- Reusable bits ---------------- */
