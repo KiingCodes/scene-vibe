@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Shield, Check, X, MapPin, Clock, Music, Users, ArrowLeft, Loader2, Megaphone,
@@ -180,7 +180,7 @@ const ManageUserDialog = ({ user, onClose }: { user: any | null; onClose: () => 
   const [reason, setReason] = useState('');
 
   // hydrate fields when user changes
-  useMemo(() => {
+  useEffect(() => {
     if (user) {
       setUsername(user.username || '');
       setBio(user.bio || '');
