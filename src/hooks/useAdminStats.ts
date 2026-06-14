@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
 
 const since = (ms: number) => new Date(Date.now() - ms).toISOString();
 
@@ -124,7 +125,11 @@ export const useAdminUsers = (search: string = '') => {
   return useQuery({
     queryKey: ['admin-users', search],
     queryFn: async () => {
-      let q = supabase.from('profiles').select('user_id, username, avatar_url, created_at' as any).order('created_at' as any, { ascending: false }).limit(100);
+      let q = supabase
+        .from('profiles')
+        .select('user_id, username, avatar_url, created_at, is_blocked, is_banned, warning_count, ban_reason, bio' as any)
+        .order('created_at' as any, { ascending: false })
+        .limit(100);
       if (search) q = (q as any).ilike('username', `%${search}%`);
       const { data } = await q;
       const ids = (data || []).map((u: any) => u.user_id);
@@ -140,6 +145,118 @@ export const useAdminUsers = (search: string = '') => {
         arr.push(r.role); rmap.set(r.user_id, arr);
       });
       return (data || []).map((u: any) => ({ ...u, points: pmap.get(u.user_id) ?? 0, roles: rmap.get(u.user_id) ?? [] }));
+    },
+  });
+};
+
+/* ---------------- Admin moderation actions ---------------- */
+
+const logAudit = async (adminId: string, targetUserId: string | null, action: string, details?: any) => {
+  try {
+    await (supabase as any).from('admin_audit_log').insert({
+      admin_id: adminId, target_user_id: targetUserId, action, details: details ?? null,
+    });
+  } catch {}
+};
+
+export const useAdminUserActions = () => {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ['admin-users'] });
+    qc.invalidateQueries({ queryKey: ['admin-audit'] });
+  };
+
+  const updateProfile = useMutation({
+    mutationFn: async ({ userId, patch }: { userId: string; patch: Record<string, any> }) => {
+      const { error } = await (supabase as any).from('profiles').update({
+        ...patch, moderated_at: new Date().toISOString(), moderated_by: user?.id,
+      }).eq('user_id', userId);
+      if (error) throw error;
+      await logAudit(user!.id, userId, 'update_profile', patch);
+    },
+    onSuccess: invalidate,
+  });
+
+  const setBlocked = useMutation({
+    mutationFn: async ({ userId, blocked, reason }: { userId: string; blocked: boolean; reason?: string }) => {
+      const { error } = await (supabase as any).from('profiles').update({
+        is_blocked: blocked, ban_reason: blocked ? reason ?? null : null,
+        moderated_at: new Date().toISOString(), moderated_by: user?.id,
+      }).eq('user_id', userId);
+      if (error) throw error;
+      await logAudit(user!.id, userId, blocked ? 'block' : 'unblock', { reason });
+    },
+    onSuccess: invalidate,
+  });
+
+  const setBanned = useMutation({
+    mutationFn: async ({ userId, banned, reason }: { userId: string; banned: boolean; reason?: string }) => {
+      const { error } = await (supabase as any).from('profiles').update({
+        is_banned: banned, ban_reason: banned ? reason ?? null : null,
+        moderated_at: new Date().toISOString(), moderated_by: user?.id,
+      }).eq('user_id', userId);
+      if (error) throw error;
+      await logAudit(user!.id, userId, banned ? 'ban' : 'unban', { reason });
+    },
+    onSuccess: invalidate,
+  });
+
+  const warn = useMutation({
+    mutationFn: async ({ userId, reason }: { userId: string; reason?: string }) => {
+      const { data: cur } = await (supabase as any).from('profiles')
+        .select('warning_count').eq('user_id', userId).maybeSingle();
+      const next = (cur?.warning_count ?? 0) + 1;
+      const { error } = await (supabase as any).from('profiles').update({
+        warning_count: next, moderated_at: new Date().toISOString(), moderated_by: user?.id,
+      }).eq('user_id', userId);
+      if (error) throw error;
+      await logAudit(user!.id, userId, 'warn', { reason, total: next });
+    },
+    onSuccess: invalidate,
+  });
+
+  const setRole = useMutation({
+    mutationFn: async ({ userId, role, grant }: { userId: string; role: 'admin' | 'moderator' | 'user'; grant: boolean }) => {
+      if (grant) {
+        const { error } = await (supabase as any).from('user_roles')
+          .upsert({ user_id: userId, role }, { onConflict: 'user_id,role' });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('user_roles').delete().eq('user_id', userId).eq('role', role);
+        if (error) throw error;
+      }
+      await logAudit(user!.id, userId, grant ? 'grant_role' : 'revoke_role', { role });
+    },
+    onSuccess: invalidate,
+  });
+
+  const adjustPoints = useMutation({
+    mutationFn: async ({ userId, points }: { userId: string; points: number }) => {
+      const { data: cur } = await supabase.from('user_points').select('points').eq('user_id', userId).maybeSingle();
+      if (cur) {
+        const { error } = await supabase.from('user_points').update({ points, updated_at: new Date().toISOString() }).eq('user_id', userId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('user_points').insert({ user_id: userId, points });
+        if (error) throw error;
+      }
+      await logAudit(user!.id, userId, 'adjust_points', { points });
+    },
+    onSuccess: invalidate,
+  });
+
+  return { updateProfile, setBlocked, setBanned, warn, setRole, adjustPoints };
+};
+
+export const useAdminAuditLog = (targetUserId?: string) => {
+  return useQuery({
+    queryKey: ['admin-audit', targetUserId ?? 'all'],
+    queryFn: async () => {
+      let q = (supabase as any).from('admin_audit_log').select('*').order('created_at', { ascending: false }).limit(50);
+      if (targetUserId) q = q.eq('target_user_id', targetUserId);
+      const { data } = await q;
+      return data || [];
     },
   });
 };

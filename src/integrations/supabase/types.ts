@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string
+          details: Json | null
+          id: string
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       club_ratings: {
         Row: {
           club_id: string
@@ -776,24 +803,45 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          ban_reason: string | null
+          bio: string | null
           created_at: string
           id: string
+          is_banned: boolean
+          is_blocked: boolean
+          moderated_at: string | null
+          moderated_by: string | null
           user_id: string
           username: string | null
+          warning_count: number
         }
         Insert: {
           avatar_url?: string | null
+          ban_reason?: string | null
+          bio?: string | null
           created_at?: string
           id?: string
+          is_banned?: boolean
+          is_blocked?: boolean
+          moderated_at?: string | null
+          moderated_by?: string | null
           user_id: string
           username?: string | null
+          warning_count?: number
         }
         Update: {
           avatar_url?: string | null
+          ban_reason?: string | null
+          bio?: string | null
           created_at?: string
           id?: string
+          is_banned?: boolean
+          is_blocked?: boolean
+          moderated_at?: string | null
+          moderated_by?: string | null
           user_id?: string
           username?: string | null
+          warning_count?: number
         }
         Relationships: []
       }

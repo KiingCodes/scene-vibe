@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Shield, Check, X, MapPin, Clock, Music, Users, ArrowLeft, Loader2, Megaphone,
   DollarSign, Sparkles, Activity, Flame, Search, AlertTriangle, BarChart3, Server,
-  TrendingUp, UserCheck, Eye, ShieldAlert, Database, Bell, Trophy,
+  TrendingUp, UserCheck, Eye, ShieldAlert, Database, Bell, Trophy, Ban, MoreVertical,
+  Settings2, AlertOctagon, History, Crown,
 } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
@@ -11,13 +12,17 @@ import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin, usePendingClubs, useApproveClub, useRejectClub } from '@/hooks/useAdmin';
 import { usePendingPromotions, useApprovePromotion, useRejectPromotion } from '@/hooks/usePromotions';
 import { usePendingExperiences, useModerateExperience } from '@/hooks/useExperiences';
-import { useAdminStats, useRecentActivity, useCheckinMonitor, useAdminUsers, useAdminAnalytics } from '@/hooks/useAdminStats';
+import { useAdminStats, useRecentActivity, useCheckinMonitor, useAdminUsers, useAdminAnalytics, useAdminUserActions, useAdminAuditLog } from '@/hooks/useAdminStats';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 
 /* ---------------- Reusable bits ---------------- */
@@ -119,6 +124,7 @@ const ActionCard = ({ icon: Icon, label, count = 0, tone }: any) => (
 const UsersTab = () => {
   const [search, setSearch] = useState('');
   const { data: users, isLoading } = useAdminUsers(search);
+  const [manageUser, setManageUser] = useState<any | null>(null);
   return (
     <div className="space-y-4">
       <div className="relative">
@@ -133,25 +139,152 @@ const UsersTab = () => {
             : users.map((u: any) => {
                 const lastActive = u.created_at ? formatDistanceToNow(new Date(u.created_at), { addSuffix: true }) : '—';
                 const isAdmin = u.roles?.includes('admin');
+                const isMod = u.roles?.includes('moderator');
                 return (
-                  <div key={u.user_id} className="px-3 py-2.5 flex items-center gap-3">
+                  <button
+                    key={u.user_id}
+                    onClick={() => setManageUser(u)}
+                    className="w-full px-3 py-2.5 flex items-center gap-3 hover:bg-card/40 text-left transition-colors"
+                  >
                     <div className="w-9 h-9 rounded-full bg-primary/20 overflow-hidden flex items-center justify-center text-xs font-bold text-primary shrink-0">
                       {u.avatar_url ? <img src={u.avatar_url} alt="" className="w-full h-full object-cover" /> : (u.username || '?').slice(0,2).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-semibold text-foreground truncate">{u.username || 'anon'}</p>
-                        {isAdmin && <Badge className="bg-primary/20 text-primary text-[9px]">ADMIN</Badge>}
+                        {isAdmin && <Badge className="bg-primary/20 text-primary text-[9px]"><Crown className="w-2.5 h-2.5 mr-0.5" />ADMIN</Badge>}
+                        {isMod && <Badge className="bg-secondary/20 text-secondary text-[9px]">MOD</Badge>}
+                        {u.is_banned && <Badge className="bg-destructive text-destructive-foreground text-[9px]"><Ban className="w-2.5 h-2.5 mr-0.5" />BANNED</Badge>}
+                        {u.is_blocked && !u.is_banned && <Badge className="bg-orange-500/20 text-orange-400 text-[9px]">BLOCKED</Badge>}
+                        {(u.warning_count ?? 0) > 0 && <Badge className="bg-yellow-500/20 text-yellow-400 text-[9px]">⚠ {u.warning_count}</Badge>}
                       </div>
                       <p className="text-[10px] text-muted-foreground">Joined {lastActive} · {u.points} pts</p>
                     </div>
-                    <Badge variant="secondary" className="text-[9px] uppercase">Active</Badge>
-                  </div>
+                    <MoreVertical className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </button>
                 );
               })}
       </div>
-      <p className="text-[10px] text-muted-foreground text-center">Showing latest 100 users. Warnings, suspensions & report history will appear here once enforcement actions are logged.</p>
+      <p className="text-[10px] text-muted-foreground text-center">Tap any user to manage profile, roles, warnings, blocks &amp; bans.</p>
+      <ManageUserDialog user={manageUser} onClose={() => setManageUser(null)} />
     </div>
+  );
+};
+
+const ManageUserDialog = ({ user, onClose }: { user: any | null; onClose: () => void }) => {
+  const actions = useAdminUserActions();
+  const { data: audit } = useAdminAuditLog(user?.user_id);
+  const [username, setUsername] = useState('');
+  const [bio, setBio] = useState('');
+  const [points, setPoints] = useState<number>(0);
+  const [reason, setReason] = useState('');
+
+  // hydrate fields when user changes
+  useEffect(() => {
+    if (user) {
+      setUsername(user.username || '');
+      setBio(user.bio || '');
+      setPoints(user.points ?? 0);
+      setReason(user.ban_reason || '');
+    }
+  }, [user?.user_id]);
+
+  if (!user) return null;
+  const isAdmin = user.roles?.includes('admin');
+  const isMod = user.roles?.includes('moderator');
+
+  const wrap = async (label: string, fn: () => Promise<any>) => {
+    try { await fn(); toast.success(label); } catch (e: any) { toast.error(e?.message || 'Failed'); }
+  };
+
+  return (
+    <Dialog open={!!user} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto glass border-border/40">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Settings2 className="w-4 h-4 text-primary" /> Manage {user.username || 'user'}
+          </DialogTitle>
+          <DialogDescription className="text-[11px] font-mono opacity-60">{user.user_id}</DialogDescription>
+        </DialogHeader>
+
+        {/* Profile edit */}
+        <section className="space-y-3">
+          <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Profile</h3>
+          <div className="space-y-2">
+            <Label className="text-[11px]">Username</Label>
+            <Input value={username} onChange={(e) => setUsername(e.target.value)} maxLength={50} />
+            <Label className="text-[11px]">Bio</Label>
+            <Textarea value={bio} onChange={(e) => setBio(e.target.value)} maxLength={280} rows={2} />
+            <Button size="sm" onClick={() => wrap('Profile updated', () =>
+              actions.updateProfile.mutateAsync({ userId: user.user_id, patch: { username: username.trim() || null, bio: bio.trim() || null } })
+            )} disabled={actions.updateProfile.isPending} className="w-full">Save profile</Button>
+          </div>
+        </section>
+
+        {/* Roles */}
+        <section className="space-y-2">
+          <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Roles</h3>
+          <div className="flex items-center justify-between glass rounded-lg p-3">
+            <div className="flex items-center gap-2"><Crown className="w-4 h-4 text-primary" /><span className="text-sm">Admin</span></div>
+            <Switch checked={!!isAdmin} onCheckedChange={(v) => wrap(v ? 'Admin granted' : 'Admin revoked', () =>
+              actions.setRole.mutateAsync({ userId: user.user_id, role: 'admin', grant: v }))} />
+          </div>
+          <div className="flex items-center justify-between glass rounded-lg p-3">
+            <div className="flex items-center gap-2"><Shield className="w-4 h-4 text-secondary" /><span className="text-sm">Moderator</span></div>
+            <Switch checked={!!isMod} onCheckedChange={(v) => wrap(v ? 'Moderator granted' : 'Moderator revoked', () =>
+              actions.setRole.mutateAsync({ userId: user.user_id, role: 'moderator', grant: v }))} />
+          </div>
+        </section>
+
+        {/* Points */}
+        <section className="space-y-2">
+          <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Points</h3>
+          <div className="flex gap-2">
+            <Input type="number" value={points} onChange={(e) => setPoints(Number(e.target.value))} />
+            <Button size="sm" onClick={() => wrap('Points set', () =>
+              actions.adjustPoints.mutateAsync({ userId: user.user_id, points }))} disabled={actions.adjustPoints.isPending}>Set</Button>
+          </div>
+        </section>
+
+        {/* Enforcement */}
+        <section className="space-y-2">
+          <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-bold flex items-center gap-1.5"><AlertOctagon className="w-3.5 h-3.5" /> Enforcement</h3>
+          <Textarea placeholder="Reason (visible in audit log)" value={reason} onChange={(e) => setReason(e.target.value)} rows={2} />
+          <div className="grid grid-cols-2 gap-2">
+            <Button size="sm" variant="outline" onClick={() => wrap('Warning issued', () =>
+              actions.warn.mutateAsync({ userId: user.user_id, reason }))} className="border-yellow-500/40 text-yellow-400">
+              ⚠ Warn ({user.warning_count ?? 0})
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => wrap(user.is_blocked ? 'Unblocked' : 'Blocked', () =>
+              actions.setBlocked.mutateAsync({ userId: user.user_id, blocked: !user.is_blocked, reason }))} className="border-orange-500/40 text-orange-400">
+              {user.is_blocked ? 'Unblock' : 'Block'}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => wrap(user.is_banned ? 'Unbanned' : 'Banned', () =>
+              actions.setBanned.mutateAsync({ userId: user.user_id, banned: !user.is_banned, reason }))} className="border-destructive/40 text-destructive col-span-2">
+              <Ban className="w-3.5 h-3.5 mr-1" /> {user.is_banned ? 'Lift ban' : 'Ban account'}
+            </Button>
+          </div>
+        </section>
+
+        {/* Audit history */}
+        <section className="space-y-2">
+          <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-bold flex items-center gap-1.5"><History className="w-3.5 h-3.5" /> History</h3>
+          <div className="glass rounded-lg divide-y divide-border/30 max-h-40 overflow-y-auto">
+            {!audit?.length ? <p className="text-[11px] text-muted-foreground p-3 text-center">No actions yet</p> :
+              audit.map((a: any) => (
+                <div key={a.id} className="px-3 py-1.5 text-[11px] flex items-center justify-between">
+                  <span className="font-semibold">{a.action}</span>
+                  <span className="text-muted-foreground">{formatDistanceToNow(new Date(a.created_at), { addSuffix: true })}</span>
+                </div>
+              ))}
+          </div>
+        </section>
+
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose} className="w-full">Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 
