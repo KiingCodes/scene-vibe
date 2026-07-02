@@ -100,6 +100,7 @@ export const useClub = (id: string) => {
         instagram: pc.instagram,
         is_community_added: true,
         created_at: pc.created_at,
+        country: pc.country ?? 'ZA',
       } as Club;
     },
     enabled: !!id,
