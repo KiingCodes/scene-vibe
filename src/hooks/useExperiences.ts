@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useCountry } from '@/contexts/CountryContext';
 
 export type Experience = {
   id: string;
@@ -25,13 +26,15 @@ export type Experience = {
 };
 
 export const useExperiences = (category?: string) => {
+  const { country } = useCountry();
   return useQuery({
-    queryKey: ['experiences', category ?? 'all'],
+    queryKey: ['experiences', category ?? 'all', country],
     queryFn: async () => {
       let q = supabase
         .from('experiences')
         .select('*')
         .eq('status', 'approved')
+        .eq('country', country)
         .order('start_date', { ascending: true, nullsFirst: false });
       if (category && category !== 'all') q = q.eq('category', category);
       const { data, error } = await q;
