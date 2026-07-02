@@ -81,6 +81,7 @@ export type Database = {
           address: string
           area: string
           capacity: string | null
+          country: string
           created_at: string
           description: string | null
           genre: string | null
@@ -99,6 +100,7 @@ export type Database = {
           address: string
           area: string
           capacity?: string | null
+          country?: string
           created_at?: string
           description?: string | null
           genre?: string | null
@@ -117,6 +119,7 @@ export type Database = {
           address?: string
           area?: string
           capacity?: string | null
+          country?: string
           created_at?: string
           description?: string | null
           genre?: string | null
@@ -265,6 +268,7 @@ export type Database = {
           area: string | null
           category: string
           club_id: string | null
+          country: string
           created_at: string
           description: string | null
           end_date: string | null
@@ -287,6 +291,7 @@ export type Database = {
           area?: string | null
           category?: string
           club_id?: string | null
+          country?: string
           created_at?: string
           description?: string | null
           end_date?: string | null
@@ -309,6 +314,7 @@ export type Database = {
           area?: string | null
           category?: string
           club_id?: string | null
+          country?: string
           created_at?: string
           description?: string | null
           end_date?: string | null
@@ -368,6 +374,7 @@ export type Database = {
           address: string | null
           area: string
           category: string
+          country: string
           created_at: string
           created_by: string | null
           description: string | null
@@ -396,6 +403,7 @@ export type Database = {
           address?: string | null
           area: string
           category?: string
+          country?: string
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -424,6 +432,7 @@ export type Database = {
           address?: string | null
           area?: string
           category?: string
+          country?: string
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -545,6 +554,7 @@ export type Database = {
         Row: {
           club_id: string | null
           content: string
+          country: string
           created_at: string
           flag_count: number
           id: string
@@ -557,6 +567,7 @@ export type Database = {
         Insert: {
           club_id?: string | null
           content: string
+          country?: string
           created_at?: string
           flag_count?: number
           id?: string
@@ -569,6 +580,7 @@ export type Database = {
         Update: {
           club_id?: string | null
           content?: string
+          country?: string
           created_at?: string
           flag_count?: number
           id?: string
@@ -739,6 +751,7 @@ export type Database = {
           address: string
           area: string
           capacity: string | null
+          country: string
           created_at: string
           description: string | null
           genre: string | null
@@ -760,6 +773,7 @@ export type Database = {
           address: string
           area: string
           capacity?: string | null
+          country?: string
           created_at?: string
           description?: string | null
           genre?: string | null
@@ -781,6 +795,7 @@ export type Database = {
           address?: string
           area?: string
           capacity?: string | null
+          country?: string
           created_at?: string
           description?: string | null
           genre?: string | null
