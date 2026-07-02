@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { CountryProvider } from "@/contexts/CountryContext";
 import { useTrendingNotifications } from "@/hooks/useTrendingNotifications";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useWhatsNew } from "@/hooks/useWhatsNew";
@@ -88,11 +89,13 @@ const AppContent = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <AppContent />
-      </TooltipProvider>
+      <CountryProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <AppContent />
+        </TooltipProvider>
+      </CountryProvider>
     </AuthProvider>
   </QueryClientProvider>
 );

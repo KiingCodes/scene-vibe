@@ -19,7 +19,7 @@ const MapPage = () => {
   return (
     <div className="h-screen gradient-dark overflow-hidden">
       <Navbar />
-      <main className="pt-16 h-full relative">
+      <main className="pt-20 h-full relative">
         {/* Floating filter chips overlay */}
         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[500] flex items-center gap-2 px-2 py-1.5 rounded-full glass border border-border/40 backdrop-blur-xl shadow-lg max-w-[95vw] overflow-x-auto">
           <button

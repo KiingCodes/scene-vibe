@@ -1,18 +1,21 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
+import { useCountry } from '@/contexts/CountryContext';
 
 export type Club = Tables<'clubs'>;
 
 // Fetch all clubs (from both clubs table and approved pending_clubs)
 export const useClubs = () => {
+  const { country } = useCountry();
   return useQuery({
-    queryKey: ['clubs'],
+    queryKey: ['clubs', country],
     queryFn: async () => {
       // Fetch from clubs table
       const { data: mainClubs, error: e1 } = await supabase
         .from('clubs')
         .select('*')
+        .eq('country', country)
         .order('name');
       if (e1) throw e1;
 
@@ -21,6 +24,7 @@ export const useClubs = () => {
         .from('pending_clubs')
         .select('*')
         .eq('status', 'approved')
+        .eq('country', country)
         .order('name');
       if (e2) throw e2;
 
@@ -42,6 +46,7 @@ export const useClubs = () => {
         instagram: pc.instagram,
         is_community_added: true,
         created_at: pc.created_at,
+        country: pc.country ?? country,
       }));
 
       // Merge, avoiding duplicates by id
@@ -95,6 +100,7 @@ export const useClub = (id: string) => {
         instagram: pc.instagram,
         is_community_added: true,
         created_at: pc.created_at,
+        country: pc.country ?? 'ZA',
       } as Club;
     },
     enabled: !!id,
