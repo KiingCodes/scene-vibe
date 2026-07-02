@@ -2,8 +2,8 @@ import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-q
 import { useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useCountry } from '@/contexts/CountryContext';
 
-const KEY = ['community-messages'];
 const PAGE_SIZE = 30;
 
 type ProfileLite = { user_id: string; username: string | null; avatar_url: string | null };
@@ -27,6 +27,8 @@ export type CommunityMessage = {
  */
 export const useCommunityMessages = () => {
   const qc = useQueryClient();
+  const { country } = useCountry();
+  const KEY = ['community-messages', country];
 
   const query = useInfiniteQuery({
     queryKey: KEY,
@@ -38,6 +40,7 @@ export const useCommunityMessages = () => {
         .select('*')
         .is('club_id', null)
         .eq('is_hidden', false)
+        .eq('country', country)
         .gte('created_at', since)
         .order('created_at', { ascending: false })
         .limit(PAGE_SIZE);
@@ -76,13 +79,14 @@ export const useCommunityMessages = () => {
   // Realtime stream — append new INSERTs and drop DELETEs without refetching.
   useEffect(() => {
     const channel = supabase
-      .channel('community-messages-stream')
+      .channel(`community-messages-stream-${country}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
         async (payload) => {
           const row: any = payload.new;
           if (row.club_id !== null || row.is_hidden) return;
+          if ((row.country ?? 'ZA') !== country) return;
 
           // Fetch profile for the new sender (lightweight).
           const { data: profile } = await supabase
@@ -128,7 +132,7 @@ export const useCommunityMessages = () => {
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [qc]);
+  }, [qc, country]);
 
   return {
     messages,
@@ -142,6 +146,7 @@ export const useCommunityMessages = () => {
 export const useSendCommunityMessage = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { country } = useCountry();
   return useMutation({
     mutationFn: async ({
       content, mediaUrl, messageType,
@@ -153,23 +158,25 @@ export const useSendCommunityMessage = () => {
         content,
         media_url: mediaUrl || null,
         message_type: messageType || 'text',
+        country,
       });
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['community-messages', country] }),
   });
 };
 
 export const useDeleteCommunityMessage = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { country } = useCountry();
   return useMutation({
     mutationFn: async (messageId: string) => {
       if (!user) throw new Error('Sign in');
       const { error } = await supabase.from('messages').delete().eq('id', messageId);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['community-messages', country] }),
   });
 };
 
