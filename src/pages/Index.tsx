@@ -1,4 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { useCountry } from '@/contexts/CountryContext';
+import { supabase } from '@/integrations/supabase/client';
 import { LogoSkeleton } from '@/components/BrandedSkeleton';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Flame, TrendingUp, Star, Sparkles, Cake, Coffee, Palette, ShoppingBag, Music2, Wine, Code2, MapPin, Calendar, ArrowRight } from 'lucide-react';
@@ -27,6 +29,20 @@ const Index = () => {
   const { data: vibeCounts } = useAllVibes();
   const { data: pullingUpCounts } = useAllPullingUp();
   const { data: experiences } = useExperiences();
+  const { country } = useCountry();
+  const healedRef = useRef<Set<string>>(new Set());
+
+  // Auto-heal missing hours/images/descriptions for the active country's venues
+  // by silently invoking the sync-venue-data edge function once per session per country.
+  useEffect(() => {
+    if (!clubs || clubs.length === 0) return;
+    const key = `${country}`;
+    if (healedRef.current.has(key)) return;
+    const missingCount = clubs.filter(c => !c.image_url || !c.opening_hours || !c.description).length;
+    if (missingCount === 0) return;
+    healedRef.current.add(key);
+    supabase.functions.invoke('sync-venue-data', { body: { country } }).catch(() => {});
+  }, [clubs, country]);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'trending' | 'vibing'>('all');
   const placeholder = useTypewriter([
