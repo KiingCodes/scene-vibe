@@ -5,7 +5,6 @@ import { useAuth } from './useAuth';
 import { useEffect } from 'react';
 import { useAwardPoints } from '@/hooks/useGamification';
 import { useActivityLog } from '@/hooks/useActivityLog';
-import { supabase as sb } from '@/integrations/supabase/client';
 
 export const useVibeCount = (clubId: string) => {
   const queryClient = useQueryClient();
@@ -188,7 +187,7 @@ export const useVibe = () => {
       if (user) {
         awardPoints.mutate({ action: 'vibe' });
         // Look up club name for a friendlier audit entry.
-        const { data: club } = await sb.from('clubs').select('name').eq('id', clubId).maybeSingle();
+        const { data: club } = await supabase.from('clubs').select('name').eq('id', clubId).maybeSingle();
         log({
           type: 'vibe',
           title: `You vibed ${club?.name || 'a club'} 🔥`,
