@@ -46,7 +46,8 @@ export const useNotifications = () => {
         { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
         (payload) => {
           const n = payload.new as Notification;
-          // Pop a toast unless the user is currently sitting on the chat screen for chat msgs
+          // Always surface a toast — user asked for every activity to be visible.
+          // Suppress only chat_message while sitting on the chat page to avoid double render.
           const onChat = typeof window !== 'undefined' && window.location.pathname.startsWith('/chat');
           if (!(n.type === 'chat_message' && onChat)) {
             toast(n.title, { description: n.body ?? undefined });
