@@ -97,6 +97,15 @@ const NotificationBell = () => {
             </button>
           )}
         </div>
+        <div className="px-3 py-1.5 border-b border-border/40">
+          <Link
+            to="/notifications"
+            onClick={() => setOpen(false)}
+            className="text-[11px] font-semibold text-primary hover:underline"
+          >
+            View full activity feed →
+          </Link>
+        </div>
         <div className="max-h-[60vh] overflow-y-auto">
           {!notifications?.length ? (
             <div className="text-center py-10 px-4">
