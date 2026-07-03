@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
-import { MapPin, MessageCircle, Home, User, Heart, Shield, BarChart3, Trophy, Users, Calendar, Video, Moon, Sparkles, ChevronDown, Check } from 'lucide-react';
+import { MapPin, MessageCircle, Home, User, Heart, Shield, BarChart3, Trophy, Users, Calendar, Video, Moon, Sparkles, ChevronDown, Check, MoreHorizontal, Bell } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/components/NotificationBell';
+import { useUnreadCount } from '@/hooks/useNotifications';
 import { useCountry, COUNTRIES, type CountryCode } from '@/contexts/CountryContext';
 import {
   DropdownMenu,
@@ -16,38 +17,41 @@ import {
 } from '@/components/ui/dropdown-menu';
 import "@fontsource/poppins/800.css";
 
-const NAV_ITEMS = [
-  { path: '/', icon: Home, label: 'Clubs' },
-  { path: '/map', icon: MapPin, label: 'Map' },
-  { path: '/chat', icon: MessageCircle, label: 'Chat' },
-  { path: '/crews', icon: Users, label: 'Crews' },
-  { path: '/events', icon: Calendar, label: 'Events' },
-  { path: '/experiences', icon: Sparkles, label: 'Discover' },
-  { path: '/videos', icon: Video, label: 'Videos' },
-  { path: '/night-replay', icon: Moon, label: 'Replay' },
-  { path: '/saved', icon: Heart, label: 'Saved' },
-  { path: '/insights', icon: BarChart3, label: 'Insights' },
-  { path: '/leaderboard', icon: Trophy, label: 'Ranks' },
+// Primary bottom-dock destinations (thumb-friendly, mobile-first).
+const PRIMARY_ITEMS = [
+  { path: '/',            icon: Home,          label: 'Home' },
+  { path: '/map',         icon: MapPin,        label: 'Map' },
+  { path: '/experiences', icon: Sparkles,      label: 'Discover' },
+  { path: '/chat',        icon: MessageCircle, label: 'Chat' },
 ];
 
-const CountrySwitcher = () => {
+// Everything else lives inside the "More" sheet — one tap from the dock.
+const MORE_ITEMS = [
+  { path: '/crews',        icon: Users,     label: 'Crews' },
+  { path: '/events',       icon: Calendar,  label: 'Events' },
+  { path: '/videos',       icon: Video,     label: 'Videos' },
+  { path: '/night-replay', icon: Moon,      label: 'Night Replay' },
+  { path: '/saved',        icon: Heart,     label: 'Saved' },
+  { path: '/insights',     icon: BarChart3, label: 'Insights' },
+  { path: '/leaderboard',  icon: Trophy,    label: 'Leaderboard' },
+  { path: '/notifications',icon: Bell,      label: 'Notifications' },
+];
+
+const CountrySwitcher = ({ align = 'start' }: { align?: 'start' | 'end' }) => {
   const { country, setCountry, meta } = useCountry();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className="group relative flex items-center gap-2 h-11 pl-2 pr-3 rounded-2xl bg-gradient-to-r from-[#0a0a0f]/90 via-[#101018]/90 to-[#0a0a0f]/90 border border-white/10 shadow-[0_0_20px_-8px_rgba(0,230,214,0.6)] hover:border-[#00e6d6]/40 transition-all"
+          className="group flex items-center gap-1.5 h-9 pl-1.5 pr-2 rounded-full bg-white/5 border border-white/10 hover:border-[#00e6d6]/40 transition-all"
           aria-label={`Country: ${meta.name}`}
         >
-          <span className="text-xl leading-none drop-shadow-[0_0_6px_rgba(0,230,214,0.5)]">{meta.flag}</span>
-          <span className="flex flex-col items-start leading-tight">
-            <span className="text-[9px] uppercase tracking-[0.2em] text-[#00e6d6]/80 font-semibold">Scene</span>
-            <span className="text-[11px] font-bold text-white/90">{meta.code}</span>
-          </span>
-          <ChevronDown className="w-3.5 h-3.5 text-white/60 group-hover:text-[#00e6d6] transition-colors" />
+          <span className="text-base leading-none">{meta.flag}</span>
+          <span className="text-[11px] font-bold text-white/90 tracking-wider">{meta.code}</span>
+          <ChevronDown className="w-3 h-3 text-white/60 group-hover:text-[#00e6d6] transition-colors" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-56 bg-[#0a0a0f]/95 border-white/10 backdrop-blur-xl">
+      <DropdownMenuContent align={align} className="w-56 bg-[#0a0a0f]/95 border-white/10 backdrop-blur-xl">
         <DropdownMenuLabel className="text-[10px] uppercase tracking-[0.2em] text-[#00e6d6]/80">
           Choose your scene
         </DropdownMenuLabel>
@@ -78,115 +82,131 @@ const Navbar = () => {
   const { user } = useAuth();
   const { data: isAdmin } = useIsAdmin();
   const location = useLocation();
+  const unread = useUnreadCount();
+  const isActive = (p: string) => location.pathname === p;
+  const inMore = MORE_ITEMS.some(i => i.path === location.pathname);
 
   return (
-    <motion.nav
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      className="fixed top-0 left-0 right-0 z-50"
-    >
-      {/* Layered backdrop: deep charcoal with color pulses */}
-      <div className="absolute inset-0 bg-[#0a0a0f]/85 backdrop-blur-2xl" aria-hidden />
-      <div
-        className="pointer-events-none absolute inset-0 opacity-70"
-        aria-hidden
-        style={{
-          background:
-            'radial-gradient(600px 60px at 15% 0%, rgba(0,230,214,0.18), transparent 60%), radial-gradient(600px 60px at 85% 100%, rgba(255,46,147,0.18), transparent 60%)',
-        }}
-      />
-      <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-[#00e6d6] via-[#ff2e93] to-[#facc15] opacity-80" aria-hidden />
-
-      <div className="relative container mx-auto px-2 sm:px-4 h-20 flex items-center gap-3">
-        {/* LEFT — Country switcher (replaces logo) */}
-        <CountrySwitcher />
-
-        {/* CENTER — Scrollable neon-underline tab rail */}
-        <div className="flex-1 min-w-0 relative">
-          <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide h-full py-1">
-            {NAV_ITEMS.map(({ path, icon: Icon, label }) => {
-              const active = location.pathname === path;
-              return (
-                <Link
-                  key={path}
-                  to={path}
-                  className={`relative shrink-0 flex flex-col items-center justify-center gap-0.5 h-14 px-3 sm:px-3.5 rounded-xl transition-all ${
-                    active
-                      ? 'text-white'
-                      : 'text-white/55 hover:text-white/90'
-                  }`}
-                >
-                  <Icon
-                    className={`w-5 h-5 transition-all ${
-                      active ? 'drop-shadow-[0_0_10px_rgba(0,230,214,0.9)]' : ''
-                    }`}
-                  />
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.12em]">{label}</span>
-                  {active && (
-                    <motion.span
-                      layoutId="nav-underline"
-                      className="absolute -bottom-0.5 left-2 right-2 h-[3px] rounded-full bg-gradient-to-r from-[#00e6d6] via-[#ff2e93] to-[#facc15] shadow-[0_0_12px_rgba(255,46,147,0.7)]"
-                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                    />
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-          {/* fade masks for horizontal overflow */}
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-[#0a0a0f] to-transparent" aria-hidden />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-[#0a0a0f] to-transparent" aria-hidden />
-        </div>
-
-        {/* RIGHT — utility cluster */}
-        <div className="flex items-center gap-1 shrink-0">
+    <>
+      {/* SLIM TOP BAR — brand-lite: country · notifications · profile.
+          Height 56px; existing pages already reserve pt-20 so we stay under it. */}
+      <motion.header
+        initial={{ y: -12, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center px-3 sm:px-4 gap-2 bg-[#0a0a0f]/85 backdrop-blur-xl border-b border-white/5"
+      >
+        <CountrySwitcher align="start" />
+        <Link to="/" className="ml-1 font-display font-black tracking-[0.25em] text-[13px] bg-gradient-to-r from-[#00e6d6] via-[#ff2e93] to-[#facc15] bg-clip-text text-transparent">
+          SCENE
+        </Link>
+        <div className="ml-auto flex items-center gap-1">
           {user ? (
             <>
               <NotificationBell />
               {isAdmin && (
-                <Link to="/admin">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={`h-10 w-10 rounded-xl border border-white/10 ${
-                      location.pathname === '/admin'
-                        ? 'bg-[#ff2e93]/15 text-[#ff2e93] border-[#ff2e93]/40'
-                        : 'text-white/70 hover:text-white hover:bg-white/5'
-                    }`}
-                    aria-label="Admin"
-                  >
+                <Link to="/admin" aria-label="Admin">
+                  <Button variant="ghost" size="icon" className={`h-9 w-9 rounded-full ${isActive('/admin') ? 'bg-[#ff2e93]/15 text-[#ff2e93]' : 'text-white/70 hover:text-white hover:bg-white/5'}`}>
                     <Shield className="w-4 h-4" />
                   </Button>
                 </Link>
               )}
-              <Link to="/profile">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`h-10 w-10 rounded-xl border border-white/10 ${
-                    location.pathname === '/profile'
-                      ? 'bg-[#00e6d6]/15 text-[#00e6d6] border-[#00e6d6]/40'
-                      : 'text-white/70 hover:text-white hover:bg-white/5'
-                  }`}
-                  aria-label="Profile"
-                >
+              <Link to="/profile" aria-label="Profile">
+                <Button variant="ghost" size="icon" className={`h-9 w-9 rounded-full ${isActive('/profile') ? 'bg-[#00e6d6]/15 text-[#00e6d6]' : 'text-white/70 hover:text-white hover:bg-white/5'}`}>
                   <User className="w-4 h-4" />
                 </Button>
               </Link>
             </>
           ) : (
             <Link to="/auth">
-              <Button
-                size="sm"
-                className="h-10 rounded-xl px-4 bg-gradient-to-r from-[#00e6d6] to-[#ff2e93] text-black font-bold shadow-[0_0_20px_-6px_rgba(255,46,147,0.7)] hover:opacity-95"
-              >
-                <User className="w-4 h-4 mr-1.5" /> Login
+              <Button size="sm" className="h-9 rounded-full px-3 bg-gradient-to-r from-[#00e6d6] to-[#ff2e93] text-black font-bold">
+                <User className="w-4 h-4 mr-1" /> Login
               </Button>
             </Link>
           )}
         </div>
-      </div>
-    </motion.nav>
+      </motion.header>
+
+      {/* BOTTOM TAB DOCK — mobile-first primary navigation. */}
+      <motion.nav
+        initial={{ y: 30, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="fixed bottom-0 left-0 right-0 z-50 pb-[env(safe-area-inset-bottom)]"
+        aria-label="Primary"
+      >
+        <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-[#00e6d6] via-[#ff2e93] to-[#facc15] opacity-80" aria-hidden />
+        <div className="bg-[#0a0a0f]/90 backdrop-blur-2xl border-t border-white/10">
+          <div className="max-w-lg mx-auto grid grid-cols-5 gap-1 px-2 h-16">
+            {PRIMARY_ITEMS.map(({ path, icon: Icon, label }) => {
+              const active = isActive(path);
+              return (
+                <Link
+                  key={path}
+                  to={path}
+                  className={`relative flex flex-col items-center justify-center gap-0.5 rounded-lg transition-colors ${
+                    active ? 'text-[#00e6d6]' : 'text-white/60 hover:text-white/90'
+                  }`}
+                  aria-current={active ? 'page' : undefined}
+                >
+                  {active && (
+                    <motion.span
+                      layoutId="dock-active"
+                      className="absolute -top-[1px] left-1/2 -translate-x-1/2 w-8 h-[3px] rounded-full bg-gradient-to-r from-[#00e6d6] to-[#ff2e93] shadow-[0_0_10px_rgba(0,230,214,0.9)]"
+                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                  <Icon className={`w-5 h-5 ${active ? 'drop-shadow-[0_0_8px_rgba(0,230,214,0.8)]' : ''}`} />
+                  <span className="text-[10px] font-semibold tracking-wide">{label}</span>
+                </Link>
+              );
+            })}
+
+            {/* MORE menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className={`relative flex flex-col items-center justify-center gap-0.5 rounded-lg transition-colors ${
+                    inMore ? 'text-[#ff2e93]' : 'text-white/60 hover:text-white/90'
+                  }`}
+                  aria-label="More"
+                >
+                  {inMore && (
+                    <span className="absolute -top-[1px] left-1/2 -translate-x-1/2 w-8 h-[3px] rounded-full bg-gradient-to-r from-[#ff2e93] to-[#facc15]" />
+                  )}
+                  <div className="relative">
+                    <MoreHorizontal className="w-5 h-5" />
+                    {unread > 0 && (
+                      <span className="absolute -top-1 -right-2 min-w-[14px] h-3.5 px-1 rounded-full bg-[#ff2e93] text-[9px] font-bold text-white flex items-center justify-center">
+                        {unread > 9 ? '9+' : unread}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[10px] font-semibold tracking-wide">More</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="top" align="end" className="w-56 mb-2 bg-[#0a0a0f]/95 border-white/10 backdrop-blur-xl">
+                <DropdownMenuLabel className="text-[10px] uppercase tracking-[0.2em] text-white/50">
+                  Explore more
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-white/10" />
+                {MORE_ITEMS.map(({ path, icon: Icon, label }) => (
+                  <DropdownMenuItem key={path} asChild className="focus:bg-white/5 cursor-pointer">
+                    <Link to={path} className="gap-2.5 py-2 flex items-center">
+                      <Icon className="w-4 h-4 text-[#00e6d6]" />
+                      <span className="text-sm text-white/90">{label}</span>
+                      {label === 'Notifications' && unread > 0 && (
+                        <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#ff2e93] text-white">
+                          {unread > 9 ? '9+' : unread}
+                        </span>
+                      )}
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </motion.nav>
+    </>
   );
 };
 

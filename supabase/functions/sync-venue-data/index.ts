@@ -6,6 +6,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.0";
  * opening hours, image URL and a short description using the Lovable AI
  * Gateway (web-grounded). Designed to run on a schedule (pg_cron).
  */
+const COUNTRY_LABEL: Record<string, string> = { ZA: 'South Africa', ZW: 'Zimbabwe' };
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -20,11 +22,19 @@ Deno.serve(async (req) => {
 
   const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
-  // Pick a small batch — clubs not synced in the last 7 days, oldest first.
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  // Parse optional { country } body — prioritises heal for the caller's region.
+  let country = "ZA";
+  try {
+    const body = await req.json();
+    if (body && (body.country === "ZA" || body.country === "ZW")) country = body.country;
+  } catch { /* no body — default ZA */ }
+
+  // Heal ONLY venues missing one of the three critical fields, in the requested country.
   const { data: clubs } = await admin
     .from("clubs")
     .select("id, name, area, opening_hours, image_url, description")
+    .eq("country", country)
+    .or("image_url.is.null,opening_hours.is.null,description.is.null")
     .limit(5);
 
   const updated: string[] = [];
@@ -38,7 +48,7 @@ Deno.serve(async (req) => {
           model: "google/gemini-3-flash-preview",
           messages: [
             { role: "system", content: "Return ONLY a JSON object with keys: opening_hours (string), image_url (https URL or null), description (max 180 chars). Use real, verifiable info from the web. If unsure, return null fields." },
-            { role: "user", content: `Venue: ${club.name} in ${club.area}, South Africa. Provide current opening hours, a public image URL, and a one-line description.` },
+            { role: "user", content: `Venue: ${club.name} in ${club.area}, ${COUNTRY_LABEL[country] || 'South Africa'}. Provide current opening hours, a public image URL, and a one-line description.` },
           ],
         }),
       });
@@ -63,7 +73,7 @@ Deno.serve(async (req) => {
     }
   }
 
-  return new Response(JSON.stringify({ ok: true, updated, count: updated.length }), {
+  return new Response(JSON.stringify({ ok: true, country, updated, count: updated.length }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 });

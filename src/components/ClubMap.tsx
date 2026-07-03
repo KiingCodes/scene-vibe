@@ -96,7 +96,7 @@ const DensityControls = () => {
     );
   };
   return (
-    <div className="absolute right-3 bottom-6 z-[500] flex flex-col gap-1.5">
+    <div className="absolute right-3 bottom-24 z-[500] flex flex-col gap-1.5">
       <button
         onClick={() => map.zoomIn()}
         aria-label="Zoom in"
@@ -125,9 +125,21 @@ const DensityControls = () => {
 const ClubMap = ({ clubs, vibeCounts = {}, selectedClubId, experiences = [], showLabels = false }: ClubMapProps) => {
   const selectedClub = clubs.find(c => c.id === selectedClubId);
 
-  const getDirectionsUrl = (club: Club) => {
-    return `https://www.google.com/maps/dir/?api=1&destination=${club.lat},${club.lng}&travelmode=driving`;
-  };
+  const directionsUrl = (lat: number, lng: number, mode: 'driving' | 'walking' | 'transit') =>
+    `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=${mode}`;
+
+  const DirButtons = ({ lat, lng }: { lat: number; lng: number }) => (
+    <div className="flex gap-1 mt-1">
+      {(['driving','walking','transit'] as const).map(m => (
+        <a key={m} href={directionsUrl(lat, lng, m)} target="_blank" rel="noopener noreferrer">
+          <button className="text-[10px] px-2 py-1 bg-gray-200 hover:bg-cyan-200 text-black rounded font-semibold capitalize flex items-center gap-1">
+            <Navigation className="w-2.5 h-2.5" />
+            {m === 'driving' ? 'Drive' : m === 'walking' ? 'Walk' : 'Transit'}
+          </button>
+        </a>
+      ))}
+    </div>
+  );
 
   return (
     <div className="w-full h-full rounded-xl overflow-hidden border border-border/50">
@@ -172,12 +184,8 @@ const ClubMap = ({ clubs, vibeCounts = {}, selectedClubId, experiences = [], sho
                     <Link to={`/club/${club.id}`}>
                       <button className="text-xs px-2 py-1 bg-cyan-500 text-black rounded font-semibold">View</button>
                     </Link>
-                    <a href={getDirectionsUrl(club)} target="_blank" rel="noopener noreferrer">
-                      <button className="text-xs px-2 py-1 bg-gray-200 text-black rounded font-semibold flex items-center gap-1">
-                        <Navigation className="w-3 h-3" /> Directions
-                      </button>
-                    </a>
                   </div>
+                  <DirButtons lat={club.lat} lng={club.lng} />
                 </div>
               </Popup>
             </Marker>
@@ -199,14 +207,7 @@ const ClubMap = ({ clubs, vibeCounts = {}, selectedClubId, experiences = [], sho
                 </h3>
                 <p className="text-xs text-gray-700 font-medium">{exp.name}</p>
                 <p className="text-xs text-gray-600 mb-2">{exp.area}</p>
-                <a
-                  href={`https://www.google.com/maps/dir/?api=1&destination=${exp.lat},${exp.lng}`}
-                  target="_blank" rel="noopener noreferrer"
-                >
-                  <button className="text-xs px-2 py-1 bg-gray-200 text-black rounded font-semibold flex items-center gap-1">
-                    <Navigation className="w-3 h-3" /> Directions
-                  </button>
-                </a>
+                <DirButtons lat={exp.lat as number} lng={exp.lng as number} />
               </div>
             </Popup>
           </Marker>

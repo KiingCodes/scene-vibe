@@ -10,8 +10,8 @@
 //        { version, date: "YYYY-MM-DD", highlights: ["...", "..."] }
 //   3. Keep highlights short, user-facing, and benefit-led (no jargon).
 //   4. The footer "What's New" modal auto-reads from this file — no other edits needed.
-export const APP_VERSION = "1.7.0";
-export const APP_RELEASED_AT = "2026-05-09T18:00:00Z";
+export const APP_VERSION = "1.8.0";
+export const APP_RELEASED_AT = "2026-07-03T18:00:00Z";
 
 export type VersionEntry = {
   version: string;
@@ -22,6 +22,20 @@ export type VersionEntry = {
 
 // Only the latest version is kept — older entries are intentionally pruned.
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.8.0",
+    date: "2026-07-03",
+    releasedAt: APP_RELEASED_AT,
+    highlights: [
+      "Bottom tab dock — one-thumb navigation, no more crowded top bar",
+      "Live activity log — every vibe, favorite and check-in shows up in Notifications",
+      "Toughened vibe anti-abuse — one vibe per account every 30 minutes, across devices",
+      "Zimbabwe venues auto-heal missing hours/images from live sources",
+      "Map directions now let you pick Drive · Walk · Transit",
+      "SCENE watermark fallback whenever a venue image is missing",
+      "Country switcher now filters search across every page",
+    ],
+  },
   {
     version: "1.7.0",
     date: "2026-05-09",
