@@ -4,6 +4,8 @@ import { useDeviceId } from './useDeviceId';
 import { useAuth } from './useAuth';
 import { useEffect } from 'react';
 import { useAwardPoints } from '@/hooks/useGamification';
+import { useActivityLog } from '@/hooks/useActivityLog';
+import { supabase as sb } from '@/integrations/supabase/client';
 
 export const useVibeCount = (clubId: string) => {
   const queryClient = useQueryClient();
@@ -166,6 +168,7 @@ export const useVibe = () => {
   const deviceId = useDeviceId();
   const { user } = useAuth();
   const awardPoints = useAwardPoints();
+  const log = useActivityLog();
 
   return useMutation({
     mutationFn: async (clubId: string) => {
@@ -184,6 +187,15 @@ export const useVibe = () => {
       // Award points only for logged-in users
       if (user) {
         awardPoints.mutate({ action: 'vibe' });
+        // Look up club name for a friendlier audit entry.
+        const { data: club } = await sb.from('clubs').select('name').eq('id', clubId).maybeSingle();
+        log({
+          type: 'vibe',
+          title: `You vibed ${club?.name || 'a club'} 🔥`,
+          body: 'Logged to your activity feed · counts for 30 minutes.',
+          link: `/club/${clubId}`,
+          meta: { club_id: clubId },
+        });
       }
 
       queryClient.invalidateQueries({ queryKey: ['vibes', clubId] });
