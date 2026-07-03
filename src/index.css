@@ -58,6 +58,8 @@
   body {
     @apply bg-background text-foreground font-body antialiased;
     position: relative;
+    /* Bottom tab dock (64px) + safe-area padding so no page content is hidden. */
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom));
     min-height: 100vh;
   }
 
