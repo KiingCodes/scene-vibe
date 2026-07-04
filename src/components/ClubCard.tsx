@@ -91,7 +91,7 @@ const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardPr
     >
       <Link to={`/club/${club.id}`}>
         <div className={`glass rounded-xl overflow-hidden group hover:border-primary/30 transition-all duration-300 ${isTrending ? 'trending-glow border-secondary/40' : ''}`}>
-          <div className="relative h-48 overflow-hidden">
+          <div className="relative h-36 overflow-hidden">
             <img
               src={club.image_url || logoFallback}
               alt={club.name}
@@ -157,13 +157,13 @@ const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardPr
             </div>
           </div>
 
-          <div className="p-4 space-y-2">
-            <h3 className="font-display font-bold text-lg text-foreground group-hover:text-primary transition-colors">
+          <div className="p-3 space-y-1.5">
+            <h3 className="font-display font-bold text-base text-foreground group-hover:text-primary transition-colors truncate">
               {club.name}
             </h3>
 
-            <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
-              <MapPin className="w-3.5 h-3.5 text-primary/70" />
+            <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
+              <MapPin className="w-3 h-3 text-primary/70" />
               <span className="truncate">{club.area}</span>
             </div>
 

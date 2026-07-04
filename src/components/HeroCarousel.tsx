@@ -90,9 +90,9 @@ const HeroCarousel = ({ clubs, vibeCounts = {} }: HeroCarouselProps) => {
               <Link
                 key={`${club.id}-${i}`}
                 to={`/club/${club.id}`}
-                className="relative w-[260px] sm:w-[300px] shrink-0 glass rounded-2xl overflow-hidden border border-border/40 hover:border-primary/60 transition-colors shadow-[0_18px_50px_-15px_hsl(var(--primary)/0.35)]"
+                className="relative w-[190px] sm:w-[220px] shrink-0 glass rounded-xl overflow-hidden border border-border/40 hover:border-primary/60 transition-colors shadow-[0_12px_36px_-12px_hsl(var(--primary)/0.35)]"
               >
-                <div className="relative h-[300px] overflow-hidden">
+                <div className="relative h-[220px] overflow-hidden">
                   <img
                     src={club.image_url || logoFallback}
                     alt={club.name}
@@ -102,21 +102,21 @@ const HeroCarousel = ({ clubs, vibeCounts = {} }: HeroCarouselProps) => {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
                   {isTrending && (
-                    <div className="absolute top-3 left-3 flex items-center gap-1 px-2.5 py-1 rounded-full gradient-secondary text-secondary-foreground text-[10px] font-bold shadow-lg">
-                      <TrendingUp className="w-3 h-3" /> TRENDING
+                    <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full gradient-secondary text-secondary-foreground text-[9px] font-bold shadow-lg">
+                      <TrendingUp className="w-2.5 h-2.5" /> TRENDING
                     </div>
                   )}
                   {vibeCount > 0 && (
-                    <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full bg-background/70 backdrop-blur-md border border-primary/40 text-xs font-bold text-primary shadow-lg">
-                      <Flame className="w-3 h-3" /> {vibeCount}
+                    <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-background/70 backdrop-blur-md border border-primary/40 text-[11px] font-bold text-primary shadow-lg">
+                      <Flame className="w-2.5 h-2.5" /> {vibeCount}
                     </div>
                   )}
-                  <div className="absolute bottom-0 left-0 right-0 p-4">
-                    <h3 className="font-display font-bold text-xl text-foreground drop-shadow-lg truncate">
+                  <div className="absolute bottom-0 left-0 right-0 p-2.5">
+                    <h3 className="font-display font-bold text-sm text-foreground drop-shadow-lg truncate">
                       {club.name}
                     </h3>
-                    <div className="flex items-center gap-1.5 text-xs text-foreground/80 mt-0.5">
-                      <MapPin className="w-3 h-3 text-primary" />
+                    <div className="flex items-center gap-1 text-[10px] text-foreground/80 mt-0.5">
+                      <MapPin className="w-2.5 h-2.5 text-primary" />
                       <span className="truncate">{club.area}</span>
                       {club.genre && (
                         <>

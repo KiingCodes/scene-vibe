@@ -133,6 +133,11 @@ const NotificationsPage = () => {
                         <p className="text-[10px] text-muted-foreground/70 mt-1 flex items-center gap-1.5">
                           <span className="inline-block px-1.5 py-0.5 rounded bg-muted/40 text-[9px] uppercase tracking-wider">{n.type.replace(/_/g,' ')}</span>
                           {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                          {(n as any).app_version && (
+                            <span className="inline-block px-1.5 py-0.5 rounded bg-primary/10 text-primary/80 text-[9px] font-mono">
+                              v{(n as any).app_version}
+                            </span>
+                          )}
                         </p>
                       </div>
                       <button

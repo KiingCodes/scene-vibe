@@ -22,6 +22,7 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         navigateFallbackDenylist: [/^\/~oauth/],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,webp}"],
+        importScripts: ["/push-sw.js"],
       },
       manifest: {
         name: "SCENE - Nightlife Vibes",
@@ -48,6 +49,12 @@ export default defineConfig(({ mode }) => ({
             sizes: "512x512",
             type: "image/png",
             purpose: "any maskable",
+          },
+          {
+            src: "/notification-badge.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "monochrome",
           },
         ],
       },
