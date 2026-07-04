@@ -712,6 +712,7 @@ export type Database = {
       }
       notifications: {
         Row: {
+          app_version: string | null
           body: string | null
           created_at: string
           id: string
@@ -723,6 +724,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          app_version?: string | null
           body?: string | null
           created_at?: string
           id?: string
@@ -734,6 +736,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          app_version?: string | null
           body?: string | null
           created_at?: string
           id?: string
@@ -939,6 +942,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          country: string | null
+          created_at: string
+          device_id: string | null
+          endpoint: string
+          id: string
+          last_seen: string
+          p256dh: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          auth: string
+          country?: string | null
+          created_at?: string
+          device_id?: string | null
+          endpoint: string
+          id?: string
+          last_seen?: string
+          p256dh: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          auth?: string
+          country?: string | null
+          created_at?: string
+          device_id?: string | null
+          endpoint?: string
+          id?: string
+          last_seen?: string
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       reviews: {
         Row: {
