@@ -25,7 +25,7 @@ const GENERIC: Record<string, { title: string; body: string }[]> = {
   ],
   peak: [
     { title: '🔥 Peak vibes right now', body: "The dance floors are lit — pull up before it dies down." },
-    { title: '📍 Who's out tonight?', body: 'Live crowd levels updated in the last few minutes.' },
+    { title: "📍 Who's out tonight?", body: "Live crowd levels updated in the last few minutes." },
   ],
   lastCall: [
     { title: '🌙 Last call energy', body: 'Which spot is still going? Check live vibes.' },
