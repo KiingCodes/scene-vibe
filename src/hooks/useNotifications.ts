@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import { APP_VERSION } from '@/lib/version';
 
 export type Notification = {
   id: string;
@@ -14,6 +15,7 @@ export type Notification = {
   meta: any;
   read: boolean;
   created_at: string;
+  app_version?: string | null;
 };
 
 export const useNotifications = () => {
@@ -120,5 +122,6 @@ export const pushLocalNotification = async (
     body: n.body ?? null,
     link: n.link ?? null,
     meta: n.meta ?? {},
+    app_version: APP_VERSION,
   });
 };
