@@ -1,5 +1,9 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array } from '@/lib/pushConfig';
+import { useAuth } from '@/hooks/useAuth';
+import { useDeviceId } from '@/hooks/useDeviceId';
+import { useCountry } from '@/contexts/CountryContext';
 
 const getServiceWorkerRegistration = async () => {
   if (!('serviceWorker' in navigator) || !('Notification' in window)) return null;
@@ -16,6 +20,9 @@ export const usePushNotifications = () => {
   const swRegistration = useRef<ServiceWorkerRegistration | null>(null);
   const notifiedTrending = useRef<Set<string>>(new Set());
   const notifiedPullingUp = useRef<Set<string>>(new Set());
+  const { user } = useAuth();
+  const deviceId = useDeviceId();
+  const { country } = useCountry();
 
   const requestPermission = useCallback(async () => {
     if (!('Notification' in window)) return false;
@@ -32,26 +39,59 @@ export const usePushNotifications = () => {
     if (swRegistration.current) {
       swRegistration.current.showNotification(title, {
         body,
-        icon: '/pwa-192x192.png',
-        badge: '/pwa-192x192.png',
+        icon: '/notification-icon.png',
+        badge: '/notification-badge.png',
         data: { url: url || '/' },
         vibrate: [100, 50, 100],
       } as NotificationOptions);
     } else {
-      new Notification(title, { body, icon: '/pwa-192x192.png' });
+      new Notification(title, { body, icon: '/notification-icon.png' });
     }
   }, [requestPermission]);
+
+  // --- REGISTER FOR BACKGROUND WEB PUSH ---
+  // Runs once permission is granted; stores the browser subscription so the
+  // scheduled edge function can push notifications even when the app is closed.
+  const registerWebPush = useCallback(async () => {
+    try {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+      if (Notification.permission !== 'granted') return;
+      const reg = await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        });
+      }
+      await supabase.functions.invoke('push-subscribe', {
+        body: {
+          subscription: sub.toJSON(),
+          device_id: deviceId,
+          country,
+          user_id: user?.id ?? null,
+        },
+      });
+    } catch (e) {
+      console.warn('web-push register failed', e);
+    }
+  }, [user, deviceId, country]);
 
   useEffect(() => {
     getServiceWorkerRegistration().then(reg => {
       swRegistration.current = reg;
+      // Kick off subscription right away when we already have permission.
+      if (reg && Notification.permission === 'granted') registerWebPush();
     });
 
     if ('Notification' in window && Notification.permission === 'default') {
-      const timer = setTimeout(() => { requestPermission(); }, 5000);
+      const timer = setTimeout(async () => {
+        const ok = await requestPermission();
+        if (ok) registerWebPush();
+      }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [requestPermission]);
+  }, [requestPermission, registerWebPush]);
 
   // --- VIBE NOTIFICATIONS ---
   useEffect(() => {
