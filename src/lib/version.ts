@@ -10,8 +10,8 @@
 //        { version, date: "YYYY-MM-DD", highlights: ["...", "..."] }
 //   3. Keep highlights short, user-facing, and benefit-led (no jargon).
 //   4. The footer "What's New" modal auto-reads from this file — no other edits needed.
-export const APP_VERSION = "1.8.0";
-export const APP_RELEASED_AT = "2026-07-03T18:00:00Z";
+export const APP_VERSION = "1.9.0";
+export const APP_RELEASED_AT = "2026-07-04T12:00:00Z";
 
 export type VersionEntry = {
   version: string;
@@ -22,6 +22,19 @@ export type VersionEntry = {
 
 // Only the latest version is kept — older entries are intentionally pruned.
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.9.0",
+    date: "2026-07-04",
+    releasedAt: APP_RELEASED_AT,
+    highlights: [
+      "Background push notifications — get pinged 3x a night, even with the app closed",
+      "Fixed the blank notification icon — SCENE logo now shows in your tray properly",
+      "Every notification is stamped with the app version it came from",
+      "Trimmer club cards & carousels — more spots visible per scroll",
+      "Real cover photos on every Zimbabwe venue (auto-synced + curated fallbacks)",
+      "Personalized push for signed-in users, generic teasers for anonymous devices",
+    ],
+  },
   {
     version: "1.8.0",
     date: "2026-07-03",
