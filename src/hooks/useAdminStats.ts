@@ -261,6 +261,53 @@ export const useAdminAuditLog = (targetUserId?: string) => {
   });
 };
 
+/** Generic admin delete: works on any table exposed via RLS admin policies. */
+export const useAdminDelete = () => {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async ({ table, id, label }: { table: string; id: string; label?: string }) => {
+      const { error } = await (supabase as any).from(table).delete().eq('id', id);
+      if (error) throw error;
+      await logAudit(user!.id, null, `delete_${table}`, { id, label });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-activity'] });
+      qc.invalidateQueries({ queryKey: ['admin-stats'] });
+      qc.invalidateQueries({ queryKey: ['admin-checkins'] });
+      qc.invalidateQueries({ queryKey: ['admin-messages'] });
+      qc.invalidateQueries({ queryKey: ['admin-audit'] });
+    },
+  });
+};
+
+/** Recent chat/community messages for moderation. */
+export const useAdminMessages = () => {
+  return useQuery({
+    queryKey: ['admin-messages'],
+    refetchInterval: 30_000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('messages')
+        .select('id, content, user_id, club_id, created_at, is_hidden, flag_count')
+        .order('created_at', { ascending: false })
+        .limit(30);
+      return data || [];
+    },
+  });
+};
+
+/** Trigger sync-venue-data edge function on demand (mode=refresh). */
+export const useTriggerSync = () => {
+  return useMutation({
+    mutationFn: async (mode: 'heal' | 'refresh' = 'refresh') => {
+      const { data, error } = await supabase.functions.invoke('sync-venue-data', { body: { mode } });
+      if (error) throw error;
+      return data;
+    },
+  });
+};
+
 /** Category popularity + most popular experiences (by attendance in last 7d). */
 export const useAdminAnalytics = () => {
   return useQuery({
