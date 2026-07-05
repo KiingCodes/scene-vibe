@@ -77,12 +77,12 @@ export const useRecentActivity = () => {
         supabase.from('user_follows').select('id, follower_id, following_id, created_at' as any).order('created_at' as any, { ascending: false }).limit(10),
         (supabase as any).from('experience_attendances').select('id, experience_id, type, created_at').order('created_at', { ascending: false }).limit(10),
       ]);
-      const items: { kind: string; at: string; label: string; sub?: string }[] = [];
-      vibes.data?.forEach((r: any) => items.push({ kind: 'vibe', at: r.created_at, label: 'Vibe sent', sub: `club ${String(r.club_id).slice(0,6)}` }));
-      pulls.data?.forEach((r: any) => items.push({ kind: 'pulling_up', at: r.created_at, label: 'Pulling up', sub: `club ${String(r.club_id).slice(0,6)}` }));
-      videos.data?.forEach((r: any) => items.push({ kind: 'video', at: r.created_at, label: 'New video', sub: r.caption || '—' }));
-      follows.data?.forEach((r: any) => items.push({ kind: 'follow', at: r.created_at, label: 'New follow' }));
-      attend.data?.forEach((r: any) => items.push({ kind: 'attendance', at: r.created_at, label: `Marked ${r.type}`, sub: `exp ${String(r.experience_id).slice(0,6)}` }));
+      const items: { id: string; kind: string; at: string; label: string; sub?: string }[] = [];
+      vibes.data?.forEach((r: any) => items.push({ id: r.id, kind: 'vibe', at: r.created_at, label: 'Vibe sent', sub: `club ${String(r.club_id).slice(0,6)}` }));
+      pulls.data?.forEach((r: any) => items.push({ id: r.id, kind: 'pulling_up', at: r.created_at, label: 'Pulling up', sub: `club ${String(r.club_id).slice(0,6)}` }));
+      videos.data?.forEach((r: any) => items.push({ id: r.id, kind: 'video', at: r.created_at, label: 'New video', sub: r.caption || '—' }));
+      follows.data?.forEach((r: any) => items.push({ id: r.id, kind: 'follow', at: r.created_at, label: 'New follow' }));
+      attend.data?.forEach((r: any) => items.push({ id: r.id, kind: 'attendance', at: r.created_at, label: `Marked ${r.type}`, sub: `exp ${String(r.experience_id).slice(0,6)}` }));
       return items.sort((a, b) => b.at.localeCompare(a.at)).slice(0, 25);
     },
   });
