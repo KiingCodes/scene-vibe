@@ -10,8 +10,8 @@
 //        { version, date: "YYYY-MM-DD", highlights: ["...", "..."] }
 //   3. Keep highlights short, user-facing, and benefit-led (no jargon).
 //   4. The footer "What's New" modal auto-reads from this file — no other edits needed.
-export const APP_VERSION = "1.9.0";
-export const APP_RELEASED_AT = "2026-07-04T12:00:00Z";
+export const APP_VERSION = "1.10.0";
+export const APP_RELEASED_AT = "2026-07-05T12:00:00Z";
 
 export type VersionEntry = {
   version: string;
@@ -22,6 +22,19 @@ export type VersionEntry = {
 
 // Only the latest version is kept — older entries are intentionally pruned.
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.10.0",
+    date: "2026-07-05",
+    releasedAt: APP_RELEASED_AT,
+    highlights: [
+      "Daily auto-sync — every club & experience refreshes real cover images, hours & websites overnight",
+      "Notification tray now shows the real SCENE logo, not a generic icon",
+      "Admin Command Center is locked behind an extra passphrase for peace of mind",
+      "Admins can now delete anything from Overview — vibes, videos, follows, check-ins & chat messages",
+      "One-tap 'Sync venues now' button for admins",
+      "Login button gets a cleaner single-color look",
+    ],
+  },
   {
     version: "1.9.0",
     date: "2026-07-04",
