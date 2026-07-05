@@ -8,6 +8,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.0";
  */
 const COUNTRY_LABEL: Record<string, string> = { ZA: 'South Africa', ZW: 'Zimbabwe' };
 
+/**
+ * Modes:
+ *   { mode: "heal" }    → default; fills only missing fields (fast, cheap)
+ *   { mode: "refresh" } → daily job; re-verifies image_url/opening_hours/website
+ *                        for every venue and updates when the source of truth changed
+ */
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -22,58 +28,93 @@ Deno.serve(async (req) => {
 
   const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
-  // Parse optional { country } body — prioritises heal for the caller's region.
-  let country = "ZA";
+  let country: string | null = null;
+  let mode: "heal" | "refresh" = "heal";
   try {
     const body = await req.json();
-    if (body && (body.country === "ZA" || body.country === "ZW")) country = body.country;
-  } catch { /* no body — default ZA */ }
+    if (body?.country === "ZA" || body?.country === "ZW") country = body.country;
+    if (body?.mode === "refresh") mode = "refresh";
+  } catch { /* no body */ }
 
-  // Heal ONLY venues missing one of the three critical fields, in the requested country.
-  const { data: clubs } = await admin
-    .from("clubs")
-    .select("id, name, area, opening_hours, image_url, description")
-    .eq("country", country)
-    .or("image_url.is.null,opening_hours.is.null,description.is.null")
-    .limit(5);
+  const askAI = async (kind: "club" | "experience", row: any) => {
+    const label = COUNTRY_LABEL[row.country] || row.country || "South Africa";
+    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          { role: "system", content: "Return ONLY a JSON object with keys: opening_hours (string), image_url (https URL or null), description (max 180 chars), website (https URL or null). Use real, verifiable info from the web. If unsure, return null fields." },
+          { role: "user", content: `${kind === "club" ? "Venue" : "Experience"}: ${row.name} in ${row.area}, ${label}. Provide current opening hours, official cover image URL, official website, and a one-line description.` },
+        ],
+      }),
+    });
+    if (!aiRes.ok) return null;
+    const j = await aiRes.json();
+    const raw = j.choices?.[0]?.message?.content || "{}";
+    try { return JSON.parse(raw.replace(/```json|```/g, "").trim()); } catch { return null; }
+  };
 
-  const updated: string[] = [];
+  const buildPatch = (existing: any, parsed: any, mode: "heal" | "refresh") => {
+    const patch: Record<string, unknown> = {};
+    const setIf = (key: string, val: any, validate?: (v: any) => boolean) => {
+      if (val == null) return;
+      if (validate && !validate(val)) return;
+      if (mode === "refresh" || !existing[key]) patch[key] = typeof val === "string" ? val.slice(0, 500) : val;
+    };
+    setIf("opening_hours", parsed.opening_hours, (v) => typeof v === "string" && v.length > 0);
+    setIf("image_url", parsed.image_url, (v) => typeof v === "string" && v.startsWith("http"));
+    setIf("description", parsed.description, (v) => typeof v === "string");
+    setIf("website", parsed.website, (v) => typeof v === "string" && v.startsWith("http"));
+    return patch;
+  };
 
-  for (const club of clubs ?? []) {
+  const clubUpdated: string[] = [];
+  const expUpdated: string[] = [];
+  const LIMIT = mode === "refresh" ? 20 : 5;
+
+  // --- Clubs ---
+  let clubQ = admin.from("clubs").select("id, name, area, country, opening_hours, image_url, description, website");
+  if (country) clubQ = clubQ.eq("country", country);
+  if (mode === "heal") clubQ = clubQ.or("image_url.is.null,opening_hours.is.null,description.is.null");
+  else clubQ = clubQ.order("updated_at", { ascending: true, nullsFirst: true });
+  const { data: clubs } = await clubQ.limit(LIMIT);
+
+  for (const c of clubs ?? []) {
     try {
-      const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          messages: [
-            { role: "system", content: "Return ONLY a JSON object with keys: opening_hours (string), image_url (https URL or null), description (max 180 chars). Use real, verifiable info from the web. If unsure, return null fields." },
-            { role: "user", content: `Venue: ${club.name} in ${club.area}, ${COUNTRY_LABEL[country] || 'South Africa'}. Provide current opening hours, a public image URL, and a one-line description.` },
-          ],
-        }),
-      });
-      if (!aiRes.ok) continue;
-      const json = await aiRes.json();
-      const raw = json.choices?.[0]?.message?.content || "{}";
-      const cleaned = raw.replace(/```json|```/g, "").trim();
-      let parsed: any = {};
-      try { parsed = JSON.parse(cleaned); } catch { continue; }
-
-      const patch: Record<string, unknown> = {};
-      if (parsed.opening_hours && typeof parsed.opening_hours === "string") patch.opening_hours = parsed.opening_hours;
-      if (parsed.image_url && typeof parsed.image_url === "string" && parsed.image_url.startsWith("http")) patch.image_url = parsed.image_url;
-      if (parsed.description && typeof parsed.description === "string") patch.description = parsed.description.slice(0, 200);
-
+      const parsed = await askAI("club", c);
+      if (!parsed) continue;
+      const patch = buildPatch(c, parsed, mode);
       if (Object.keys(patch).length) {
-        await admin.from("clubs").update(patch).eq("id", club.id);
-        updated.push(club.name);
+        await admin.from("clubs").update(patch).eq("id", c.id);
+        clubUpdated.push(c.name);
       }
-    } catch (e) {
-      console.error("sync error for", club.name, e);
-    }
+    } catch (e) { console.error("club sync err", c.name, e); }
   }
 
-  return new Response(JSON.stringify({ ok: true, country, updated, count: updated.length }), {
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+  // --- Experiences ---
+  try {
+    let expQ = admin.from("experiences").select("id, name, area, country, opening_hours, image_url, description, website");
+    if (country) expQ = expQ.eq("country", country);
+    if (mode === "heal") expQ = expQ.or("image_url.is.null,opening_hours.is.null,description.is.null");
+    else expQ = expQ.order("updated_at", { ascending: true, nullsFirst: true });
+    const { data: exps } = await expQ.limit(LIMIT);
+    for (const x of exps ?? []) {
+      try {
+        const parsed = await askAI("experience", x);
+        if (!parsed) continue;
+        const patch = buildPatch(x, parsed, mode);
+        if (Object.keys(patch).length) {
+          await admin.from("experiences").update(patch).eq("id", x.id);
+          expUpdated.push(x.name);
+        }
+      } catch (e) { console.error("exp sync err", x.name, e); }
+    }
+  } catch (e) { console.error("experiences sync loop failed", e); }
+
+  return new Response(JSON.stringify({
+    ok: true, mode, country,
+    clubs: clubUpdated, experiences: expUpdated,
+    count: clubUpdated.length + expUpdated.length,
+  }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 });
