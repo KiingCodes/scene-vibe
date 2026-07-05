@@ -77,12 +77,12 @@ export const useRecentActivity = () => {
         supabase.from('user_follows').select('id, follower_id, following_id, created_at' as any).order('created_at' as any, { ascending: false }).limit(10),
         (supabase as any).from('experience_attendances').select('id, experience_id, type, created_at').order('created_at', { ascending: false }).limit(10),
       ]);
-      const items: { kind: string; at: string; label: string; sub?: string }[] = [];
-      vibes.data?.forEach((r: any) => items.push({ kind: 'vibe', at: r.created_at, label: 'Vibe sent', sub: `club ${String(r.club_id).slice(0,6)}` }));
-      pulls.data?.forEach((r: any) => items.push({ kind: 'pulling_up', at: r.created_at, label: 'Pulling up', sub: `club ${String(r.club_id).slice(0,6)}` }));
-      videos.data?.forEach((r: any) => items.push({ kind: 'video', at: r.created_at, label: 'New video', sub: r.caption || '—' }));
-      follows.data?.forEach((r: any) => items.push({ kind: 'follow', at: r.created_at, label: 'New follow' }));
-      attend.data?.forEach((r: any) => items.push({ kind: 'attendance', at: r.created_at, label: `Marked ${r.type}`, sub: `exp ${String(r.experience_id).slice(0,6)}` }));
+      const items: { id: string; kind: string; at: string; label: string; sub?: string }[] = [];
+      vibes.data?.forEach((r: any) => items.push({ id: r.id, kind: 'vibe', at: r.created_at, label: 'Vibe sent', sub: `club ${String(r.club_id).slice(0,6)}` }));
+      pulls.data?.forEach((r: any) => items.push({ id: r.id, kind: 'pulling_up', at: r.created_at, label: 'Pulling up', sub: `club ${String(r.club_id).slice(0,6)}` }));
+      videos.data?.forEach((r: any) => items.push({ id: r.id, kind: 'video', at: r.created_at, label: 'New video', sub: r.caption || '—' }));
+      follows.data?.forEach((r: any) => items.push({ id: r.id, kind: 'follow', at: r.created_at, label: 'New follow' }));
+      attend.data?.forEach((r: any) => items.push({ id: r.id, kind: 'attendance', at: r.created_at, label: `Marked ${r.type}`, sub: `exp ${String(r.experience_id).slice(0,6)}` }));
       return items.sort((a, b) => b.at.localeCompare(a.at)).slice(0, 25);
     },
   });
@@ -257,6 +257,53 @@ export const useAdminAuditLog = (targetUserId?: string) => {
       if (targetUserId) q = q.eq('target_user_id', targetUserId);
       const { data } = await q;
       return data || [];
+    },
+  });
+};
+
+/** Generic admin delete: works on any table exposed via RLS admin policies. */
+export const useAdminDelete = () => {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async ({ table, id, label }: { table: string; id: string; label?: string }) => {
+      const { error } = await (supabase as any).from(table).delete().eq('id', id);
+      if (error) throw error;
+      await logAudit(user!.id, null, `delete_${table}`, { id, label });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-activity'] });
+      qc.invalidateQueries({ queryKey: ['admin-stats'] });
+      qc.invalidateQueries({ queryKey: ['admin-checkins'] });
+      qc.invalidateQueries({ queryKey: ['admin-messages'] });
+      qc.invalidateQueries({ queryKey: ['admin-audit'] });
+    },
+  });
+};
+
+/** Recent chat/community messages for moderation. */
+export const useAdminMessages = () => {
+  return useQuery({
+    queryKey: ['admin-messages'],
+    refetchInterval: 30_000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('messages')
+        .select('id, content, user_id, club_id, created_at, is_hidden, flag_count')
+        .order('created_at', { ascending: false })
+        .limit(30);
+      return data || [];
+    },
+  });
+};
+
+/** Trigger sync-venue-data edge function on demand (mode=refresh). */
+export const useTriggerSync = () => {
+  return useMutation({
+    mutationFn: async (mode: 'heal' | 'refresh' = 'refresh') => {
+      const { data, error } = await supabase.functions.invoke('sync-venue-data', { body: { mode } });
+      if (error) throw error;
+      return data;
     },
   });
 };

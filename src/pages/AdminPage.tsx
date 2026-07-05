@@ -12,7 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin, usePendingClubs, useApproveClub, useRejectClub } from '@/hooks/useAdmin';
 import { usePendingPromotions, useApprovePromotion, useRejectPromotion } from '@/hooks/usePromotions';
 import { usePendingExperiences, useModerateExperience } from '@/hooks/useExperiences';
-import { useAdminStats, useRecentActivity, useCheckinMonitor, useAdminUsers, useAdminAnalytics, useAdminUserActions, useAdminAuditLog } from '@/hooks/useAdminStats';
+import { useAdminStats, useRecentActivity, useCheckinMonitor, useAdminUsers, useAdminAnalytics, useAdminUserActions, useAdminAuditLog, useAdminDelete, useAdminMessages, useTriggerSync } from '@/hooks/useAdminStats';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,16 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
+import { Trash2, RefreshCw, Lock, MessageSquare } from 'lucide-react';
+
+const ADMIN_PANEL_PASSWORD = 'justvibes26';
+const ACTIVITY_TABLE_MAP: Record<string, string> = {
+  vibe: 'vibes',
+  pulling_up: 'pulling_up',
+  video: 'videos',
+  follow: 'user_follows',
+  attendance: 'experience_attendances',
+};
 
 /* ---------------- Reusable bits ---------------- */
 
@@ -54,6 +64,22 @@ const EmptyState = ({ icon: Icon, title, sub }: any) => (
 const OverviewTab = () => {
   const { data: s, isLoading } = useAdminStats();
   const { data: feed } = useRecentActivity();
+  const del = useAdminDelete();
+  const sync = useTriggerSync();
+  const removeItem = async (kind: string, id: string, label: string) => {
+    const table = ACTIVITY_TABLE_MAP[kind];
+    if (!table) return;
+    if (!confirm(`Delete this ${kind}? This cannot be undone.`)) return;
+    try { await del.mutateAsync({ table, id, label }); toast.success(`${label} deleted`); }
+    catch (e: any) { toast.error(e?.message || 'Delete failed'); }
+  };
+  const runSync = async () => {
+    try {
+      toast.info('Syncing venues from source of truth…');
+      const r: any = await sync.mutateAsync('refresh');
+      toast.success(`Synced ${r?.count ?? 0} items`);
+    } catch (e: any) { toast.error(e?.message || 'Sync failed'); }
+  };
   return (
     <div className="space-y-6">
       <div>
@@ -88,21 +114,66 @@ const OverviewTab = () => {
       <div>
         <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-bold mb-3 flex items-center gap-2">
           <Activity className="w-3.5 h-3.5" /> Recent Activity
+          <Button size="sm" variant="outline" onClick={runSync} disabled={sync.isPending} className="ml-auto h-7 gap-1.5 text-[10px]">
+            <RefreshCw className={`w-3 h-3 ${sync.isPending ? 'animate-spin' : ''}`} /> Sync venues now
+          </Button>
         </h2>
         <div className="glass rounded-2xl divide-y divide-border/30 max-h-96 overflow-y-auto">
           {!feed?.length
             ? <div className="p-6 text-center text-xs text-muted-foreground">No recent activity</div>
             : feed.map((e, i) => (
-              <div key={i} className="px-3 py-2 flex items-center gap-3">
+              <div key={i} className="px-3 py-2 flex items-center gap-3 group">
                 <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-foreground truncate">{e.label}</p>
                   {e.sub && <p className="text-[10px] text-muted-foreground truncate">{e.sub}</p>}
                 </div>
                 <span className="text-[10px] text-muted-foreground shrink-0">{formatDistanceToNow(new Date(e.at), { addSuffix: true })}</span>
+                {ACTIVITY_TABLE_MAP[(e as any).kind] && (
+                  <Button size="icon" variant="ghost" onClick={() => removeItem((e as any).kind, (e as any).id ?? '', e.label)}
+                    className="h-6 w-6 text-destructive/70 hover:text-destructive hover:bg-destructive/10">
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                )}
               </div>
             ))}
         </div>
+      </div>
+
+      <ChatModerationPanel />
+    </div>
+  );
+};
+
+const ChatModerationPanel = () => {
+  const { data: msgs, isLoading } = useAdminMessages();
+  const del = useAdminDelete();
+  const remove = async (id: string) => {
+    if (!confirm('Delete this message?')) return;
+    try { await del.mutateAsync({ table: 'messages', id, label: 'chat message' }); toast.success('Message deleted'); }
+    catch (e: any) { toast.error(e?.message || 'Delete failed'); }
+  };
+  return (
+    <div>
+      <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-bold mb-3 flex items-center gap-2">
+        <MessageSquare className="w-3.5 h-3.5" /> Latest Chat Messages
+      </h2>
+      <div className="glass rounded-2xl divide-y divide-border/30 max-h-80 overflow-y-auto">
+        {isLoading ? <Skeleton className="h-24" /> : !msgs?.length ? (
+          <div className="p-6 text-center text-xs text-muted-foreground">No messages</div>
+        ) : msgs.map((m: any) => (
+          <div key={m.id} className="px-3 py-2 flex items-center gap-3">
+            <Badge variant="outline" className="text-[9px] shrink-0">{m.club_id ? 'CLUB' : 'GLOBAL'}</Badge>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs truncate">{m.content || <span className="italic text-muted-foreground">[media]</span>}</p>
+              <p className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(m.created_at), { addSuffix: true })}{m.is_hidden ? ' · hidden' : ''}{m.flag_count > 0 ? ` · ${m.flag_count} flags` : ''}</p>
+            </div>
+            <Button size="icon" variant="ghost" onClick={() => remove(m.id)}
+              className="h-6 w-6 text-destructive/70 hover:text-destructive hover:bg-destructive/10">
+              <Trash2 className="w-3 h-3" />
+            </Button>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -518,11 +589,44 @@ const AdminPage = () => {
   const rejectPromo = useRejectPromotion();
   const { data: pendingExperiences } = usePendingExperiences();
   const moderateExperience = useModerateExperience();
+  const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem('scene_admin_unlocked') === '1');
+  const [pw, setPw] = useState('');
+  const tryUnlock = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pw === ADMIN_PANEL_PASSWORD) {
+      sessionStorage.setItem('scene_admin_unlocked', '1');
+      setUnlocked(true);
+      toast.success('Command center unlocked');
+    } else {
+      toast.error('Incorrect password');
+      setPw('');
+    }
+  };
 
   if (authLoading || adminLoading) {
     return <div className="min-h-screen gradient-dark flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
   if (!user || !isAdmin) return <Navigate to="/" replace />;
+
+  if (!unlocked) {
+    return (
+      <div className="min-h-screen gradient-dark flex items-center justify-center px-4">
+        <motion.form onSubmit={tryUnlock} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          className="glass rounded-2xl p-6 w-full max-w-sm space-y-4 border border-primary/20">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="p-2.5 rounded-xl bg-primary/20 border border-primary/30"><Lock className="w-5 h-5 text-primary" /></div>
+            <div>
+              <h1 className="font-display font-bold text-lg">Command Center</h1>
+              <p className="text-[11px] text-muted-foreground">Enter admin passphrase to continue</p>
+            </div>
+          </div>
+          <Input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Passphrase" autoFocus />
+          <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">Unlock</Button>
+          <Link to="/" className="block text-center text-[11px] text-muted-foreground hover:text-foreground">← Back to app</Link>
+        </motion.form>
+      </div>
+    );
+  }
 
   const handleApprove = async (id: string, name: string) => {
     try { await approveClub.mutateAsync(id); toast.success(`✅ ${name} approved!`); } catch { toast.error('Failed'); }
