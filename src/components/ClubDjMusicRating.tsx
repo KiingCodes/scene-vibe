@@ -112,9 +112,35 @@ const ClubDjMusicRating = ({ clubId }: { clubId: string }) => {
           )}
         </div>
       ) : (
-        <div className="text-center py-2">
-          <Link to="/auth" className="text-primary text-sm hover:underline">Sign in to rate</Link>
-        </div>
+        <Link
+          to="/auth"
+          className="block relative rounded-xl p-4 border border-primary/25 bg-gradient-to-br from-primary/5 to-accent/5 hover:border-primary/60 hover:from-primary/10 hover:to-accent/10 transition-all group overflow-hidden"
+        >
+          <span className="absolute -inset-1 bg-primary/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="relative space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <Headphones className="w-3.5 h-3.5" /> DJ
+              </span>
+              <div className="flex gap-1">
+                {[1,2,3,4,5].map(i => (
+                  <Star key={i} className="w-5 h-5 text-primary/30 group-hover:text-primary/60 transition-colors" style={{ filter: 'drop-shadow(0 0 4px hsl(var(--primary) / 0.4))' }} />
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <Music2 className="w-3.5 h-3.5" /> Music
+              </span>
+              <div className="flex gap-1">
+                {[1,2,3,4,5].map(i => (
+                  <Star key={i} className="w-5 h-5 text-secondary/30 group-hover:text-secondary/60 transition-colors" style={{ filter: 'drop-shadow(0 0 4px hsl(var(--secondary) / 0.4))' }} />
+                ))}
+              </div>
+            </div>
+            <p className="text-[11px] text-center text-primary/80 font-semibold uppercase tracking-widest">Tap to sign in & rate</p>
+          </div>
+        </Link>
       )}
     </motion.div>
   );
