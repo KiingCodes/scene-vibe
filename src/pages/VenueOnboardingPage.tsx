@@ -265,8 +265,8 @@ const VenueOnboardingPage = () => {
                 <h1 className="font-display text-2xl font-bold text-white mt-0.5">Claim your business on SCENE</h1>
               </div>
               <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30">
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
-                <span className="text-[10px] font-bold uppercase tracking-widest text-primary">Free · 48h review</span>
+                {saving ? <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-primary" />}
+                <span className="text-[10px] font-bold uppercase tracking-widest text-primary">{saving ? 'Saving…' : 'Free · 48h review'}</span>
               </div>
             </div>
 
@@ -359,6 +359,27 @@ const VenueOnboardingPage = () => {
                   </div>
                   <NeonField label="Physical Address" value={address} onChange={setAddress} placeholder="Street, City, Country" />
 
+                  {/* Geolocate button */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      onClick={detectLocation}
+                      disabled={locating}
+                      className="rounded-full bg-primary/15 border border-primary/40 text-primary hover:bg-primary/25 h-9 px-4 gap-2"
+                    >
+                      {locating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LocateFixed className="w-3.5 h-3.5" />}
+                      <span className="text-xs font-bold uppercase tracking-widest">
+                        {coords ? 'Re-pin location' : 'Use my current location'}
+                      </span>
+                    </Button>
+                    {coords && (
+                      <span className="text-[10px] text-emerald-300 font-mono">
+                        ✓ {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
+                      </span>
+                    )}
+                  </div>
+                  {geoError && <p className="text-[11px] text-rose-400">{geoError}</p>}
+
                   {/* Dark-mode map placeholder */}
                   <div className="relative rounded-2xl overflow-hidden border border-white/10 h-56 bg-slate-950">
                     <div className="absolute inset-0 opacity-40" style={{
@@ -379,7 +400,7 @@ const VenueOnboardingPage = () => {
                       </div>
                     </div>
                     <div className="absolute bottom-2 left-2 px-2 py-1 rounded-md bg-black/50 backdrop-blur-sm border border-white/10 text-[10px] text-white/70 font-mono">
-                      DARK · LIVE MAP
+                      {coords ? `GEOFENCED · ${radius[0]}m` : 'DARK · TAP LOCATE'}
                     </div>
                   </div>
 
@@ -444,8 +465,30 @@ const VenueOnboardingPage = () => {
                     <div className="flex items-center gap-2">
                       <Phone className="w-4 h-4 text-secondary" />
                       <p className="text-sm font-semibold text-white">Fast-Track Phone Verification</p>
+                      {otpVerified && (
+                        <span className="ml-auto flex items-center gap-1 text-[10px] font-black text-emerald-300 uppercase tracking-widest">
+                          <Check className="w-3 h-3" /> Verified
+                        </span>
+                      )}
                     </div>
-                    <p className="text-[11px] text-muted-foreground">Enter the 4-digit code we sent to your business phone.</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[11px] text-muted-foreground">
+                        {otpSent ? `Enter the 4-digit code sent to ${phone}` : `We'll SMS a 4-digit code to ${phone || 'your phone'}`}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={sendOtp}
+                        disabled={otpSending || !phone.trim()}
+                        className="text-[10px] font-black uppercase tracking-widest text-secondary hover:text-secondary/80 disabled:opacity-40"
+                      >
+                        {otpSending ? 'Sending…' : otpSent ? 'Resend' : 'Send code'}
+                      </button>
+                    </div>
+                    {devCode && (
+                      <p className="text-[10px] text-amber-300/80 font-mono bg-amber-500/5 border border-amber-500/20 rounded-lg px-2 py-1">
+                        DEV: code is <span className="font-bold">{devCode}</span>
+                      </p>
+                    )}
                     <div className="flex gap-2 justify-center py-1">
                       {otp.map((d, i) => (
                         <input
@@ -455,7 +498,10 @@ const VenueOnboardingPage = () => {
                           onChange={(e) => handleOtpChange(i, e.target.value)}
                           inputMode="numeric"
                           maxLength={1}
-                          className="w-12 h-14 rounded-xl bg-black/50 border border-white/10 text-center text-2xl font-bold font-mono text-white focus:outline-none focus:border-secondary focus:shadow-[0_0_18px_hsl(var(--secondary)/0.35)] transition-all"
+                          disabled={!otpSent || otpVerified}
+                          className={`w-12 h-14 rounded-xl bg-black/50 border text-center text-2xl font-bold font-mono text-white focus:outline-none transition-all disabled:opacity-40 ${
+                            otpVerified ? 'border-emerald-400/60 shadow-[0_0_18px_rgba(16,185,129,0.35)]' : 'border-white/10 focus:border-secondary focus:shadow-[0_0_18px_hsl(var(--secondary)/0.35)]'
+                          }`}
                         />
                       ))}
                     </div>
@@ -480,10 +526,11 @@ const VenueOnboardingPage = () => {
             </div>
             <Button
               onClick={handleNext}
-              disabled={!canContinue}
+              disabled={!canContinue || submitting}
               className={`rounded-full gradient-primary text-primary-foreground font-semibold px-6 shadow-[0_0_20px_hsl(var(--primary)/0.4)] disabled:opacity-40 disabled:shadow-none`}
             >
-              {step === 3 ? 'Submit Claim' : 'Continue'} <ArrowRight className="w-4 h-4 ml-1" />
+              {submitting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : null}
+              {step === 3 ? (submitting ? 'Submitting…' : 'Submit Claim') : 'Continue'} <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
         </div>
