@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
-import { MapPin, MessageCircle, Home, User, Heart, Shield, BarChart3, Trophy, Users, Calendar, Video, Moon, Sparkles, ChevronDown, Check, MoreHorizontal, Bell } from 'lucide-react';
+import { MapPin, MessageCircle, Home, User, Heart, Shield, BarChart3, Trophy, Users, Calendar, Video, Moon, Sparkles, ChevronDown, Check, MoreHorizontal, Bell, Building2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,7 @@ const MORE_ITEMS = [
   { path: '/insights',     icon: BarChart3, label: 'Insights' },
   { path: '/leaderboard',  icon: Trophy,    label: 'Leaderboard' },
   { path: '/notifications',icon: Bell,      label: 'Notifications' },
+  { path: '/venue-onboarding', icon: Building2, label: 'Claim Your Venue' },
 ];
 
 const CountrySwitcher = ({ align = 'start' }: { align?: 'start' | 'end' }) => {
