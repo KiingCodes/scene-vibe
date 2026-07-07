@@ -1,11 +1,12 @@
 import { motion } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
-import { MapPin, MessageCircle, Home, User, Heart, Shield, BarChart3, Trophy, Users, Calendar, Video, Moon, Sparkles, ChevronDown, Check, MoreHorizontal, Bell } from 'lucide-react';
+import { MapPin, MessageCircle, Home, User, Heart, Shield, BarChart3, Trophy, Users, Calendar, Video, Moon, Sparkles, ChevronDown, Check, MoreHorizontal, Bell, Building2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/components/NotificationBell';
 import { useUnreadCount } from '@/hooks/useNotifications';
+import { useLiveChatCount } from '@/hooks/useLiveChatCount';
 import { useCountry, COUNTRIES, type CountryCode } from '@/contexts/CountryContext';
 import {
   DropdownMenu,
@@ -35,6 +36,7 @@ const MORE_ITEMS = [
   { path: '/insights',     icon: BarChart3, label: 'Insights' },
   { path: '/leaderboard',  icon: Trophy,    label: 'Leaderboard' },
   { path: '/notifications',icon: Bell,      label: 'Notifications' },
+  { path: '/venue-onboarding', icon: Building2, label: 'Claim Your Venue' },
 ];
 
 const CountrySwitcher = ({ align = 'start' }: { align?: 'start' | 'end' }) => {
@@ -83,6 +85,7 @@ const Navbar = () => {
   const { data: isAdmin } = useIsAdmin();
   const location = useLocation();
   const unread = useUnreadCount();
+  const liveChat = useLiveChatCount();
   const isActive = (p: string) => location.pathname === p;
   const inMore = MORE_ITEMS.some(i => i.path === location.pathname);
 
@@ -138,6 +141,7 @@ const Navbar = () => {
           <div className="max-w-lg mx-auto grid grid-cols-5 gap-1 px-2 h-16">
             {PRIMARY_ITEMS.map(({ path, icon: Icon, label }) => {
               const active = isActive(path);
+              const isChat = path === '/chat';
               return (
                 <Link
                   key={path}
@@ -154,7 +158,14 @@ const Navbar = () => {
                       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                     />
                   )}
-                  <Icon className={`w-5 h-5 ${active ? 'drop-shadow-[0_0_8px_rgba(0,230,214,0.8)]' : ''}`} />
+                  <div className="relative">
+                    <Icon className={`w-5 h-5 ${active ? 'drop-shadow-[0_0_8px_rgba(0,230,214,0.8)]' : ''}`} />
+                    {isChat && liveChat > 0 && (
+                      <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-gradient-to-r from-[#00e6d6] to-[#ff2e93] text-[9px] font-black text-black flex items-center justify-center shadow-[0_0_10px_rgba(0,230,214,0.6)]">
+                        {liveChat > 99 ? '99+' : liveChat}
+                      </span>
+                    )}
+                  </div>
                   <span className="text-[10px] font-semibold tracking-wide">{label}</span>
                 </Link>
               );

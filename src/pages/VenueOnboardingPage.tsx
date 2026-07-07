@@ -1,12 +1,16 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Check, MapPin, Upload, Phone, ShieldCheck, Building2, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, MapPin, Upload, Phone, ShieldCheck, Building2, Sparkles, X, Loader2, LocateFixed } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
 import Navbar from '@/components/Navbar';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+
+const DRAFT_KEY = 'scene:venue-onboarding-draft';
 
 const STEPS = [
   { id: 1, key: 'business', label: 'Business Info' },
@@ -33,7 +37,11 @@ const NeonField = ({
 
 const VenueOnboardingPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
+  const [claimId, setClaimId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // Step 1
   const [venueName, setVenueName] = useState('');
@@ -45,25 +53,176 @@ const VenueOnboardingPage = () => {
   // Step 2
   const [address, setAddress] = useState('');
   const [radius, setRadius] = useState<number[]>([100]);
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [geoError, setGeoError] = useState<string | null>(null);
 
   // Step 3
   const [file, setFile] = useState<File | null>(null);
   const [otp, setOtp] = useState(['', '', '', '']);
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [devCode, setDevCode] = useState<string | null>(null);
+  const hydrated = useRef(false);
+
+  // ---------- Hydrate from localStorage on mount ----------
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) {
+        const d = JSON.parse(raw);
+        setStep(d.step ?? 1);
+        setVenueName(d.venueName ?? '');
+        setLegalName(d.legalName ?? '');
+        setEmail(d.email ?? '');
+        setPhone(d.phone ?? '');
+        setTags(d.tags ?? []);
+        setAddress(d.address ?? '');
+        setRadius([d.radius ?? 100]);
+        setCoords(d.coords ?? null);
+        setClaimId(d.claimId ?? null);
+        setOtpVerified(!!d.otpVerified);
+      }
+    } catch { /* ignore */ }
+    hydrated.current = true;
+  }, []);
+
+  // ---------- Persist to localStorage every change ----------
+  useEffect(() => {
+    if (!hydrated.current) return;
+    const draft = { step, venueName, legalName, email, phone, tags, address, radius: radius[0], coords, claimId, otpVerified };
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+  }, [step, venueName, legalName, email, phone, tags, address, radius, coords, claimId, otpVerified]);
+
+  // ---------- Cloud persistence (auto-save when signed in) ----------
+  const persistDraft = async (status: 'draft' | 'submitted' = 'draft') => {
+    if (!user) return null;
+    const payload = {
+      user_id: user.id,
+      venue_name: venueName || 'Untitled venue',
+      legal_name: legalName || null,
+      email: email || null,
+      phone: phone || null,
+      tags,
+      address: address || null,
+      latitude: coords?.lat ?? null,
+      longitude: coords?.lng ?? null,
+      radius_m: radius[0],
+      geofence_verified: !!coords,
+      verification_method: otpVerified ? 'otp' : file ? 'document' : 'pending',
+      otp_verified: otpVerified,
+      status,
+      step,
+    };
+    setSaving(true);
+    try {
+      if (claimId) {
+        const { error } = await supabase.from('venue_claims').update(payload).eq('id', claimId);
+        if (error) throw error;
+        return claimId;
+      } else {
+        const { data, error } = await supabase.from('venue_claims').insert(payload).select('id').single();
+        if (error) throw error;
+        setClaimId(data.id);
+        return data.id as string;
+      }
+    } catch (e: any) {
+      console.error('[claim] save error', e);
+      toast.error('Could not save draft — will retry.');
+      return null;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ---------- Real geofence check via browser geolocation ----------
+  const detectLocation = () => {
+    if (!('geolocation' in navigator)) {
+      setGeoError('Geolocation not supported by this browser.');
+      return;
+    }
+    setLocating(true);
+    setGeoError(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setLocating(false);
+        toast.success('📍 Geofence pinned to your current position');
+      },
+      (err) => {
+        setLocating(false);
+        setGeoError(err.message || 'Could not access location');
+        toast.error('Location permission denied');
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  // ---------- Real OTP via edge function ----------
+  const sendOtp = async () => {
+    if (!phone.trim()) { toast.error('Add a business phone in step 1 first.'); return; }
+    setOtpSending(true);
+    try {
+      const id = await persistDraft('draft');
+      const { data, error } = await supabase.functions.invoke('venue-otp', {
+        body: { action: 'send', phone, claimId: id },
+      });
+      if (error) throw error;
+      setOtpSent(true);
+      if ((data as any)?.code) setDevCode((data as any).code);
+      toast.success('📩 Code sent — check your phone');
+    } catch (e: any) {
+      toast.error(e.message || 'Could not send code');
+    } finally {
+      setOtpSending(false);
+    }
+  };
+
+  const verifyOtp = async () => {
+    const code = otp.join('');
+    if (code.length !== 4) return;
+    try {
+      const { data, error } = await supabase.functions.invoke('venue-otp', {
+        body: { action: 'verify', phone, code, claimId },
+      });
+      if (error || !(data as any)?.ok) throw new Error('Incorrect code');
+      setOtpVerified(true);
+      toast.success('✅ Phone verified');
+    } catch {
+      toast.error('Incorrect or expired code');
+      setOtp(['', '', '', '']);
+    }
+  };
 
   const toggleTag = (t: string) =>
     setTags((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
 
   const canContinue = (() => {
     if (step === 1) return venueName.trim() && legalName.trim() && email.trim() && phone.trim() && tags.length > 0;
-    if (step === 2) return address.trim().length > 3;
-    if (step === 3) return file !== null || otp.every((d) => d.length === 1);
+    if (step === 2) return address.trim().length > 3 && !!coords; // real geofence required
+    if (step === 3) return file !== null || otpVerified;
     return false;
   })();
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!canContinue) return;
-    if (step < 3) return setStep(step + 1);
+    if (!user) {
+      toast.error('Sign in to save your claim');
+      navigate('/auth');
+      return;
+    }
+    if (step < 3) {
+      await persistDraft('draft');
+      setStep(step + 1);
+      return;
+    }
+    setSubmitting(true);
+    const id = await persistDraft('submitted');
+    setSubmitting(false);
+    if (!id) return;
     toast.success('🎉 Claim submitted — SCENE will verify within 48 hours.');
+    localStorage.removeItem(DRAFT_KEY);
     setTimeout(() => navigate('/'), 1200);
   };
 
@@ -75,6 +234,13 @@ const VenueOnboardingPage = () => {
     if (clean && i < 3) {
       const el = document.getElementById(`otp-${i + 1}`);
       el?.focus();
+    }
+    // Auto-verify once all 4 digits entered
+    if (next.every((d) => d.length === 1)) {
+      setTimeout(() => {
+        const code = next.join('');
+        if (code.length === 4 && otpSent && !otpVerified) verifyOtp();
+      }, 100);
     }
   };
 
@@ -99,8 +265,8 @@ const VenueOnboardingPage = () => {
                 <h1 className="font-display text-2xl font-bold text-white mt-0.5">Claim your business on SCENE</h1>
               </div>
               <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30">
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
-                <span className="text-[10px] font-bold uppercase tracking-widest text-primary">Free · 48h review</span>
+                {saving ? <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-primary" />}
+                <span className="text-[10px] font-bold uppercase tracking-widest text-primary">{saving ? 'Saving…' : 'Free · 48h review'}</span>
               </div>
             </div>
 
@@ -193,6 +359,27 @@ const VenueOnboardingPage = () => {
                   </div>
                   <NeonField label="Physical Address" value={address} onChange={setAddress} placeholder="Street, City, Country" />
 
+                  {/* Geolocate button */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      onClick={detectLocation}
+                      disabled={locating}
+                      className="rounded-full bg-primary/15 border border-primary/40 text-primary hover:bg-primary/25 h-9 px-4 gap-2"
+                    >
+                      {locating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LocateFixed className="w-3.5 h-3.5" />}
+                      <span className="text-xs font-bold uppercase tracking-widest">
+                        {coords ? 'Re-pin location' : 'Use my current location'}
+                      </span>
+                    </Button>
+                    {coords && (
+                      <span className="text-[10px] text-emerald-300 font-mono">
+                        ✓ {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
+                      </span>
+                    )}
+                  </div>
+                  {geoError && <p className="text-[11px] text-rose-400">{geoError}</p>}
+
                   {/* Dark-mode map placeholder */}
                   <div className="relative rounded-2xl overflow-hidden border border-white/10 h-56 bg-slate-950">
                     <div className="absolute inset-0 opacity-40" style={{
@@ -213,7 +400,7 @@ const VenueOnboardingPage = () => {
                       </div>
                     </div>
                     <div className="absolute bottom-2 left-2 px-2 py-1 rounded-md bg-black/50 backdrop-blur-sm border border-white/10 text-[10px] text-white/70 font-mono">
-                      DARK · LIVE MAP
+                      {coords ? `GEOFENCED · ${radius[0]}m` : 'DARK · TAP LOCATE'}
                     </div>
                   </div>
 
@@ -278,8 +465,30 @@ const VenueOnboardingPage = () => {
                     <div className="flex items-center gap-2">
                       <Phone className="w-4 h-4 text-secondary" />
                       <p className="text-sm font-semibold text-white">Fast-Track Phone Verification</p>
+                      {otpVerified && (
+                        <span className="ml-auto flex items-center gap-1 text-[10px] font-black text-emerald-300 uppercase tracking-widest">
+                          <Check className="w-3 h-3" /> Verified
+                        </span>
+                      )}
                     </div>
-                    <p className="text-[11px] text-muted-foreground">Enter the 4-digit code we sent to your business phone.</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[11px] text-muted-foreground">
+                        {otpSent ? `Enter the 4-digit code sent to ${phone}` : `We'll SMS a 4-digit code to ${phone || 'your phone'}`}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={sendOtp}
+                        disabled={otpSending || !phone.trim()}
+                        className="text-[10px] font-black uppercase tracking-widest text-secondary hover:text-secondary/80 disabled:opacity-40"
+                      >
+                        {otpSending ? 'Sending…' : otpSent ? 'Resend' : 'Send code'}
+                      </button>
+                    </div>
+                    {devCode && (
+                      <p className="text-[10px] text-amber-300/80 font-mono bg-amber-500/5 border border-amber-500/20 rounded-lg px-2 py-1">
+                        DEV: code is <span className="font-bold">{devCode}</span>
+                      </p>
+                    )}
                     <div className="flex gap-2 justify-center py-1">
                       {otp.map((d, i) => (
                         <input
@@ -289,7 +498,10 @@ const VenueOnboardingPage = () => {
                           onChange={(e) => handleOtpChange(i, e.target.value)}
                           inputMode="numeric"
                           maxLength={1}
-                          className="w-12 h-14 rounded-xl bg-black/50 border border-white/10 text-center text-2xl font-bold font-mono text-white focus:outline-none focus:border-secondary focus:shadow-[0_0_18px_hsl(var(--secondary)/0.35)] transition-all"
+                          disabled={!otpSent || otpVerified}
+                          className={`w-12 h-14 rounded-xl bg-black/50 border text-center text-2xl font-bold font-mono text-white focus:outline-none transition-all disabled:opacity-40 ${
+                            otpVerified ? 'border-emerald-400/60 shadow-[0_0_18px_rgba(16,185,129,0.35)]' : 'border-white/10 focus:border-secondary focus:shadow-[0_0_18px_hsl(var(--secondary)/0.35)]'
+                          }`}
                         />
                       ))}
                     </div>
@@ -314,10 +526,11 @@ const VenueOnboardingPage = () => {
             </div>
             <Button
               onClick={handleNext}
-              disabled={!canContinue}
+              disabled={!canContinue || submitting}
               className={`rounded-full gradient-primary text-primary-foreground font-semibold px-6 shadow-[0_0_20px_hsl(var(--primary)/0.4)] disabled:opacity-40 disabled:shadow-none`}
             >
-              {step === 3 ? 'Submit Claim' : 'Continue'} <ArrowRight className="w-4 h-4 ml-1" />
+              {submitting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : null}
+              {step === 3 ? (submitting ? 'Submitting…' : 'Submit Claim') : 'Continue'} <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
         </div>

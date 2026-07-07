@@ -749,6 +749,47 @@ export type Database = {
         }
         Relationships: []
       }
+      otp_challenges: {
+        Row: {
+          attempts: number
+          claim_id: string | null
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          phone: string
+          verified: boolean
+        }
+        Insert: {
+          attempts?: number
+          claim_id?: string | null
+          code: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone: string
+          verified?: boolean
+        }
+        Update: {
+          attempts?: number
+          claim_id?: string | null
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone?: string
+          verified?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "otp_challenges_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "venue_claims"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pending_clubs: {
         Row: {
           address: string
@@ -1098,6 +1139,72 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      venue_claims: {
+        Row: {
+          address: string | null
+          created_at: string
+          document_url: string | null
+          email: string | null
+          geofence_verified: boolean | null
+          id: string
+          latitude: number | null
+          legal_name: string | null
+          longitude: number | null
+          otp_verified: boolean | null
+          phone: string | null
+          radius_m: number | null
+          status: string
+          step: number
+          tags: string[] | null
+          updated_at: string
+          user_id: string
+          venue_name: string
+          verification_method: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          document_url?: string | null
+          email?: string | null
+          geofence_verified?: boolean | null
+          id?: string
+          latitude?: number | null
+          legal_name?: string | null
+          longitude?: number | null
+          otp_verified?: boolean | null
+          phone?: string | null
+          radius_m?: number | null
+          status?: string
+          step?: number
+          tags?: string[] | null
+          updated_at?: string
+          user_id: string
+          venue_name: string
+          verification_method?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          document_url?: string | null
+          email?: string | null
+          geofence_verified?: boolean | null
+          id?: string
+          latitude?: number | null
+          legal_name?: string | null
+          longitude?: number | null
+          otp_verified?: boolean | null
+          phone?: string | null
+          radius_m?: number | null
+          status?: string
+          step?: number
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string
+          venue_name?: string
+          verification_method?: string | null
         }
         Relationships: []
       }

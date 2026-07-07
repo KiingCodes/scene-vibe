@@ -10,8 +10,8 @@
 //        { version, date: "YYYY-MM-DD", highlights: ["...", "..."] }
 //   3. Keep highlights short, user-facing, and benefit-led (no jargon).
 //   4. The footer "What's New" modal auto-reads from this file — no other edits needed.
-export const APP_VERSION = "1.11.0";
-export const APP_RELEASED_AT = "2026-07-06T12:00:00Z";
+export const APP_VERSION = "1.12.0";
+export const APP_RELEASED_AT = "2026-07-07T12:00:00Z";
 
 export type VersionEntry = {
   version: string;
@@ -22,6 +22,19 @@ export type VersionEntry = {
 
 // Only the latest version is kept — older entries are intentionally pruned.
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.12.0",
+    date: "2026-07-07",
+    releasedAt: APP_RELEASED_AT,
+    highlights: [
+      "Venue Manager Onboarding is now live — find it in the More menu under 'Claim Your Venue'",
+      "Wizard now saves drafts to the cloud and resumes exactly where you left off",
+      "Real geofence check — one-tap 'Use my current location' pins the venue with GPS accuracy",
+      "Real 4-digit OTP verification for fast-track phone claiming",
+      "Refreshed home-feed club cards — glass LIVE/CLOSED badge, slim action bar & colored crowd status",
+      "Live community chat counter on the Chat tab so you always see who's around",
+    ],
+  },
   {
     version: "1.11.0",
     date: "2026-07-06",
