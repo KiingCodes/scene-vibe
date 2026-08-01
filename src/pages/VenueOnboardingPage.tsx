@@ -317,7 +317,16 @@ const VenueOnboardingPage = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <p className="sr-only" role="status" aria-live="polite">{announce}</p>
+            <div
+              className="flex items-center gap-2"
+              role="progressbar"
+              aria-label="Onboarding progress"
+              aria-valuemin={1}
+              aria-valuemax={STEPS.length}
+              aria-valuenow={step}
+              aria-valuetext={`Step ${step} of ${STEPS.length}: ${STEPS[step - 1].label}`}
+            >
               {STEPS.map((s, i) => {
                 const isDone = step > s.id;
                 const isActive = step === s.id;
@@ -362,8 +371,8 @@ const VenueOnboardingPage = () => {
               {step === 1 && (
                 <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
                   <div className="flex items-center gap-2 text-primary">
-                    <Building2 className="w-5 h-5" />
-                    <h2 className="font-display text-lg font-bold text-white">Business details</h2>
+                    <Building2 className="w-5 h-5" aria-hidden="true" />
+                    <h2 ref={headingRef} tabIndex={-1} className="font-display text-lg font-bold text-white outline-none">Business details</h2>
                   </div>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <NeonField label="Venue Name" value={venueName} onChange={setVenueName} placeholder="e.g. Skybar Rooftop" />
@@ -373,8 +382,8 @@ const VenueOnboardingPage = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-[11px] uppercase tracking-widest text-muted-foreground font-bold">Venue Tags & Genres</label>
-                    <div className="flex flex-wrap gap-2">
+                    <span id="tags-label" className="block text-[11px] uppercase tracking-widest text-muted-foreground font-bold">Venue Tags & Genres</span>
+                    <div className="flex flex-wrap gap-2" role="group" aria-labelledby="tags-label">
                       {TAG_OPTIONS.map((t) => {
                         const active = tags.includes(t);
                         return (
@@ -382,6 +391,7 @@ const VenueOnboardingPage = () => {
                             key={t}
                             type="button"
                             onClick={() => toggleTag(t)}
+                            aria-pressed={active}
                             className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
                               active
                                 ? 'bg-primary/20 border-primary text-primary shadow-[0_0_16px_hsl(var(--primary)/0.35)]'
@@ -401,8 +411,8 @@ const VenueOnboardingPage = () => {
               {step === 2 && (
                 <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
                   <div className="flex items-center gap-2 text-primary">
-                    <MapPin className="w-5 h-5" />
-                    <h2 className="font-display text-lg font-bold text-white">Geofence & precise location</h2>
+                    <MapPin className="w-5 h-5" aria-hidden="true" />
+                    <h2 ref={headingRef} tabIndex={-1} className="font-display text-lg font-bold text-white outline-none">Geofence &amp; precise location</h2>
                   </div>
                   <NeonField label="Physical Address" value={address} onChange={setAddress} placeholder="Street, City, Country" />
 
@@ -412,6 +422,7 @@ const VenueOnboardingPage = () => {
                       type="button"
                       onClick={detectLocation}
                       disabled={locating}
+                      aria-label={coords ? 'Re-pin geofence to my current location' : 'Use my current location to pin the geofence'}
                       className="rounded-full bg-primary/15 border border-primary/40 text-primary hover:bg-primary/25 h-9 px-4 gap-2"
                     >
                       {locating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LocateFixed className="w-3.5 h-3.5" />}
@@ -425,7 +436,7 @@ const VenueOnboardingPage = () => {
                       </span>
                     )}
                   </div>
-                  {geoError && <p className="text-[11px] text-rose-400">{geoError}</p>}
+                  {geoError && <p role="alert" className="text-[11px] text-rose-400">{geoError}</p>}
 
                   {/* Dark-mode map placeholder */}
                   <div className="relative rounded-2xl overflow-hidden border border-white/10 h-56 bg-slate-950">
@@ -472,25 +483,36 @@ const VenueOnboardingPage = () => {
               {step === 3 && (
                 <motion.div key="s3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
                   <div className="flex items-center gap-2 text-primary">
-                    <ShieldCheck className="w-5 h-5" />
-                    <h2 className="font-display text-lg font-bold text-white">Verification & claiming</h2>
+                    <ShieldCheck className="w-5 h-5" aria-hidden="true" />
+                    <h2 ref={headingRef} tabIndex={-1} className="font-display text-lg font-bold text-white outline-none">Verification &amp; claiming</h2>
                   </div>
 
                   <label className="block cursor-pointer">
                     <div className={`relative rounded-2xl border-2 border-dashed p-8 text-center transition-all ${
                       file ? 'border-primary/60 bg-primary/5' : 'border-white/15 bg-white/[0.02] hover:border-primary/40 hover:bg-primary/[0.03]'
                     }`}>
-                      <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-                      <Upload className="w-8 h-8 mx-auto mb-2 text-primary" strokeWidth={1.5} />
-                      {file ? (
+                      <input
+                        type="file"
+                        className="sr-only"
+                        aria-label="Upload proof of ownership document (image or PDF, max 10MB)"
+                        accept="image/*,.pdf"
+                        onChange={(e) => handleFile(e.target.files?.[0] || null)}
+                      />
+                      {uploading
+                        ? <Loader2 className="w-8 h-8 mx-auto mb-2 text-primary animate-spin" aria-hidden="true" />
+                        : <Upload className="w-8 h-8 mx-auto mb-2 text-primary" strokeWidth={1.5} aria-hidden="true" />}
+                      {uploading ? (
+                        <p className="text-sm font-semibold text-foreground">Uploading securely…</p>
+                      ) : file ? (
                         <div>
                           <p className="text-sm font-semibold text-foreground">{file.name}</p>
                           <button
                             type="button"
-                            onClick={(e) => { e.preventDefault(); setFile(null); }}
+                            onClick={(e) => { e.preventDefault(); handleFile(null); }}
+                            aria-label={`Remove uploaded document ${file.name}`}
                             className="mt-1 text-[11px] text-muted-foreground hover:text-secondary inline-flex items-center gap-1"
                           >
-                            <X className="w-3 h-3" /> Remove
+                            <X className="w-3 h-3" aria-hidden="true" /> Remove
                           </button>
                         </div>
                       ) : (
@@ -536,13 +558,16 @@ const VenueOnboardingPage = () => {
                         DEV: code is <span className="font-bold">{devCode}</span>
                       </p>
                     )}
-                    <div className="flex gap-2 justify-center py-1">
+                    <div className="flex gap-2 justify-center py-1" role="group" aria-label="4-digit verification code">
                       {otp.map((d, i) => (
                         <input
                           key={i}
                           id={`otp-${i}`}
                           value={d}
                           onChange={(e) => handleOtpChange(i, e.target.value)}
+                          onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                          aria-label={`Verification code digit ${i + 1}`}
+                          autoComplete="one-time-code"
                           inputMode="numeric"
                           maxLength={1}
                           disabled={!otpSent || otpVerified}
