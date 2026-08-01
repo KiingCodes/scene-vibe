@@ -41,6 +41,11 @@
     --neon-glow-secondary: 0 0 20px hsla(330, 100%, 60%, 0.4);
     --neon-glow-accent: 0 0 20px hsla(270, 80%, 60%, 0.4);
 
+    /* Venue portal palette */
+    --portal-violet: 258 90% 66%;
+    --portal-cyan: 189 94% 43%;
+    --portal-pink: 330 81% 60%;
+
     --sidebar-background: 240 10% 4%;
     --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 174 100% 50%;

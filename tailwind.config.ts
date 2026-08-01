@@ -75,6 +75,12 @@ const config: Config = {
           pink: "hsl(330 100% 60%)",
           purple: "hsl(270 80% 60%)",
         },
+
+        portal: {
+          violet: "hsl(var(--portal-violet))",
+          cyan: "hsl(var(--portal-cyan))",
+          pink: "hsl(var(--portal-pink))",
+        },
       },
 
       borderRadius: {
