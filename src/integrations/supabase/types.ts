@@ -1146,6 +1146,7 @@ export type Database = {
         Row: {
           address: string | null
           created_at: string
+          document_name: string | null
           document_url: string | null
           email: string | null
           geofence_verified: boolean | null
@@ -1156,6 +1157,9 @@ export type Database = {
           otp_verified: boolean | null
           phone: string | null
           radius_m: number | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           status: string
           step: number
           tags: string[] | null
@@ -1167,6 +1171,7 @@ export type Database = {
         Insert: {
           address?: string | null
           created_at?: string
+          document_name?: string | null
           document_url?: string | null
           email?: string | null
           geofence_verified?: boolean | null
@@ -1177,6 +1182,9 @@ export type Database = {
           otp_verified?: boolean | null
           phone?: string | null
           radius_m?: number | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
           step?: number
           tags?: string[] | null
@@ -1188,6 +1196,7 @@ export type Database = {
         Update: {
           address?: string | null
           created_at?: string
+          document_name?: string | null
           document_url?: string | null
           email?: string | null
           geofence_verified?: boolean | null
@@ -1198,6 +1207,9 @@ export type Database = {
           otp_verified?: boolean | null
           phone?: string | null
           radius_m?: number | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
           step?: number
           tags?: string[] | null
