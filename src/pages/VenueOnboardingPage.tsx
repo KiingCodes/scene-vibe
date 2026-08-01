@@ -64,7 +64,18 @@ const VenueOnboardingPage = () => {
   const [otpSent, setOtpSent] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
   const [devCode, setDevCode] = useState<string | null>(null);
+  const [docPath, setDocPath] = useState<string | null>(null);
+  const [docName, setDocName] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const hydrated = useRef(false);
+  const headingRef = useRef<HTMLHeadingElement | null>(null);
+  const [announce, setAnnounce] = useState('');
+
+  // Move focus to the step heading whenever the step changes (screen-reader friendly).
+  useEffect(() => {
+    headingRef.current?.focus();
+    setAnnounce(`Step ${step} of ${STEPS.length}: ${STEPS[step - 1].label}`);
+  }, [step]);
 
   // ---------- Hydrate from localStorage on mount ----------
   useEffect(() => {
@@ -83,6 +94,8 @@ const VenueOnboardingPage = () => {
         setCoords(d.coords ?? null);
         setClaimId(d.claimId ?? null);
         setOtpVerified(!!d.otpVerified);
+        setDocPath(d.docPath ?? null);
+        setDocName(d.docName ?? null);
       }
     } catch { /* ignore */ }
     hydrated.current = true;
@@ -91,9 +104,9 @@ const VenueOnboardingPage = () => {
   // ---------- Persist to localStorage every change ----------
   useEffect(() => {
     if (!hydrated.current) return;
-    const draft = { step, venueName, legalName, email, phone, tags, address, radius: radius[0], coords, claimId, otpVerified };
+    const draft = { step, venueName, legalName, email, phone, tags, address, radius: radius[0], coords, claimId, otpVerified, docPath, docName };
     localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-  }, [step, venueName, legalName, email, phone, tags, address, radius, coords, claimId, otpVerified]);
+  }, [step, venueName, legalName, email, phone, tags, address, radius, coords, claimId, otpVerified, docPath, docName]);
 
   // ---------- Cloud persistence (auto-save when signed in) ----------
   const persistDraft = async (status: 'draft' | 'submitted' = 'draft') => {
@@ -110,11 +123,13 @@ const VenueOnboardingPage = () => {
       longitude: coords?.lng ?? null,
       radius_m: radius[0],
       geofence_verified: !!coords,
-      verification_method: otpVerified ? 'otp' : file ? 'document' : 'pending',
+      verification_method: otpVerified ? 'otp' : docPath ? 'document' : 'pending',
+      document_url: docPath,
+      document_name: docName,
       otp_verified: otpVerified,
       status,
       step,
-    };
+    } as any;
     setSaving(true);
     try {
       if (claimId) {
@@ -198,10 +213,36 @@ const VenueOnboardingPage = () => {
   const toggleTag = (t: string) =>
     setTags((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
 
+  // ---------- Document upload to private storage ----------
+  const handleFile = async (f: File | null) => {
+    setFile(f);
+    if (!f) { setDocPath(null); setDocName(null); return; }
+    if (!user) { toast.error('Sign in to upload your document'); navigate('/auth'); return; }
+    if (f.size > 10 * 1024 * 1024) { toast.error('File must be under 10MB'); setFile(null); return; }
+    const ok = f.type.startsWith('image/') || f.type === 'application/pdf';
+    if (!ok) { toast.error('Only images or PDF files are accepted'); setFile(null); return; }
+    setUploading(true);
+    try {
+      const ext = f.name.split('.').pop() || 'bin';
+      const path = `${user.id}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from('venue-docs').upload(path, f, { upsert: false, contentType: f.type });
+      if (error) throw error;
+      setDocPath(path);
+      setDocName(f.name);
+      toast.success('📄 Document uploaded securely');
+    } catch (e: any) {
+      console.error('[claim] upload error', e);
+      toast.error(e.message || 'Upload failed');
+      setFile(null);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const canContinue = (() => {
     if (step === 1) return venueName.trim() && legalName.trim() && email.trim() && phone.trim() && tags.length > 0;
     if (step === 2) return address.trim().length > 3 && !!coords; // real geofence required
-    if (step === 3) return file !== null || otpVerified;
+    if (step === 3) return (!!docPath && !uploading) || otpVerified;
     return false;
   })();
 
@@ -242,6 +283,12 @@ const VenueOnboardingPage = () => {
         if (code.length === 4 && otpSent && !otpVerified) verifyOtp();
       }, 100);
     }
+  };
+
+  const handleOtpKeyDown = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !otp[i] && i > 0) document.getElementById(`otp-${i - 1}`)?.focus();
+    if (e.key === 'ArrowLeft' && i > 0) document.getElementById(`otp-${i - 1}`)?.focus();
+    if (e.key === 'ArrowRight' && i < 3) document.getElementById(`otp-${i + 1}`)?.focus();
   };
 
   return (
