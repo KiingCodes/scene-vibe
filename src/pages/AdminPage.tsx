@@ -25,6 +25,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Trash2, RefreshCw, Lock, MessageSquare } from 'lucide-react';
+import { Building2 } from 'lucide-react';
+import VenueClaimsTab from '@/components/admin/VenueClaimsTab';
 
 const ADMIN_PANEL_PASSWORD = 'justvibes26';
 const ACTIVITY_TABLE_MAP: Record<string, string> = {
@@ -669,6 +671,7 @@ const AdminPage = () => {
               <TabsTrigger value="users" className="rounded-full text-xs gap-1.5"><Users className="w-3.5 h-3.5" /> Users</TabsTrigger>
               <TabsTrigger value="checkins" className="rounded-full text-xs gap-1.5"><UserCheck className="w-3.5 h-3.5" /> Check-ins</TabsTrigger>
               <TabsTrigger value="moderation" className="rounded-full text-xs gap-1.5"><Shield className="w-3.5 h-3.5" /> Moderation</TabsTrigger>
+              <TabsTrigger value="claims" className="rounded-full text-xs gap-1.5"><Building2 className="w-3.5 h-3.5" /> Venue Claims</TabsTrigger>
               <TabsTrigger value="analytics" className="rounded-full text-xs gap-1.5"><BarChart3 className="w-3.5 h-3.5" /> Analytics</TabsTrigger>
               <TabsTrigger value="system" className="rounded-full text-xs gap-1.5"><Server className="w-3.5 h-3.5" /> System</TabsTrigger>
             </TabsList>
@@ -694,6 +697,7 @@ const AdminPage = () => {
                   />}
             </TabsContent>
             <TabsContent value="analytics" className="mt-6"><AnalyticsTab /></TabsContent>
+            <TabsContent value="claims" className="mt-6"><VenueClaimsTab /></TabsContent>
             <TabsContent value="system" className="mt-6"><SystemTab /></TabsContent>
           </Tabs>
         </motion.div>
