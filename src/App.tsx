@@ -32,6 +32,7 @@ import SubmitExperiencePage from "./pages/SubmitExperiencePage";
 import NightReplayPage from "./pages/NightReplayPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import VenueOnboardingPage from "./pages/VenueOnboardingPage";
+import VenuePortalPage from "./pages/VenuePortalPage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import AboutPage from "./pages/AboutPage";
@@ -72,6 +73,7 @@ const AppContent = () => {
         <Route path="/night-replay" element={<NightReplayPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/venue-onboarding" element={<VenueOnboardingPage />} />
+        <Route path="/venue-portal" element={<VenuePortalPage />} />
         <Route path="/club/:id" element={<ClubDetailPage />} />
         <Route path="/suggest" element={<SuggestSpotPage />} />
         <Route path="/saved" element={<SavedPage />} />
