@@ -20,6 +20,9 @@ import ClubDetailPage from "./pages/ClubDetailPage";
 import SuggestSpotPage from "./pages/SuggestSpotPage";
 import SavedPage from "./pages/SavedPage";
 import AdminPage from "./pages/AdminPage";
+import SuperAdminPage from "./pages/SuperAdminPage";
+import SponsorshipsPage from "./pages/SponsorshipsPage";
+import BusinessBillingPage from "./pages/BusinessBillingPage";
 import InsightsPage from "./pages/InsightsPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import VibeHistoryPage from "./pages/VibeHistoryPage";
@@ -86,6 +89,9 @@ const AppContent = () => {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/how-it-works" element={<HowItWorksPage />} />
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/admin/super" element={<SuperAdminPage />} />
+        <Route path="/admin/sponsorships" element={<SponsorshipsPage />} />
+        <Route path="/business/billing" element={<BusinessBillingPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
