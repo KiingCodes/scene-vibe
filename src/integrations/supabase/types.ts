@@ -859,6 +859,24 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1058,6 +1076,95 @@ export type Database = {
           },
         ]
       }
+      sponsorship_campaigns: {
+        Row: {
+          asset_type: string
+          brand: string
+          budget_cents: number
+          created_at: string
+          created_by: string | null
+          end_date: string | null
+          id: string
+          impressions: number
+          redemptions: number
+          spent_cents: number
+          start_date: string | null
+          status: string
+          title: string
+          updated_at: string
+          venues: string[]
+        }
+        Insert: {
+          asset_type?: string
+          brand: string
+          budget_cents?: number
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          impressions?: number
+          redemptions?: number
+          spent_cents?: number
+          start_date?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          venues?: string[]
+        }
+        Update: {
+          asset_type?: string
+          brand?: string
+          budget_cents?: number
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          impressions?: number
+          redemptions?: number
+          spent_cents?: number
+          start_date?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          venues?: string[]
+        }
+        Relationships: []
+      }
+      sponsorship_redemptions: {
+        Row: {
+          campaign_id: string | null
+          created_at: string
+          id: string
+          label: string
+          user_id: string | null
+          venue_name: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          created_at?: string
+          id?: string
+          label: string
+          user_id?: string | null
+          venue_name?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          created_at?: string
+          id?: string
+          label?: string
+          user_id?: string | null
+          venue_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsorship_redemptions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "sponsorship_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_badges: {
         Row: {
           badge_type: string
@@ -1219,6 +1326,53 @@ export type Database = {
           verification_method?: string | null
         }
         Relationships: []
+      }
+      venue_subscriptions: {
+        Row: {
+          claim_id: string | null
+          created_at: string
+          id: string
+          renews_at: string | null
+          status: string
+          tier: string
+          updated_at: string
+          user_id: string
+          venue_name: string
+          verified: boolean
+        }
+        Insert: {
+          claim_id?: string | null
+          created_at?: string
+          id?: string
+          renews_at?: string | null
+          status?: string
+          tier?: string
+          updated_at?: string
+          user_id: string
+          venue_name: string
+          verified?: boolean
+        }
+        Update: {
+          claim_id?: string | null
+          created_at?: string
+          id?: string
+          renews_at?: string | null
+          status?: string
+          tier?: string
+          updated_at?: string
+          user_id?: string
+          venue_name?: string
+          verified?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_subscriptions_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: true
+            referencedRelation: "venue_claims"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vibes: {
         Row: {

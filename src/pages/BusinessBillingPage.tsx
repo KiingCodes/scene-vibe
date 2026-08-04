@@ -8,17 +8,36 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { PLANS, type SubscriptionPlan, type VenueTier } from "@/components/business/types";
+import { useAuth } from "@/hooks/useAuth";
+import { useMyClaim, useMySubscription, useUpsertSubscription } from "@/hooks/useBusinessAdmin";
 
 const glass = "rounded-2xl border border-white/10 bg-zinc-950/80 backdrop-blur-2xl";
 
 export default function BusinessBillingPage() {
-  const [current, setCurrent] = useState<VenueTier>("basic");
+  const { user } = useAuth();
+  const { data: sub, isLoading } = useMySubscription();
+  const { data: claim } = useMyClaim();
+  const upsert = useUpsertSubscription();
   const [selected, setSelected] = useState<SubscriptionPlan | null>(null);
 
-  const confirm = () => {
+  const current: VenueTier = (sub?.tier as VenueTier) ?? "basic";
+  const venueName = sub?.venue_name ?? claim?.venue_name ?? "Your venue";
+
+  const confirm = async () => {
     if (!selected) return;
-    setCurrent(selected.id);
-    toast.success(`Checkout ready for ${selected.name} — payment gateway pending`);
+    if (!user) return toast.error("Sign in to manage your plan");
+    try {
+      await upsert.mutateAsync({
+        id: sub?.id,
+        claim_id: sub?.claim_id ?? claim?.id ?? null,
+        venue_name: venueName,
+        tier: selected.id,
+        status: sub?.status ?? "pending",
+      });
+      toast.success(`${selected.name} requested — payment gateway pending`);
+    } catch (e: any) {
+      toast.error(e.message ?? "Could not update plan");
+    }
     setSelected(null);
   };
 
@@ -27,15 +46,24 @@ export default function BusinessBillingPage() {
       <div className="mx-auto max-w-5xl px-4 pt-6">
         <div className={`${glass} flex flex-wrap items-center justify-between gap-3 p-5`}>
           <div>
-            <div className="text-xs uppercase tracking-widest text-zinc-500">Your plan</div>
+            <div className="text-xs uppercase tracking-widest text-zinc-500">{venueName}</div>
             <h1 className="flex items-center gap-2 text-2xl font-bold">
               <Crown className="h-6 w-6 text-[#F59E0B]" />
               {PLANS.find((p) => p.id === current)!.name}
               {current === "basic" && <span className="text-zinc-400">— Free</span>}
             </h1>
-            <p className="mt-1 text-xs text-zinc-500">Renews 01 Sep 2026 · billed monthly</p>
+            <p className="mt-1 text-xs text-zinc-500">
+              {isLoading ? "Loading plan…"
+                : sub?.renews_at ? `Renews ${new Date(sub.renews_at).toLocaleDateString()} · billed monthly`
+                : "No billing cycle yet · billed monthly once active"}
+            </p>
           </div>
-          <Badge variant="outline" className="border-[#10B981]/40 text-[#10B981]">Active</Badge>
+          <Badge variant="outline" className={
+            sub?.status === "active" ? "border-[#10B981]/40 text-[#10B981]"
+              : sub?.status === "suspended" ? "border-[#EC4899]/40 text-[#EC4899]"
+              : "border-[#F59E0B]/40 text-[#F59E0B]"}>
+            {sub?.status ?? "pending"}
+          </Badge>
         </div>
 
         <div className="mt-6 grid gap-4 md:grid-cols-3">
@@ -92,7 +120,7 @@ export default function BusinessBillingPage() {
           </ul>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setSelected(null)}>Cancel</Button>
-            <Button onClick={confirm} className="bg-[#10B981] text-black hover:bg-[#10B981]/90">
+            <Button onClick={confirm} disabled={upsert.isPending} className="bg-[#10B981] text-black hover:bg-[#10B981]/90">
               Continue to checkout
             </Button>
           </DialogFooter>
