@@ -12,7 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import type { VenueTier } from "@/components/business/types";
-import { useAdminStats, useAdminUsers, useAdminUserActions, useAdminAuditLog } from "@/hooks/useAdminStats";
+import { useAdminStats, useAdminUsers, useAdminUserActions } from "@/hooks/useAdminStats";
+import { useAdminRealtime } from "@/hooks/useAdminRealtime";
+import AuditTrail from "@/components/admin/AuditTrail";
 import { useVenueClaims, useModerateClaim } from "@/hooks/useVenueClaims";
 import {
   useCampaigns, usePlatformFees, useRevenue, useSaveFees,
@@ -340,21 +342,8 @@ export default function SuperAdminPage() {
                 ))}
               </div>
             </div>
-            <div className={`${glass} divide-y divide-white/5`}>
-              <div className="p-4 text-xs uppercase tracking-widest text-zinc-500">Admin audit trail</div>
-              {audit.length === 0 && <div className="p-6 text-center text-sm text-zinc-500">No admin actions logged yet.</div>}
-              {audit.map((e: any) => (
-                <div key={e.id} className="flex items-center justify-between p-4 text-sm">
-                  <div>
-                    <div className="font-medium capitalize">{String(e.action).replace(/_/g, " ")}</div>
-                    <div className="text-xs text-zinc-500">
-                      {e.target_user_id ? `target ${String(e.target_user_id).slice(0, 8)}` : "platform action"}
-                    </div>
-                  </div>
-                  <span className="text-xs text-zinc-500">{ago(e.created_at)}</span>
-                </div>
-              ))}
-            </div>
+            <AuditTrail />
+
           </TabsContent>
         </Tabs>
       </div>
