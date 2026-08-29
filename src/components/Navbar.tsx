@@ -121,7 +121,7 @@ const Navbar = () => {
             </>
           ) : (
             <Link to="/auth">
-              <Button size="sm" className="h-9 rounded-full px-3 bg-gradient-to-r from-[#00e6d6] to-[#ff2e93] text-black font-bold">
+              <Button size="sm" className="h-9 rounded-full px-3 bg-[#00e6d6] hover:bg-[#00c9bb] text-black font-bold">
                 <User className="w-4 h-4 mr-1" /> Login
               </Button>
             </Link>

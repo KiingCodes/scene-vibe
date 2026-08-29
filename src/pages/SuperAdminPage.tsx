@@ -64,7 +64,7 @@ export default function SuperAdminPage() {
   const { data: fees } = usePlatformFees();
   const { data: revenue } = useRevenue();
   const { data: users = [] } = useAdminUsers(userQuery);
-  const { data: audit = [] } = useAdminAuditLog();
+  useAdminRealtime();
 
   const moderateClaim = useModerateClaim();
   const upsertSub = useUpsertSubscription();
