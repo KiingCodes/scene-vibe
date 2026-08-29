@@ -27,6 +27,8 @@ import { toast } from 'sonner';
 import { Trash2, RefreshCw, Lock, MessageSquare } from 'lucide-react';
 import { Building2 } from 'lucide-react';
 import VenueClaimsTab from '@/components/admin/VenueClaimsTab';
+import AuditTrail from '@/components/admin/AuditTrail';
+import { useAdminRealtime } from '@/hooks/useAdminRealtime';
 
 const ADMIN_PANEL_PASSWORD = 'justvibes26';
 const ACTIVITY_TABLE_MAP: Record<string, string> = {
@@ -581,6 +583,7 @@ const SystemTab = () => {
 /* ---------------- Page ---------------- */
 
 const AdminPage = () => {
+  useAdminRealtime();
   const { user, loading: authLoading } = useAuth();
   const { data: isAdmin, isLoading: adminLoading } = useIsAdmin();
   const { data: pendingClubs, isLoading } = usePendingClubs();
