@@ -690,6 +690,7 @@ const AdminPage = () => {
               <TabsTrigger value="moderation" className="rounded-full text-xs gap-1.5"><Shield className="w-3.5 h-3.5" /> Moderation</TabsTrigger>
               <TabsTrigger value="claims" className="rounded-full text-xs gap-1.5"><Building2 className="w-3.5 h-3.5" /> Venue Claims</TabsTrigger>
               <TabsTrigger value="analytics" className="rounded-full text-xs gap-1.5"><BarChart3 className="w-3.5 h-3.5" /> Analytics</TabsTrigger>
+              <TabsTrigger value="audit" className="rounded-full text-xs gap-1.5"><History className="w-3.5 h-3.5" /> Audit</TabsTrigger>
               <TabsTrigger value="system" className="rounded-full text-xs gap-1.5"><Server className="w-3.5 h-3.5" /> System</TabsTrigger>
             </TabsList>
 
@@ -715,6 +716,7 @@ const AdminPage = () => {
             </TabsContent>
             <TabsContent value="analytics" className="mt-6"><AnalyticsTab /></TabsContent>
             <TabsContent value="claims" className="mt-6"><VenueClaimsTab /></TabsContent>
+            <TabsContent value="audit" className="mt-6"><AuditTrail /></TabsContent>
             <TabsContent value="system" className="mt-6"><SystemTab /></TabsContent>
           </Tabs>
         </motion.div>
