@@ -39,6 +39,14 @@ const MORE_ITEMS = [
   { path: '/venue-onboarding', icon: Building2, label: 'Claim Your Venue' },
 ];
 
+// Owner/admin-only destinations, surfaced inside the "More" sheet.
+const ADMIN_ITEMS = [
+  { path: '/admin',              icon: Shield,    label: 'Command Center' },
+  { path: '/admin/super',        icon: Crown,     label: 'Super Admin' },
+  { path: '/admin/sponsorships', icon: Sparkles,  label: 'Sponsorships' },
+  { path: '/business/billing',   icon: Building2, label: 'Venue Billing' },
+];
+
 const CountrySwitcher = ({ align = 'start' }: { align?: 'start' | 'end' }) => {
   const { country, setCountry, meta } = useCountry();
   return (
@@ -212,6 +220,22 @@ const Navbar = () => {
                     </Link>
                   </DropdownMenuItem>
                 ))}
+                {isAdmin && (
+                  <>
+                    <DropdownMenuSeparator className="bg-white/10" />
+                    <DropdownMenuLabel className="text-[10px] uppercase tracking-[0.2em] text-[#ff2e93]/80">
+                      Admin
+                    </DropdownMenuLabel>
+                    {ADMIN_ITEMS.map(({ path, icon: Icon, label }) => (
+                      <DropdownMenuItem key={path} asChild className="focus:bg-white/5 cursor-pointer">
+                        <Link to={path} className="gap-2.5 py-2 flex items-center">
+                          <Icon className="w-4 h-4 text-[#ff2e93]" />
+                          <span className="text-sm text-white/90">{label}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
