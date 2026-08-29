@@ -27,6 +27,8 @@ import { toast } from 'sonner';
 import { Trash2, RefreshCw, Lock, MessageSquare } from 'lucide-react';
 import { Building2 } from 'lucide-react';
 import VenueClaimsTab from '@/components/admin/VenueClaimsTab';
+import AuditTrail from '@/components/admin/AuditTrail';
+import { useAdminRealtime } from '@/hooks/useAdminRealtime';
 
 const ADMIN_PANEL_PASSWORD = 'justvibes26';
 const ACTIVITY_TABLE_MAP: Record<string, string> = {
@@ -581,6 +583,7 @@ const SystemTab = () => {
 /* ---------------- Page ---------------- */
 
 const AdminPage = () => {
+  useAdminRealtime();
   const { user, loading: authLoading } = useAuth();
   const { data: isAdmin, isLoading: adminLoading } = useIsAdmin();
   const { data: pendingClubs, isLoading } = usePendingClubs();
@@ -655,7 +658,7 @@ const AdminPage = () => {
       <main className="container mx-auto px-4 pt-24 pb-12 max-w-5xl">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
           <Link to="/" className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground mb-4 text-sm"><ArrowLeft className="w-4 h-4" /> Back</Link>
-          <div className="flex items-center gap-3 mb-6">
+          <div className="flex items-center gap-3 mb-4">
             <div className="p-2.5 rounded-xl bg-primary/20 border border-primary/30 shadow-[0_0_20px_hsl(var(--primary)/0.3)]"><Shield className="w-6 h-6 text-primary" /></div>
             <div className="flex-1">
               <h1 className="font-display font-bold text-2xl text-foreground">Scene Command Center</h1>
@@ -665,6 +668,20 @@ const AdminPage = () => {
             </div>
           </div>
 
+          {/* Owner-level portals */}
+          <div className="flex flex-wrap gap-2 mb-6">
+            <Button asChild size="sm" className="rounded-full bg-primary text-primary-foreground">
+              <Link to="/admin/super"><Crown className="w-3.5 h-3.5 mr-1.5" /> Super Admin</Link>
+            </Button>
+            <Button asChild size="sm" variant="outline" className="rounded-full">
+              <Link to="/admin/sponsorships"><Sparkles className="w-3.5 h-3.5 mr-1.5" /> Sponsorships</Link>
+            </Button>
+            <Button asChild size="sm" variant="outline" className="rounded-full">
+              <Link to="/business/billing"><Building2 className="w-3.5 h-3.5 mr-1.5" /> Venue Billing</Link>
+            </Button>
+          </div>
+
+
           <Tabs defaultValue="overview" className="w-full">
             <TabsList className="w-full overflow-x-auto flex justify-start gap-1 h-auto bg-card/40 p-1 rounded-full">
               <TabsTrigger value="overview" className="rounded-full text-xs gap-1.5"><Activity className="w-3.5 h-3.5" /> Overview</TabsTrigger>
@@ -673,6 +690,7 @@ const AdminPage = () => {
               <TabsTrigger value="moderation" className="rounded-full text-xs gap-1.5"><Shield className="w-3.5 h-3.5" /> Moderation</TabsTrigger>
               <TabsTrigger value="claims" className="rounded-full text-xs gap-1.5"><Building2 className="w-3.5 h-3.5" /> Venue Claims</TabsTrigger>
               <TabsTrigger value="analytics" className="rounded-full text-xs gap-1.5"><BarChart3 className="w-3.5 h-3.5" /> Analytics</TabsTrigger>
+              <TabsTrigger value="audit" className="rounded-full text-xs gap-1.5"><History className="w-3.5 h-3.5" /> Audit</TabsTrigger>
               <TabsTrigger value="system" className="rounded-full text-xs gap-1.5"><Server className="w-3.5 h-3.5" /> System</TabsTrigger>
             </TabsList>
 
@@ -698,6 +716,7 @@ const AdminPage = () => {
             </TabsContent>
             <TabsContent value="analytics" className="mt-6"><AnalyticsTab /></TabsContent>
             <TabsContent value="claims" className="mt-6"><VenueClaimsTab /></TabsContent>
+            <TabsContent value="audit" className="mt-6"><AuditTrail /></TabsContent>
             <TabsContent value="system" className="mt-6"><SystemTab /></TabsContent>
           </Tabs>
         </motion.div>
