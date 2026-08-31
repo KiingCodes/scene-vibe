@@ -45,7 +45,7 @@ export const usePushNotifications = () => {
         vibrate: [100, 50, 100],
       } as NotificationOptions);
     } else {
-      new Notification(title, { body, icon: '/notification-icon.png' });
+      new Notification(title, { body, icon: '/pwa-512x512.png', badge: '/notification-badge.png' });
     }
   }, [requestPermission]);
 
