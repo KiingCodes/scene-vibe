@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+  <!-- Monochrome notification badge: pin locator with inner party silhouettes, pure white on transparent -->
+  <g fill="#FFFFFF">
+    <!-- Pin locator outline -->
+    <path d="M48 6C30.3 6 16 20.3 16 38c0 22.5 27.3 46.9 29.9 49.2a3.2 3.2 0 0 0 4.2 0C52.7 84.9 80 60.5 80 38 80 20.3 65.7 6 48 6zm0 73.3C38.1 66.7 24 50.2 24 38c0-13.3 10.7-24 24-24s24 10.7 24 24c0 12.2-14.1 28.7-24 41.3z"/>
+    <!-- Inner silhouettes: three raised partygoer figures -->
+    <path d="M48 22a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11zm-15 4a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9zm30 0a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9z"/>
+    <path d="M48 36c-4 0-7.2 2.4-8.2 5.8l-4.4-3.4a3 3 0 0 0-4 4.4l7 8.2V58h19.2v-6.8l7-8.2a3 3 0 1 0-4-4.4l-4.4 3.4C55.2 38.4 52 36 48 36z"/>
+    <path d="M31 36.5c-2.6 0-4.8 1.7-5.4 4l-1.1 4.5a2.5 2.5 0 1 0 4.8 1.2l.8-3.2V58h9v-6.6l-5-5.9c-.7-5-1.5-9-3.1-9zm34 0c-1.6 0-2.4 4-3.1 9l-5 5.9V58h9V43l.8 3.2a2.5 2.5 0 1 0 4.8-1.2L70.4 40.5c-.6-2.3-2.8-4-5.4-4z"/>
+  </g>
+</svg>
