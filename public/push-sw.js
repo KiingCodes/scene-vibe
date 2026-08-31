@@ -11,7 +11,7 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: payload.body,
-    icon: '/notification-icon.png',
+    icon: '/pwa-512x512.png',
     badge: '/notification-badge.png',
     tag: payload.tag || 'scene',
     renotify: true,
