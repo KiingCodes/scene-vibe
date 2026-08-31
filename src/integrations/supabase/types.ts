@@ -262,6 +262,33 @@ export type Database = {
         }
         Relationships: []
       }
+      emergency_contacts: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          phone_number: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          phone_number: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          phone_number?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           address: string | null
@@ -1075,6 +1102,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      safety_sessions: {
+        Row: {
+          battery_level: number | null
+          created_at: string
+          current_lat: number | null
+          current_lng: number | null
+          destination_label: string | null
+          destination_lat: number
+          destination_lng: number
+          duress_flagged: boolean
+          escalated_at: string | null
+          eta_minutes: number
+          expires_at: string
+          id: string
+          last_ping_at: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          battery_level?: number | null
+          created_at?: string
+          current_lat?: number | null
+          current_lng?: number | null
+          destination_label?: string | null
+          destination_lat: number
+          destination_lng: number
+          duress_flagged?: boolean
+          escalated_at?: string | null
+          eta_minutes?: number
+          expires_at?: string
+          id?: string
+          last_ping_at?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          battery_level?: number | null
+          created_at?: string
+          current_lat?: number | null
+          current_lng?: number | null
+          destination_label?: string | null
+          destination_lat?: number
+          destination_lng?: number
+          duress_flagged?: boolean
+          escalated_at?: string | null
+          eta_minutes?: number
+          expires_at?: string
+          id?: string
+          last_ping_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       sponsorship_campaigns: {
         Row: {
