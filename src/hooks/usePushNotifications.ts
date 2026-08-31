@@ -40,12 +40,12 @@ export const usePushNotifications = () => {
       swRegistration.current.showNotification(title, {
         body,
         icon: '/pwa-512x512.png',
-        badge: '/notification-badge.png',
+        badge: '/notification-badge.png?v=2',
         data: { url: url || '/' },
         vibrate: [100, 50, 100],
       } as NotificationOptions);
     } else {
-      new Notification(title, { body, icon: '/pwa-512x512.png', badge: '/notification-badge.png' });
+      new Notification(title, { body, icon: '/pwa-512x512.png', badge: '/notification-badge.png?v=2' });
     }
   }, [requestPermission]);
 
