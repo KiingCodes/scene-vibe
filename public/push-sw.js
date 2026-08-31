@@ -12,7 +12,7 @@ self.addEventListener('push', (event) => {
   const options = {
     body: payload.body,
     icon: '/pwa-512x512.png',
-    badge: '/notification-badge.png',
+    badge: '/notification-badge.png?v=2',
     tag: payload.tag || 'scene',
     renotify: true,
     vibrate: [80, 40, 80],
