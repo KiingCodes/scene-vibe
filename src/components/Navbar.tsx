@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
-import { MapPin, MessageCircle, Home, User, Heart, Shield, BarChart3, Trophy, Users, Calendar, Video, Moon, Sparkles, ChevronDown, Check, MoreHorizontal, Bell, Building2, Crown } from 'lucide-react';
+import { MapPin, MessageCircle, Home, User, Heart, Shield, BarChart3, Trophy, Users, Calendar, Video, Moon, Sparkles, ChevronDown, Check, MoreHorizontal, Bell, Building2, Crown, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
 import { Button } from '@/components/ui/button';
@@ -32,6 +32,7 @@ const MORE_ITEMS = [
   { path: '/events',       icon: Calendar,  label: 'Events' },
   { path: '/videos',       icon: Video,     label: 'Videos' },
   { path: '/night-replay', icon: Moon,      label: 'Night Replay' },
+  { path: '/safety',       icon: ShieldCheck, label: 'Walk Me Home' },
   { path: '/saved',        icon: Heart,     label: 'Saved' },
   { path: '/insights',     icon: BarChart3, label: 'Insights' },
   { path: '/leaderboard',  icon: Trophy,    label: 'Leaderboard' },

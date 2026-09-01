@@ -41,6 +41,9 @@ import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import AboutPage from "./pages/AboutPage";
 import HowItWorksPage from "./pages/HowItWorksPage";
+import SafetyPage from "./pages/SafetyPage";
+import TrackPage from "./pages/TrackPage";
+import ActiveWalkBar from "./components/safety/ActiveWalkBar";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -63,6 +66,7 @@ const AppContent = () => {
       <SplashScreen />
       <TermsGate />
       <InstallPrompt />
+      <ActiveWalkBar />
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/index" element={<Navigate to="/" replace />} />
@@ -93,6 +97,8 @@ const AppContent = () => {
         <Route path="/admin/super" element={<AdminOnly><SuperAdminPage /></AdminOnly>} />
         <Route path="/admin/sponsorships" element={<AdminOnly><SponsorshipsPage /></AdminOnly>} />
         <Route path="/business/billing" element={<BusinessBillingPage />} />
+        <Route path="/safety" element={<SafetyPage />} />
+        <Route path="/track/:sessionId" element={<TrackPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

@@ -10,8 +10,8 @@
 //        { version, date: "YYYY-MM-DD", highlights: ["...", "..."] }
 //   3. Keep highlights short, user-facing, and benefit-led (no jargon).
 //   4. The footer "What's New" modal auto-reads from this file — no other edits needed.
-export const APP_VERSION = "1.12.0";
-export const APP_RELEASED_AT = "2026-07-07T12:00:00Z";
+export const APP_VERSION = "1.13.0";
+export const APP_RELEASED_AT = "2026-09-01T00:00:00Z";
 
 export type VersionEntry = {
   version: string;
@@ -22,6 +22,18 @@ export type VersionEntry = {
 
 // Only the latest version is kept — older entries are intentionally pruned.
 export const VERSION_HISTORY: VersionEntry[] = [
+  {
+    version: "1.13.0",
+    date: "2026-09-01",
+    releasedAt: APP_RELEASED_AT,
+    highlights: [
+      "Walk Me Home is here — live location tracking from the More menu until you get home safe",
+      "Share a live track link so a friend can watch your route in real time",
+      "Emergency contacts get an SMS with your last known location, battery and live link",
+      "Safe PIN ends a walk; a duress PIN ends it on screen while silently alerting your people",
+      "Auto-arrival detection within 50m and automatic alerts if your location goes quiet",
+    ],
+  },
   {
     version: "1.12.0",
     date: "2026-07-07",
