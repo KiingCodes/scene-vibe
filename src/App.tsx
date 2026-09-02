@@ -60,6 +60,8 @@ const AppContent = () => {
   usePushNotifications();
   useWhatsNew();
   useReminderNotifications();
+  useVenueRealtime();
+
 
   return (
     <BrowserRouter>
