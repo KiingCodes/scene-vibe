@@ -9,27 +9,57 @@ const admin = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
 );
 
-const TWILIO_SID = Deno.env.get('TWILIO_ACCOUNT_SID');
-const TWILIO_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN');
-const TWILIO_FROM = Deno.env.get('TWILIO_FROM_NUMBER');
+const GATEWAY_URL = 'https://connector-gateway.lovable.dev/twilio';
+const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+const TWILIO_API_KEY = Deno.env.get('TWILIO_API_KEY');
+const TWILIO_FROM_ENV = Deno.env.get('TWILIO_FROM_NUMBER');
+
+const gatewayHeaders = (contentType?: string) => ({
+  Authorization: `Bearer ${LOVABLE_API_KEY}`,
+  'X-Connection-Api-Key': `${TWILIO_API_KEY}`,
+  ...(contentType ? { 'Content-Type': contentType } : {}),
+});
+
+let cachedFrom: string | null = null;
+
+/** Resolves the sending number: explicit secret first, else the account's first Twilio number. */
+async function resolveFrom(): Promise<string | null> {
+  if (TWILIO_FROM_ENV) return TWILIO_FROM_ENV;
+  if (cachedFrom) return cachedFrom;
+  const res = await fetch(`${GATEWAY_URL}/IncomingPhoneNumbers.json`, { headers: gatewayHeaders() });
+  if (!res.ok) {
+    console.error(`[safety-alert] number lookup failed [${res.status}]: ${await res.text()}`);
+    return null;
+  }
+  const data = await res.json();
+  cachedFrom = data?.incoming_phone_numbers?.[0]?.phone_number ?? null;
+  return cachedFrom;
+}
 
 async function sendSms(to: string, body: string) {
-  if (!TWILIO_SID || !TWILIO_TOKEN || !TWILIO_FROM) {
-    console.log(`[safety-alert] SMS provider not configured. Would send to ${to}: ${body}`);
-    return { ok: false, skipped: true };
+  if (!LOVABLE_API_KEY || !TWILIO_API_KEY) {
+    console.log(`[safety-alert] Twilio connection missing. Would send to ${to}: ${body}`);
+    return { ok: false, skipped: true, reason: 'twilio_not_connected' };
   }
-  const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
+  const from = await resolveFrom();
+  if (!from) {
+    console.error('[safety-alert] No Twilio sending number available.');
+    return { ok: false, skipped: true, reason: 'no_sender_number' };
+  }
+  const res = await fetch(`${GATEWAY_URL}/Messages.json`, {
     method: 'POST',
-    headers: {
-      Authorization: 'Basic ' + btoa(`${TWILIO_SID}:${TWILIO_TOKEN}`),
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({ To: to, From: TWILIO_FROM, Body: body }),
+    headers: gatewayHeaders('application/x-www-form-urlencoded'),
+    body: new URLSearchParams({ To: to, From: from, Body: body }),
   });
-  const ok = res.ok;
-  if (!ok) console.error('[safety-alert] twilio error', await res.text());
-  return { ok, skipped: false };
+  if (!res.ok) {
+    const details = await res.text();
+    console.error(`[safety-alert] twilio error [${res.status}]: ${details}`);
+    return { ok: false, skipped: false, status: res.status, details };
+  }
+  const msg = await res.json();
+  return { ok: true, skipped: false, sid: msg?.sid };
 }
+
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
