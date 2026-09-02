@@ -81,6 +81,7 @@ export type Database = {
           address: string
           area: string
           capacity: string | null
+          claim_id: string | null
           country: string
           created_at: string
           description: string | null
@@ -93,13 +94,17 @@ export type Database = {
           lng: number
           name: string
           opening_hours: string | null
+          owner_id: string | null
           phone: string | null
+          status: string
+          verified_at: string | null
           website: string | null
         }
         Insert: {
           address: string
           area: string
           capacity?: string | null
+          claim_id?: string | null
           country?: string
           created_at?: string
           description?: string | null
@@ -112,13 +117,17 @@ export type Database = {
           lng: number
           name: string
           opening_hours?: string | null
+          owner_id?: string | null
           phone?: string | null
+          status?: string
+          verified_at?: string | null
           website?: string | null
         }
         Update: {
           address?: string
           area?: string
           capacity?: string | null
+          claim_id?: string | null
           country?: string
           created_at?: string
           description?: string | null
@@ -131,10 +140,21 @@ export type Database = {
           lng?: number
           name?: string
           opening_hours?: string | null
+          owner_id?: string | null
           phone?: string | null
+          status?: string
+          verified_at?: string | null
           website?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clubs_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "venue_claims"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       crew_locations: {
         Row: {
@@ -1662,7 +1682,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "admin" | "moderator" | "user" | "venue_owner"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1790,7 +1810,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "moderator", "user", "venue_owner"],
     },
   },
 } as const

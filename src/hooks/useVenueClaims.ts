@@ -81,6 +81,11 @@ export const useModerateClaim = () => {
         });
       } catch { /* non-fatal */ }
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['venue-claims'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['venue-claims'] });
+      qc.invalidateQueries({ queryKey: ['clubs'] });
+      qc.invalidateQueries({ queryKey: ['admin-stats'] });
+    },
+
   });
 };

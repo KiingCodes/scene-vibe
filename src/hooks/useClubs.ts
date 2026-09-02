@@ -11,13 +11,15 @@ export const useClubs = () => {
   return useQuery({
     queryKey: ['clubs', country],
     queryFn: async () => {
-      // Fetch from clubs table
+      // Fetch approved venues from clubs table
       const { data: mainClubs, error: e1 } = await supabase
         .from('clubs')
         .select('*')
         .eq('country', country)
+        .eq('status', 'approved')
         .order('name');
       if (e1) throw e1;
+
 
       // Fetch approved community spots
       const { data: approvedPending, error: e2 } = await supabase
@@ -47,6 +49,11 @@ export const useClubs = () => {
         is_community_added: true,
         created_at: pc.created_at,
         country: pc.country ?? country,
+        status: 'approved',
+        owner_id: null,
+        claim_id: null,
+        verified_at: null,
+
       }));
 
       // Merge, avoiding duplicates by id
@@ -101,6 +108,11 @@ export const useClub = (id: string) => {
         is_community_added: true,
         created_at: pc.created_at,
         country: pc.country ?? 'ZA',
+        status: 'approved',
+        owner_id: null,
+        claim_id: null,
+        verified_at: null,
+
       } as Club;
     },
     enabled: !!id,

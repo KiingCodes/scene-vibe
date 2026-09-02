@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.apply_venue_claim_approval() FROM PUBLIC, anon, authenticated;

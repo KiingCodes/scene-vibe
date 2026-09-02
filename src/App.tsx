@@ -45,6 +45,8 @@ import SafetyPage from "./pages/SafetyPage";
 import TrackPage from "./pages/TrackPage";
 import ActiveWalkBar from "./components/safety/ActiveWalkBar";
 import NotFound from "./pages/NotFound";
+import { useVenueRealtime } from "./hooks/useVenueRealtime";
+
 
 const queryClient = new QueryClient();
 
@@ -60,6 +62,8 @@ const AppContent = () => {
   usePushNotifications();
   useWhatsNew();
   useReminderNotifications();
+  useVenueRealtime();
+
 
   return (
     <BrowserRouter>
