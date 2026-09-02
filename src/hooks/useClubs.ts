@@ -49,6 +49,11 @@ export const useClubs = () => {
         is_community_added: true,
         created_at: pc.created_at,
         country: pc.country ?? country,
+        status: 'approved',
+        owner_id: null,
+        claim_id: null,
+        verified_at: null,
+
       }));
 
       // Merge, avoiding duplicates by id
@@ -103,6 +108,11 @@ export const useClub = (id: string) => {
         is_community_added: true,
         created_at: pc.created_at,
         country: pc.country ?? 'ZA',
+        status: 'approved',
+        owner_id: null,
+        claim_id: null,
+        verified_at: null,
+
       } as Club;
     },
     enabled: !!id,
