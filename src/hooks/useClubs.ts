@@ -11,13 +11,15 @@ export const useClubs = () => {
   return useQuery({
     queryKey: ['clubs', country],
     queryFn: async () => {
-      // Fetch from clubs table
+      // Fetch approved venues from clubs table
       const { data: mainClubs, error: e1 } = await supabase
         .from('clubs')
         .select('*')
         .eq('country', country)
+        .eq('status', 'approved')
         .order('name');
       if (e1) throw e1;
+
 
       // Fetch approved community spots
       const { data: approvedPending, error: e2 } = await supabase
