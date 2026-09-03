@@ -1,26 +1,30 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Zap, Sparkles, TrendingUp } from "lucide-react";
+import { Zap, Sparkles, TrendingUp, Megaphone } from "lucide-react";
 import { PortalHeader } from "./PortalHeader";
 import { LiveCommandTab } from "./LiveCommandTab";
 import { ContentManagerTab } from "./ContentManagerTab";
 import { AnalyticsTab } from "./AnalyticsTab";
+import { VenueUpdatesTab } from "./VenueUpdatesTab";
 import { PortalMode, VenueStatus } from "./types";
+import type { Club } from "@/hooks/useClubs";
 import { cn } from "@/lib/utils";
 
-type TabId = "live" | "content" | "analytics";
+type TabId = "live" | "updates" | "content" | "analytics";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   { id: "live", label: "Live Command", icon: <Zap className="h-4 w-4" /> },
+  { id: "updates", label: "Updates & Events", icon: <Megaphone className="h-4 w-4" /> },
   { id: "content", label: "Profile & Content", icon: <Sparkles className="h-4 w-4" /> },
   { id: "analytics", label: "Analytics", icon: <TrendingUp className="h-4 w-4" /> },
 ];
 
 interface VenueManagementPortalProps {
   venueName?: string;
+  venue?: Club;
 }
 
-export const VenueManagementPortal = ({ venueName = "Konka Soweto" }: VenueManagementPortalProps) => {
+export const VenueManagementPortal = ({ venueName, venue }: VenueManagementPortalProps) => {
   const [mode, setMode] = useState<PortalMode>("live");
   const [tab, setTab] = useState<TabId>("live");
   const [status, setStatus] = useState<VenueStatus>({
@@ -36,7 +40,7 @@ export const VenueManagementPortal = ({ venueName = "Konka Soweto" }: VenueManag
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-5">
-      <PortalHeader venueName={venueName} mode={mode} onModeChange={handleModeChange} status={status} />
+      <PortalHeader venueName={venue?.name ?? venueName ?? "Your Venue"} mode={mode} onModeChange={handleModeChange} status={status} />
 
       <div role="tablist" aria-label="Venue portal sections" className="flex gap-1 rounded-2xl border border-white/10 bg-zinc-950/70 p-1 backdrop-blur-xl overflow-x-auto">
         {TABS.map((t) => (
@@ -75,8 +79,9 @@ export const VenueManagementPortal = ({ venueName = "Konka Soweto" }: VenueManag
           transition={{ duration: 0.22, ease: "easeOut" }}
         >
           {tab === "live" && <LiveCommandTab status={status} onStatusChange={setStatus} />}
+          {tab === "updates" && venue && <VenueUpdatesTab venue={venue} />}
           {tab === "content" && <ContentManagerTab />}
-          {tab === "analytics" && <AnalyticsTab />}
+          {tab === "analytics" && <AnalyticsTab venue={venue} />}
         </motion.div>
       </AnimatePresence>
     </div>
