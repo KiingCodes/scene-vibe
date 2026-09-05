@@ -90,6 +90,7 @@ export type Database = {
           image_url: string | null
           instagram: string | null
           is_community_added: boolean
+          is_verified: boolean
           lat: number
           lng: number
           name: string
@@ -113,6 +114,7 @@ export type Database = {
           image_url?: string | null
           instagram?: string | null
           is_community_added?: boolean
+          is_verified?: boolean
           lat: number
           lng: number
           name: string
@@ -136,6 +138,7 @@ export type Database = {
           image_url?: string | null
           instagram?: string | null
           is_community_added?: boolean
+          is_verified?: boolean
           lat?: number
           lng?: number
           name?: string
@@ -1360,22 +1363,26 @@ export type Database = {
           document_name: string | null
           document_url: string | null
           email: string | null
+          full_name: string | null
           geofence_verified: boolean | null
           id: string
           latitude: number | null
           legal_name: string | null
           longitude: number | null
+          notes: string | null
           otp_verified: boolean | null
           phone: string | null
           radius_m: number | null
           review_note: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          role_position: string | null
           status: string
           step: number
           tags: string[] | null
           updated_at: string
           user_id: string
+          venue_id: string | null
           venue_name: string
           verification_method: string | null
         }
@@ -1385,22 +1392,26 @@ export type Database = {
           document_name?: string | null
           document_url?: string | null
           email?: string | null
+          full_name?: string | null
           geofence_verified?: boolean | null
           id?: string
           latitude?: number | null
           legal_name?: string | null
           longitude?: number | null
+          notes?: string | null
           otp_verified?: boolean | null
           phone?: string | null
           radius_m?: number | null
           review_note?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          role_position?: string | null
           status?: string
           step?: number
           tags?: string[] | null
           updated_at?: string
           user_id: string
+          venue_id?: string | null
           venue_name: string
           verification_method?: string | null
         }
@@ -1410,26 +1421,38 @@ export type Database = {
           document_name?: string | null
           document_url?: string | null
           email?: string | null
+          full_name?: string | null
           geofence_verified?: boolean | null
           id?: string
           latitude?: number | null
           legal_name?: string | null
           longitude?: number | null
+          notes?: string | null
           otp_verified?: boolean | null
           phone?: string | null
           radius_m?: number | null
           review_note?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          role_position?: string | null
           status?: string
           step?: number
           tags?: string[] | null
           updated_at?: string
           user_id?: string
+          venue_id?: string | null
           venue_name?: string
           verification_method?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "venue_claims_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       venue_subscriptions: {
         Row: {
