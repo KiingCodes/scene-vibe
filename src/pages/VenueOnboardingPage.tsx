@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Check, MapPin, Upload, Phone, ShieldCheck, Building2, Sparkles, X, Loader2, LocateFixed } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, ArrowRight, Check, MapPin, Upload, ShieldCheck, Building2, Sparkles, X, Loader2, LocateFixed, PartyPopper } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import Navbar from '@/components/Navbar';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,16 +15,19 @@ import { useAuth } from '@/hooks/useAuth';
 const DRAFT_KEY = 'scene:venue-onboarding-draft';
 
 const STEPS = [
-  { id: 1, key: 'business', label: 'Business Info' },
-  { id: 2, key: 'geofence', label: 'Geofence & Location' },
-  { id: 3, key: 'verify', label: 'Verification & Claiming' },
+  { id: 1, key: 'business', label: 'Business & Owner' },
+  { id: 2, key: 'geofence', label: 'Location & Proof' },
 ];
 
 const TAG_OPTIONS = ['Nightclub', 'Lounge', 'Bar', 'Rooftop', 'Techno', 'House', 'R&B', 'Amapiano', 'Hip-Hop', 'Afrobeats', 'Mix', 'Live Music'];
+const ROLE_OPTIONS = ['Owner', 'Co-Owner', 'General Manager', 'Marketing Manager', 'Promoter', 'Other'];
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const PHONE_RE = /^\+?[0-9\s()-]{9,16}$/;
 
 const NeonField = ({
-  label, value, onChange, placeholder, type = 'text',
-}: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string }) => (
+  label, value, onChange, placeholder, type = 'text', error,
+}: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string; error?: string | null }) => (
   <div className="space-y-1.5">
     <label className="text-[11px] uppercase tracking-widest text-muted-foreground font-bold">{label}</label>
     <Input
@@ -30,103 +35,123 @@ const NeonField = ({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       type={type}
-      className="h-11 rounded-xl bg-black/50 border-white/10 text-foreground placeholder:text-muted-foreground/60 focus-visible:ring-primary focus-visible:ring-offset-0 focus-visible:border-primary/60 focus-visible:shadow-[0_0_20px_hsl(var(--primary)/0.25)] transition-all"
+      aria-invalid={!!error}
+      className={`h-11 rounded-xl bg-black/50 border-white/10 text-foreground placeholder:text-muted-foreground/60 focus-visible:ring-primary focus-visible:ring-offset-0 focus-visible:border-primary/60 focus-visible:shadow-[0_0_20px_hsl(var(--primary)/0.25)] transition-all ${error ? 'border-destructive/60' : ''}`}
     />
+    {error && <p role="alert" className="text-[11px] text-rose-400">{error}</p>}
   </div>
 );
 
 const VenueOnboardingPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [params] = useSearchParams();
   const [step, setStep] = useState(1);
   const [claimId, setClaimId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showTouched, setShowTouched] = useState(false);
+  const [done, setDone] = useState(false);
 
-  // Step 1
+  // Target venue (when arriving from a venue profile "Claim This Venue" CTA)
+  const [venueId, setVenueId] = useState<string | null>(null);
+
+  // Step 1 — business + owner
   const [venueName, setVenueName] = useState('');
   const [legalName, setLegalName] = useState('');
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [rolePosition, setRolePosition] = useState('');
   const [tags, setTags] = useState<string[]>([]);
 
-  // Step 2
+  // Step 2 — location + proof
   const [address, setAddress] = useState('');
   const [radius, setRadius] = useState<number[]>([100]);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
-
-  // Step 3
+  const [notes, setNotes] = useState('');
   const [file, setFile] = useState<File | null>(null);
-  const [otp, setOtp] = useState(['', '', '', '']);
-  const [otpSending, setOtpSending] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpVerified, setOtpVerified] = useState(false);
-  const [devCode, setDevCode] = useState<string | null>(null);
   const [docPath, setDocPath] = useState<string | null>(null);
   const [docName, setDocName] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+
   const hydrated = useRef(false);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
   const [announce, setAnnounce] = useState('');
 
-  // Move focus to the step heading whenever the step changes (screen-reader friendly).
   useEffect(() => {
     headingRef.current?.focus();
     setAnnounce(`Step ${step} of ${STEPS.length}: ${STEPS[step - 1].label}`);
+    setShowTouched(false);
   }, [step]);
 
-  // ---------- Hydrate from localStorage on mount ----------
+  // ---------- Hydrate from localStorage ----------
   useEffect(() => {
     try {
       const raw = localStorage.getItem(DRAFT_KEY);
       if (raw) {
         const d = JSON.parse(raw);
-        setStep(d.step ?? 1);
+        setStep(Math.min(d.step ?? 1, STEPS.length));
         setVenueName(d.venueName ?? '');
         setLegalName(d.legalName ?? '');
+        setFullName(d.fullName ?? '');
         setEmail(d.email ?? '');
         setPhone(d.phone ?? '');
+        setRolePosition(d.rolePosition ?? '');
         setTags(d.tags ?? []);
         setAddress(d.address ?? '');
         setRadius([d.radius ?? 100]);
         setCoords(d.coords ?? null);
         setClaimId(d.claimId ?? null);
-        setOtpVerified(!!d.otpVerified);
         setDocPath(d.docPath ?? null);
         setDocName(d.docName ?? null);
+        setNotes(d.notes ?? '');
+        setVenueId(d.venueId ?? null);
       }
     } catch { /* ignore */ }
+    // A venue passed in the URL always wins over the stored draft
+    const qId = params.get('venue');
+    const qName = params.get('name');
+    const qAddress = params.get('address');
+    if (qId) setVenueId(qId);
+    if (qName) setVenueName(qName);
+    if (qAddress) setAddress(qAddress);
     hydrated.current = true;
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ---------- Persist to localStorage every change ----------
+  // ---------- Persist draft locally ----------
   useEffect(() => {
     if (!hydrated.current) return;
-    const draft = { step, venueName, legalName, email, phone, tags, address, radius: radius[0], coords, claimId, otpVerified, docPath, docName };
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-  }, [step, venueName, legalName, email, phone, tags, address, radius, coords, claimId, otpVerified, docPath, docName]);
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({
+      step, venueName, legalName, fullName, email, phone, rolePosition, tags,
+      address, radius: radius[0], coords, claimId, docPath, docName, notes, venueId,
+    }));
+  }, [step, venueName, legalName, fullName, email, phone, rolePosition, tags, address, radius, coords, claimId, docPath, docName, notes, venueId]);
 
-  // ---------- Cloud persistence (auto-save when signed in) ----------
-  const persistDraft = async (status: 'draft' | 'submitted' = 'draft') => {
+  // ---------- Cloud persistence ----------
+  const persistDraft = async (status: 'draft' | 'pending_approval' = 'draft') => {
     if (!user) return null;
     const payload = {
       user_id: user.id,
-      venue_name: venueName || 'Untitled venue',
-      legal_name: legalName || null,
-      email: email || null,
-      phone: phone || null,
+      venue_id: venueId,
+      venue_name: venueName.trim() || 'Untitled venue',
+      legal_name: legalName.trim() || null,
+      full_name: fullName.trim() || null,
+      email: email.trim() || null,
+      phone: phone.trim() || null,
+      role_position: rolePosition || null,
+      notes: notes.trim() || null,
       tags,
-      address: address || null,
+      address: address.trim() || null,
       latitude: coords?.lat ?? null,
       longitude: coords?.lng ?? null,
       radius_m: radius[0],
       geofence_verified: !!coords,
-      verification_method: otpVerified ? 'otp' : docPath ? 'document' : 'pending',
+      verification_method: docPath ? 'document' : 'notes',
       document_url: docPath,
       document_name: docName,
-      otp_verified: otpVerified,
       status,
       step,
     } as any;
@@ -136,27 +161,23 @@ const VenueOnboardingPage = () => {
         const { error } = await supabase.from('venue_claims').update(payload).eq('id', claimId);
         if (error) throw error;
         return claimId;
-      } else {
-        const { data, error } = await supabase.from('venue_claims').insert(payload).select('id').single();
-        if (error) throw error;
-        setClaimId(data.id);
-        return data.id as string;
       }
+      const { data, error } = await supabase.from('venue_claims').insert(payload).select('id').single();
+      if (error) throw error;
+      setClaimId(data.id);
+      return data.id as string;
     } catch (e: any) {
       console.error('[claim] save error', e);
-      toast.error('Could not save draft — will retry.');
+      toast.error(e.message || 'Could not save your claim — please try again.');
       return null;
     } finally {
       setSaving(false);
     }
   };
 
-  // ---------- Real geofence check via browser geolocation ----------
+  // ---------- Geolocation ----------
   const detectLocation = () => {
-    if (!('geolocation' in navigator)) {
-      setGeoError('Geolocation not supported by this browser.');
-      return;
-    }
+    if (!('geolocation' in navigator)) { setGeoError('Geolocation not supported by this browser.'); return; }
     setLocating(true);
     setGeoError(null);
     navigator.geolocation.getCurrentPosition(
@@ -170,57 +191,22 @@ const VenueOnboardingPage = () => {
         setGeoError(err.message || 'Could not access location');
         toast.error('Location permission denied');
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 10000 },
     );
-  };
-
-  // ---------- Real OTP via edge function ----------
-  const sendOtp = async () => {
-    if (!phone.trim()) { toast.error('Add a business phone in step 1 first.'); return; }
-    setOtpSending(true);
-    try {
-      const id = await persistDraft('draft');
-      const { data, error } = await supabase.functions.invoke('venue-otp', {
-        body: { action: 'send', phone, claimId: id },
-      });
-      if (error) throw error;
-      setOtpSent(true);
-      if ((data as any)?.code) setDevCode((data as any).code);
-      toast.success('📩 Code sent — check your phone');
-    } catch (e: any) {
-      toast.error(e.message || 'Could not send code');
-    } finally {
-      setOtpSending(false);
-    }
-  };
-
-  const verifyOtp = async () => {
-    const code = otp.join('');
-    if (code.length !== 4) return;
-    try {
-      const { data, error } = await supabase.functions.invoke('venue-otp', {
-        body: { action: 'verify', phone, code, claimId },
-      });
-      if (error || !(data as any)?.ok) throw new Error('Incorrect code');
-      setOtpVerified(true);
-      toast.success('✅ Phone verified');
-    } catch {
-      toast.error('Incorrect or expired code');
-      setOtp(['', '', '', '']);
-    }
   };
 
   const toggleTag = (t: string) =>
     setTags((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
 
-  // ---------- Document upload to private storage ----------
+  // ---------- Document upload ----------
   const handleFile = async (f: File | null) => {
     setFile(f);
     if (!f) { setDocPath(null); setDocName(null); return; }
     if (!user) { toast.error('Sign in to upload your document'); navigate('/auth'); return; }
     if (f.size > 10 * 1024 * 1024) { toast.error('File must be under 10MB'); setFile(null); return; }
-    const ok = f.type.startsWith('image/') || f.type === 'application/pdf';
-    if (!ok) { toast.error('Only images or PDF files are accepted'); setFile(null); return; }
+    if (!(f.type.startsWith('image/') || f.type === 'application/pdf')) {
+      toast.error('Only images or PDF files are accepted'); setFile(null); return;
+    }
     setUploading(true);
     try {
       const ext = f.name.split('.').pop() || 'bin';
@@ -239,56 +225,38 @@ const VenueOnboardingPage = () => {
     }
   };
 
-  const canContinue = (() => {
-    if (step === 1) return venueName.trim() && legalName.trim() && email.trim() && phone.trim() && tags.length > 0;
-    if (step === 2) return address.trim().length > 3 && !!coords; // real geofence required
-    if (step === 3) return (!!docPath && !uploading) || otpVerified;
-    return false;
-  })();
+  // ---------- Validation ----------
+  const errors = {
+    venueName: venueName.trim().length < 2 ? 'Venue name is required' : null,
+    legalName: legalName.trim().length < 2 ? 'Registered business name is required' : null,
+    fullName: fullName.trim().length < 3 ? 'Your full name is required' : null,
+    email: !EMAIL_RE.test(email.trim()) ? 'Enter a valid business email' : null,
+    phone: !PHONE_RE.test(phone.trim()) ? 'Enter a valid mobile number' : null,
+    rolePosition: !rolePosition ? 'Select your role at the venue' : null,
+    tags: tags.length === 0 ? 'Pick at least one tag' : null,
+    address: address.trim().length < 5 ? 'Enter the full street address' : null,
+    coords: !coords ? 'Pin the venue location to set the geofence' : null,
+    proof: !docPath && notes.trim().length < 20 ? 'Upload a document or write at least 20 characters of proof notes' : null,
+  };
+  const step1Valid = !errors.venueName && !errors.legalName && !errors.fullName && !errors.email && !errors.phone && !errors.rolePosition && !errors.tags;
+  const step2Valid = !errors.address && !errors.coords && !errors.proof && !uploading;
+  const canContinue = step === 1 ? step1Valid : step2Valid;
+  const err = (k: keyof typeof errors) => (showTouched ? errors[k] : null);
 
   const handleNext = async () => {
-    if (!canContinue) return;
-    if (!user) {
-      toast.error('Sign in to save your claim');
-      navigate('/auth');
-      return;
-    }
-    if (step < 3) {
+    if (!user) { toast.error('Sign in to save your claim'); navigate('/auth'); return; }
+    if (!canContinue) { setShowTouched(true); toast.error('Please complete every field before continuing.'); return; }
+    if (step < STEPS.length) {
       await persistDraft('draft');
       setStep(step + 1);
       return;
     }
     setSubmitting(true);
-    const id = await persistDraft('submitted');
+    const id = await persistDraft('pending_approval');
     setSubmitting(false);
     if (!id) return;
-    toast.success('🎉 Claim submitted — SCENE will verify within 48 hours.');
     localStorage.removeItem(DRAFT_KEY);
-    setTimeout(() => navigate('/'), 1200);
-  };
-
-  const handleOtpChange = (i: number, v: string) => {
-    const clean = v.replace(/\D/g, '').slice(0, 1);
-    const next = [...otp];
-    next[i] = clean;
-    setOtp(next);
-    if (clean && i < 3) {
-      const el = document.getElementById(`otp-${i + 1}`);
-      el?.focus();
-    }
-    // Auto-verify once all 4 digits entered
-    if (next.every((d) => d.length === 1)) {
-      setTimeout(() => {
-        const code = next.join('');
-        if (code.length === 4 && otpSent && !otpVerified) verifyOtp();
-      }, 100);
-    }
-  };
-
-  const handleOtpKeyDown = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !otp[i] && i > 0) document.getElementById(`otp-${i - 1}`)?.focus();
-    if (e.key === 'ArrowLeft' && i > 0) document.getElementById(`otp-${i - 1}`)?.focus();
-    if (e.key === 'ArrowRight' && i < 3) document.getElementById(`otp-${i + 1}`)?.focus();
+    setDone(true);
   };
 
   return (
@@ -300,11 +268,10 @@ const VenueOnboardingPage = () => {
         </Link>
 
         <div className="relative rounded-3xl bg-gradient-to-br from-slate-900/90 via-slate-950/95 to-black border border-white/10 overflow-hidden shadow-2xl">
-          {/* Ambient glows */}
           <span className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-primary/20 blur-3xl pointer-events-none" />
           <span className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-secondary/15 blur-3xl pointer-events-none" />
 
-          {/* Progress bar */}
+          {/* Progress */}
           <div className="relative px-6 pt-6 pb-4 border-b border-white/5">
             <div className="flex items-center justify-between mb-3">
               <div>
@@ -372,17 +339,38 @@ const VenueOnboardingPage = () => {
                 <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
                   <div className="flex items-center gap-2 text-primary">
                     <Building2 className="w-5 h-5" aria-hidden="true" />
-                    <h2 ref={headingRef} tabIndex={-1} className="font-display text-lg font-bold text-white outline-none">Business details</h2>
+                    <h2 ref={headingRef} tabIndex={-1} className="font-display text-lg font-bold text-white outline-none">Business &amp; owner details</h2>
                   </div>
+
+                  {venueId && (
+                    <p className="text-[11px] text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 rounded-xl px-3 py-2">
+                      You're claiming an existing SCENE listing — {venueName || 'this venue'}.
+                    </p>
+                  )}
+
                   <div className="grid sm:grid-cols-2 gap-4">
-                    <NeonField label="Venue Name" value={venueName} onChange={setVenueName} placeholder="e.g. Skybar Rooftop" />
-                    <NeonField label="Legal Entity Name" value={legalName} onChange={setLegalName} placeholder="Registered company name" />
-                    <NeonField label="Business Email" value={email} onChange={setEmail} placeholder="owner@venue.com" type="email" />
-                    <NeonField label="Business Phone" value={phone} onChange={setPhone} placeholder="+27 82 000 0000" type="tel" />
+                    <NeonField label="Venue Name" value={venueName} onChange={setVenueName} placeholder="e.g. Skybar Rooftop" error={err('venueName')} />
+                    <NeonField label="Legal Entity Name" value={legalName} onChange={setLegalName} placeholder="Registered company name" error={err('legalName')} />
+                    <NeonField label="Your Full Name" value={fullName} onChange={setFullName} placeholder="e.g. Thabo Nkosi" error={err('fullName')} />
+                    <NeonField label="Business Email" value={email} onChange={setEmail} placeholder="owner@venue.com" type="email" error={err('email')} />
+                    <NeonField label="Mobile Number" value={phone} onChange={setPhone} placeholder="+27 82 000 0000" type="tel" error={err('phone')} />
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] uppercase tracking-widest text-muted-foreground font-bold" htmlFor="role-position">Role / Position at Venue</label>
+                      <select
+                        id="role-position"
+                        value={rolePosition}
+                        onChange={(e) => setRolePosition(e.target.value)}
+                        className={`w-full h-11 rounded-xl bg-black/50 border border-white/10 px-3 text-sm text-foreground focus:outline-none focus:border-primary/60 ${err('rolePosition') ? 'border-destructive/60' : ''}`}
+                      >
+                        <option value="">Select your role…</option>
+                        {ROLE_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
+                      </select>
+                      {err('rolePosition') && <p role="alert" className="text-[11px] text-rose-400">{errors.rolePosition}</p>}
+                    </div>
                   </div>
 
                   <div className="space-y-2">
-                    <span id="tags-label" className="block text-[11px] uppercase tracking-widest text-muted-foreground font-bold">Venue Tags & Genres</span>
+                    <span id="tags-label" className="block text-[11px] uppercase tracking-widest text-muted-foreground font-bold">Venue Tags &amp; Genres</span>
                     <div className="flex flex-wrap gap-2" role="group" aria-labelledby="tags-label">
                       {TAG_OPTIONS.map((t) => {
                         const active = tags.includes(t);
@@ -404,6 +392,7 @@ const VenueOnboardingPage = () => {
                         );
                       })}
                     </div>
+                    {err('tags') && <p role="alert" className="text-[11px] text-rose-400">{errors.tags}</p>}
                   </div>
                 </motion.div>
               )}
@@ -412,11 +401,10 @@ const VenueOnboardingPage = () => {
                 <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
                   <div className="flex items-center gap-2 text-primary">
                     <MapPin className="w-5 h-5" aria-hidden="true" />
-                    <h2 ref={headingRef} tabIndex={-1} className="font-display text-lg font-bold text-white outline-none">Geofence &amp; precise location</h2>
+                    <h2 ref={headingRef} tabIndex={-1} className="font-display text-lg font-bold text-white outline-none">Location &amp; proof of ownership</h2>
                   </div>
-                  <NeonField label="Physical Address" value={address} onChange={setAddress} placeholder="Street, City, Country" />
+                  <NeonField label="Physical Address" value={address} onChange={setAddress} placeholder="Street, City, Country" error={err('address')} />
 
-                  {/* Geolocate button */}
                   <div className="flex items-center gap-2">
                     <Button
                       type="button"
@@ -436,31 +424,7 @@ const VenueOnboardingPage = () => {
                       </span>
                     )}
                   </div>
-                  {geoError && <p role="alert" className="text-[11px] text-rose-400">{geoError}</p>}
-
-                  {/* Dark-mode map placeholder */}
-                  <div className="relative rounded-2xl overflow-hidden border border-white/10 h-56 bg-slate-950">
-                    <div className="absolute inset-0 opacity-40" style={{
-                      backgroundImage: 'linear-gradient(hsl(var(--primary)/0.15) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)/0.15) 1px, transparent 1px)',
-                      backgroundSize: '32px 32px',
-                    }} />
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10" />
-                    {/* pin + radius */}
-                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                      <motion.div
-                        animate={{ scale: [1, 1.15, 1] }}
-                        transition={{ duration: 2.5, repeat: Infinity }}
-                        style={{ width: `${Math.max(60, radius[0] * 1.4)}px`, height: `${Math.max(60, radius[0] * 1.4)}px` }}
-                        className="rounded-full bg-primary/15 border border-primary/40 backdrop-blur-sm"
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-4 h-4 rounded-full bg-primary shadow-[0_0_20px_hsl(var(--primary))]" />
-                      </div>
-                    </div>
-                    <div className="absolute bottom-2 left-2 px-2 py-1 rounded-md bg-black/50 backdrop-blur-sm border border-white/10 text-[10px] text-white/70 font-mono">
-                      {coords ? `GEOFENCED · ${radius[0]}m` : 'DARK · TAP LOCATE'}
-                    </div>
-                  </div>
+                  {(geoError || err('coords')) && <p role="alert" className="text-[11px] text-rose-400">{geoError || errors.coords}</p>}
 
                   <div className="space-y-3 rounded-2xl p-4 bg-white/[0.02] border border-white/10">
                     <div className="flex items-center justify-between">
@@ -476,15 +440,6 @@ const VenueOnboardingPage = () => {
                     <div className="flex justify-between text-[10px] text-muted-foreground font-mono uppercase tracking-widest">
                       <span>50m</span><span>200m</span>
                     </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {step === 3 && (
-                <motion.div key="s3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
-                  <div className="flex items-center gap-2 text-primary">
-                    <ShieldCheck className="w-5 h-5" aria-hidden="true" />
-                    <h2 ref={headingRef} tabIndex={-1} className="font-display text-lg font-bold text-white outline-none">Verification &amp; claiming</h2>
                   </div>
 
                   <label className="block cursor-pointer">
@@ -524,60 +479,21 @@ const VenueOnboardingPage = () => {
                     </div>
                   </label>
 
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 h-px bg-white/10" />
-                    <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">OR</span>
-                    <div className="flex-1 h-px bg-white/10" />
+                  <div className="space-y-1.5">
+                    <label htmlFor="claim-notes" className="text-[11px] uppercase tracking-widest text-muted-foreground font-bold">Proof / Notes for our team</label>
+                    <Textarea
+                      id="claim-notes"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="Tell us how you're connected to this venue — company registration number, social handles we can check, anything that speeds up review."
+                      className="min-h-[100px] rounded-xl bg-black/50 border-white/10 text-sm"
+                    />
+                    {err('proof') && <p role="alert" className="text-[11px] text-rose-400">{errors.proof}</p>}
                   </div>
 
-                  <div className="rounded-2xl p-4 bg-gradient-to-br from-secondary/10 to-primary/5 border border-secondary/25 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-secondary" />
-                      <p className="text-sm font-semibold text-white">Fast-Track Phone Verification</p>
-                      {otpVerified && (
-                        <span className="ml-auto flex items-center gap-1 text-[10px] font-black text-emerald-300 uppercase tracking-widest">
-                          <Check className="w-3 h-3" /> Verified
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-[11px] text-muted-foreground">
-                        {otpSent ? `Enter the 4-digit code sent to ${phone}` : `We'll SMS a 4-digit code to ${phone || 'your phone'}`}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={sendOtp}
-                        disabled={otpSending || !phone.trim()}
-                        className="text-[10px] font-black uppercase tracking-widest text-secondary hover:text-secondary/80 disabled:opacity-40"
-                      >
-                        {otpSending ? 'Sending…' : otpSent ? 'Resend' : 'Send code'}
-                      </button>
-                    </div>
-                    {devCode && (
-                      <p className="text-[10px] text-amber-300/80 font-mono bg-amber-500/5 border border-amber-500/20 rounded-lg px-2 py-1">
-                        DEV: code is <span className="font-bold">{devCode}</span>
-                      </p>
-                    )}
-                    <div className="flex gap-2 justify-center py-1" role="group" aria-label="4-digit verification code">
-                      {otp.map((d, i) => (
-                        <input
-                          key={i}
-                          id={`otp-${i}`}
-                          value={d}
-                          onChange={(e) => handleOtpChange(i, e.target.value)}
-                          onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                          aria-label={`Verification code digit ${i + 1}`}
-                          autoComplete="one-time-code"
-                          inputMode="numeric"
-                          maxLength={1}
-                          disabled={!otpSent || otpVerified}
-                          className={`w-12 h-14 rounded-xl bg-black/50 border text-center text-2xl font-bold font-mono text-white focus:outline-none transition-all disabled:opacity-40 ${
-                            otpVerified ? 'border-emerald-400/60 shadow-[0_0_18px_rgba(16,185,129,0.35)]' : 'border-white/10 focus:border-secondary focus:shadow-[0_0_18px_hsl(var(--secondary)/0.35)]'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  </div>
+                  <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Our admin team reviews every claim manually — usually within 48 hours.
+                  </p>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -598,15 +514,34 @@ const VenueOnboardingPage = () => {
             </div>
             <Button
               onClick={handleNext}
-              disabled={!canContinue || submitting}
-              className={`rounded-full gradient-primary text-primary-foreground font-semibold px-6 shadow-[0_0_20px_hsl(var(--primary)/0.4)] disabled:opacity-40 disabled:shadow-none`}
+              disabled={submitting || uploading}
+              className="rounded-full gradient-primary text-primary-foreground font-semibold px-6 shadow-[0_0_20px_hsl(var(--primary)/0.4)] disabled:opacity-40 disabled:shadow-none"
             >
               {submitting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : null}
-              {step === 3 ? (submitting ? 'Submitting…' : 'Submit Claim') : 'Continue'} <ArrowRight className="w-4 h-4 ml-1" />
+              {step === STEPS.length ? (submitting ? 'Submitting…' : 'Submit Claim') : 'Continue'} <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
         </div>
       </main>
+
+      <Dialog open={done} onOpenChange={(o) => { if (!o) { setDone(false); navigate('/'); } }}>
+        <DialogContent className="max-w-md text-center">
+          <DialogHeader className="items-center">
+            <div className="w-14 h-14 rounded-2xl grid place-items-center bg-emerald-500/15 border border-emerald-400/40 mb-2">
+              <PartyPopper className="w-7 h-7 text-emerald-300" />
+            </div>
+            <DialogTitle className="font-display text-xl">Claim Submitted!</DialogTitle>
+            <DialogDescription>
+              Our admin team will review your application for <span className="text-foreground font-semibold">{venueName}</span> shortly.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-center">
+            <Button onClick={() => { setDone(false); navigate('/'); }} className="rounded-full gradient-primary text-primary-foreground px-6">
+              Back to SCENE
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
