@@ -172,7 +172,12 @@ const ClubMap = ({ clubs, vibeCounts = {}, selectedClubId, experiences = [], sho
               </Tooltip>
               <Popup className="club-popup">
                 <div className="p-1 min-w-[200px]">
-                  <h3 className="font-bold text-sm mb-1">{club.name}</h3>
+                  <h3 className="font-bold text-sm mb-1 flex items-center gap-1">
+                    {club.name}
+                    {(club.status === 'approved' && (club.owner_id || club.verified_at)) && (
+                      <span title="Verified venue" style={{ color: 'rgb(16,185,129)' }}>✔</span>
+                    )}
+                  </h3>
                   <p className="text-xs text-gray-600 mb-1">{club.area}</p>
                   {vibeCounts[club.id] && (
                     <p className="text-xs flex items-center gap-1 mb-2">

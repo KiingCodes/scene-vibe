@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useCommunityMessages } from '@/hooks/useCommunityChat';
 import { useMemo } from 'react';
+import { VerifiedVenueBadge } from '@/components/VerifiedBadge';
+import { isVerifiedVenue } from '@/hooks/useVenueOwner';
 
 // Neon capacity badge — replaces the faint grey bar next to "Empty"
 const CapacityBadge = ({ vibeCount }: { vibeCount: number }) => {
@@ -124,9 +126,12 @@ const ClubDetailPage = () => {
                   <TrendingUp className="w-3 h-3" /> Trending Tonight
                 </motion.span>
               )}
-              <h1 className="font-display font-bold text-3xl sm:text-5xl text-white leading-tight tracking-tight drop-shadow-lg">
-                {club.name}
-              </h1>
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="font-display font-bold text-3xl sm:text-5xl text-white leading-tight tracking-tight drop-shadow-lg">
+                  {club.name}
+                </h1>
+                {isVerifiedVenue(club) && <VerifiedVenueBadge size="lg" />}
+              </div>
               <p className="text-white/80 flex items-center gap-1.5 mt-2 text-sm">
                 <MapPin className="w-4 h-4 text-primary shrink-0" />
                 <span className="truncate">{club.address}</span>
@@ -154,6 +159,19 @@ const ClubDetailPage = () => {
             </Button>
           </div>
         </motion.div>
+
+        {!isVerifiedVenue(club) && (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/50 bg-white/[0.03] px-4 py-3">
+            <p className="text-xs text-muted-foreground">
+              This spot hasn't been claimed yet. Own or manage it? Verify it to post official updates.
+            </p>
+            <Link to="/venue-onboarding">
+              <Button size="sm" variant="outline" className="rounded-full border-emerald-400/40 text-emerald-300 hover:text-emerald-200 hover:border-emerald-400/70">
+                Claim This Venue
+              </Button>
+            </Link>
+          </div>
+        )}
 
         {/* Info Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">

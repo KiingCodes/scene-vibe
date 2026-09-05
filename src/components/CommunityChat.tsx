@@ -18,12 +18,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { getUserColor } from '@/lib/userColor';
 import { useTypewriter } from '@/hooks/useTypewriter';
 import { useDeviceId } from '@/hooks/useDeviceId';
+import { useVenueOwnerIds } from '@/hooks/useVenueOwner';
+import { OfficialAccountTag } from '@/components/VerifiedBadge';
 
 const QUICK_EMOJIS = ['🔥','🎉','💃','🕺','🎵','😍','🙌','👀','💀','😂','🥂','🎧','⚡','🌃','✨'];
 const MAX_IMAGE_MB = 5;
 const MAX_AUDIO_MB = 8;
 
 const CommunityChat = () => {
+  const { data: ownerIds } = useVenueOwnerIds();
   const { user } = useAuth();
   const { data: isAdmin } = useIsAdmin();
   const deviceId = useDeviceId();
@@ -309,8 +312,9 @@ const CommunityChat = () => {
             >
               <div className="max-w-[80%] flex flex-col gap-0.5">
                 {!isOwn && (
-                  <span className="text-[11px] font-semibold pl-2.5" style={{ color: color.name }}>
+                  <span className="text-[11px] font-semibold pl-2.5 inline-flex items-center gap-1" style={{ color: color.name }}>
                     {username}
+                    {ownerIds?.has(msg.user_id) && <OfficialAccountTag />}
                   </span>
                 )}
                 <div
