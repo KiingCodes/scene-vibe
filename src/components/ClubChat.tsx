@@ -101,6 +101,7 @@ const ClubChat = ({ clubId, clubName }: ClubChatProps) => {
                 {!isOwn && (
                   <p className="text-xs font-semibold text-primary/80 mb-0.5 flex items-center gap-1">
                     {profile?.username || 'Anon'}
+                    {ownerIds?.has(msg.user_id) && <OfficialAccountTag />}
                   </p>
                 )}
                 {msgType === 'image' && mediaUrl ? (

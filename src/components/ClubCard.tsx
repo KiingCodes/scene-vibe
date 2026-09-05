@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Flame, TrendingUp, MapPin, Clock, Music, Users, Heart, Car } from 'lucide-react';
+import { Flame, TrendingUp, MapPin, Clock, Music, Users, Heart, Car, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useHasVibed, useVibe, useVibeFreshness } from '@/hooks/useVibes';
@@ -12,6 +12,8 @@ import type { Club } from '@/hooks/useClubs';
 import { getOpenStatus } from '@/lib/openHours';
 import { useEffect, useState } from 'react';
 import logoFallback from '@/assets/scene-logo.jpg';
+import { VerifiedVenueBadge } from '@/components/VerifiedBadge';
+import { isVerifiedVenue } from '@/hooks/useVenueOwner';
 
 interface ClubCardProps {
   club: Club;
@@ -160,8 +162,9 @@ const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardPr
 
           <div className="p-3 space-y-2">
             <div className="flex items-start justify-between gap-2">
-              <h3 className="font-display font-black text-[17px] leading-tight tracking-tight text-foreground group-hover:text-primary transition-colors truncate">
-                {club.name}
+              <h3 className="font-display font-black text-[17px] leading-tight tracking-tight text-foreground group-hover:text-primary transition-colors truncate flex items-center gap-1.5">
+                <span className="truncate">{club.name}</span>
+                {isVerifiedVenue(club) && <ShieldCheck className="w-3.5 h-3.5 shrink-0 text-emerald-400" aria-label="Verified venue" />}
               </h3>
               {/* Crisp colored micro-badge crowd status */}
               <div className={`shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full border ${crowdBadge.bg} ${crowdBadge.border}`}>

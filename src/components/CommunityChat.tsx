@@ -309,8 +309,9 @@ const CommunityChat = () => {
             >
               <div className="max-w-[80%] flex flex-col gap-0.5">
                 {!isOwn && (
-                  <span className="text-[11px] font-semibold pl-2.5" style={{ color: color.name }}>
+                  <span className="text-[11px] font-semibold pl-2.5 inline-flex items-center gap-1" style={{ color: color.name }}>
                     {username}
+                    {ownerIds?.has(msg.user_id) && <OfficialAccountTag />}
                   </span>
                 )}
                 <div
