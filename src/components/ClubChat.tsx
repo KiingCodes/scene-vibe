@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useVenueOwnerIds } from '@/hooks/useVenueOwner';
+import { OfficialAccountTag } from '@/components/VerifiedBadge';
 
 const VERIFIED_LEVEL = 8;
 
@@ -21,6 +23,7 @@ interface ClubChatProps {
 }
 
 const ClubChat = ({ clubId, clubName }: ClubChatProps) => {
+  const { data: ownerIds } = useVenueOwnerIds();
   const { user } = useAuth();
   const { data: messages, isLoading } = useMessages(clubId);
   const sendMessage = useSendMessage();
