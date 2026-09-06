@@ -31,8 +31,6 @@ import ProfilePage from "./pages/ProfilePage";
 import CrewsPage from "./pages/CrewsPage";
 import EventsPage from "./pages/EventsPage";
 import VideosPage from "./pages/VideosPage";
-import ExperiencesPage from "./pages/ExperiencesPage";
-import SubmitExperiencePage from "./pages/SubmitExperiencePage";
 import NightReplayPage from "./pages/NightReplayPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import VenueOnboardingPage from "./pages/VenueOnboardingPage";
@@ -80,8 +78,6 @@ const AppContent = () => {
         <Route path="/crews" element={<CrewsPage />} />
         <Route path="/events" element={<EventsPage />} />
         <Route path="/videos" element={<VideosPage />} />
-        <Route path="/experiences" element={<ExperiencesPage />} />
-        <Route path="/experiences/submit" element={<SubmitExperiencePage />} />
         <Route path="/night-replay" element={<NightReplayPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/venue-onboarding" element={<VenueOnboardingPage />} />
@@ -103,6 +99,8 @@ const AppContent = () => {
         <Route path="/business/billing" element={<BusinessBillingPage />} />
         <Route path="/safety" element={<SafetyPage />} />
         <Route path="/track/:sessionId" element={<TrackPage />} />
+        <Route path="/experiences" element={<Navigate to="/" replace />} />
+        <Route path="/experiences/submit" element={<Navigate to="/suggest" replace />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
