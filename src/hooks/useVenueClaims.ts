@@ -82,9 +82,9 @@ export const useModerateClaim = () => {
       } catch { /* non-fatal */ }
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['venue-claims'] });
-      qc.invalidateQueries({ queryKey: ['clubs'] });
-      qc.invalidateQueries({ queryKey: ['admin-stats'] });
+      ['venue-claims', 'clubs', 'club', 'admin-stats', 'pending-clubs', 'venue-owner', 'admin-audit'].forEach((key) =>
+        qc.invalidateQueries({ queryKey: [key] }),
+      );
     },
 
   });
