@@ -2,18 +2,15 @@ import { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import ClubMap from '@/components/ClubMap';
 import { useClubs } from '@/hooks/useClubs';
-import { useExperiences } from '@/hooks/useExperiences';
 import { useAllVibes } from '@/hooks/useVibes';
-import { Flame, Sparkles } from 'lucide-react';
+import { Flame } from 'lucide-react';
 import { SkeletonBlock, LogoSkeleton } from '@/components/BrandedSkeleton';
 
 const MapPage = () => {
   const { data: clubs, isLoading: clubsLoading } = useClubs();
-  const { data: experiences } = useExperiences();
   const { data: vibeCounts } = useAllVibes();
   const [selectedClubId] = useState<string | undefined>();
   const [showClubs, setShowClubs] = useState(true);
-  const [showExps, setShowExps] = useState(true);
   const [showLabels, setShowLabels] = useState(false);
 
   return (
@@ -28,15 +25,7 @@ const MapPage = () => {
               showClubs ? 'bg-primary/20 border-primary/50 text-primary' : 'border-border/30 text-muted-foreground'
             }`}
           >
-            <Flame className="w-3 h-3" /> Clubs {clubs ? `(${clubs.length})` : ''}
-          </button>
-          <button
-            onClick={() => setShowExps(v => !v)}
-            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border transition-all whitespace-nowrap ${
-              showExps ? 'bg-secondary/20 border-secondary/50 text-secondary' : 'border-border/30 text-muted-foreground'
-            }`}
-          >
-            <Sparkles className="w-3 h-3" /> Experiences {experiences ? `(${experiences.filter(e => e.lat != null).length})` : ''}
+            <Flame className="w-3 h-3" /> Venues {clubs ? `(${clubs.length})` : ''}
           </button>
           <button
             onClick={() => setShowLabels(v => !v)}
@@ -47,6 +36,7 @@ const MapPage = () => {
             {showLabels ? 'All labels' : 'Trending labels'}
           </button>
         </div>
+
         {/* Full-screen map */}
         <div className="h-full w-full">
           {clubsLoading || !clubs ? (
