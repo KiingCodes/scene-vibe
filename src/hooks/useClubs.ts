@@ -53,6 +53,8 @@ export const useClubs = () => {
         owner_id: null,
         claim_id: null,
         verified_at: null,
+        is_verified: false,
+
 
       }));
 

@@ -64,7 +64,7 @@ export const useModerateClaim = () => {
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
-    mutationFn: async ({ id, status, note }: { id: string; status: 'approved' | 'rejected' | 'in_review' | 'submitted'; note?: string }) => {
+    mutationFn: async ({ id, status, note }: { id: string; status: 'approved' | 'rejected' | 'in_review' | 'pending_approval'; note?: string }) => {
       const { error } = await (supabase as any)
         .from('venue_claims')
         .update({
@@ -82,9 +82,9 @@ export const useModerateClaim = () => {
       } catch { /* non-fatal */ }
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['venue-claims'] });
-      qc.invalidateQueries({ queryKey: ['clubs'] });
-      qc.invalidateQueries({ queryKey: ['admin-stats'] });
+      ['venue-claims', 'clubs', 'club', 'admin-stats', 'pending-clubs', 'venue-owner', 'admin-audit'].forEach((key) =>
+        qc.invalidateQueries({ queryKey: [key] }),
+      );
     },
 
   });
