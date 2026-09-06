@@ -19,7 +19,7 @@ const STATUS_TONE: Record<string, string> = {
   rejected: 'bg-rose-500/15 text-rose-300 border-rose-500/30',
 };
 
-const STAGES = ['Business Info', 'Geofence', 'Verification'];
+const STAGES = ['Business & Owner', 'Location & Proof'];
 
 const DocumentLightbox = ({ path, name, onClose }: { path: string; name?: string | null; onClose: () => void }) => {
   const { data: url, isLoading, error } = useClaimDocumentUrl(path);
@@ -163,7 +163,7 @@ const VenueClaimsTab = () => {
     <div className="space-y-4">
       <Tabs value={status} onValueChange={setStatus}>
         <TabsList className="bg-card/40 rounded-full p-1 flex-wrap h-auto">
-          {['all', 'submitted', 'in_review', 'approved', 'rejected', 'draft'].map((s) => (
+          {['all', 'pending_approval', 'in_review', 'approved', 'rejected', 'draft'].map((s) => (
             <TabsTrigger key={s} value={s} className="rounded-full text-xs capitalize">{s.replace('_', ' ')}</TabsTrigger>
           ))}
         </TabsList>
