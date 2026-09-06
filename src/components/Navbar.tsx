@@ -21,18 +21,17 @@ import "@fontsource/poppins/800.css";
 // Primary bottom-dock destinations (thumb-friendly, mobile-first).
 const PRIMARY_ITEMS = [
   { path: '/',            icon: Home,          label: 'Home' },
-  { path: '/map',         icon: MapPin,        label: 'Map' },
-  { path: '/experiences', icon: Sparkles,      label: 'Discover' },
   { path: '/chat',        icon: MessageCircle, label: 'Chat' },
+  { path: '/safety',      icon: ShieldCheck,   label: 'Walk Me Home' },
 ];
 
 // Everything else lives inside the "More" sheet — one tap from the dock.
 const MORE_ITEMS = [
+  { path: '/map',          icon: MapPin,    label: 'Map' },
   { path: '/crews',        icon: Users,     label: 'Crews' },
   { path: '/events',       icon: Calendar,  label: 'Events' },
   { path: '/videos',       icon: Video,     label: 'Videos' },
   { path: '/night-replay', icon: Moon,      label: 'Night Replay' },
-  { path: '/safety',       icon: ShieldCheck, label: 'Walk Me Home' },
   { path: '/saved',        icon: Heart,     label: 'Saved' },
   { path: '/insights',     icon: BarChart3, label: 'Insights' },
   { path: '/leaderboard',  icon: Trophy,    label: 'Leaderboard' },
@@ -147,7 +146,7 @@ const Navbar = () => {
       >
         <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-[#00e6d6] via-[#ff2e93] to-[#facc15] opacity-80" aria-hidden />
         <div className="bg-[#0a0a0f]/90 backdrop-blur-2xl border-t border-white/10">
-          <div className="max-w-lg mx-auto grid grid-cols-5 gap-1 px-2 h-16">
+          <div className="max-w-lg mx-auto grid grid-cols-4 gap-1 px-2 h-16">
             {PRIMARY_ITEMS.map(({ path, icon: Icon, label }) => {
               const active = isActive(path);
               const isChat = path === '/chat';
