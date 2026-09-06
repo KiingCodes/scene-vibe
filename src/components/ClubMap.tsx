@@ -5,7 +5,6 @@ import 'leaflet/dist/leaflet.css';
 import { Link } from 'react-router-dom';
 import { Navigation, Flame, Plus, Minus, Locate } from 'lucide-react';
 import type { Club } from '@/hooks/useClubs';
-import type { Experience } from '@/hooks/useExperiences';
 
 // Fix default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -44,33 +43,10 @@ const CATEGORY_COLOR: Record<string, string> = {
   street_event: 'hsl(190,100%,55%)',
 };
 
-const createExperienceIcon = (category: string) => {
-  const color = CATEGORY_COLOR[category] || 'hsl(280,100%,65%)';
-  return L.divIcon({
-    className: 'custom-marker',
-    html: `<div style="
-      width: 26px; height: 26px; border-radius: 8px;
-      background: ${color};
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 0 10px ${color};
-      border: 2px solid white;
-      transform: rotate(45deg);
-    ">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="white" style="transform: rotate(-45deg);">
-        <path d="M12 2l2.4 7.4H22l-6 4.4 2.3 7.2L12 16.6 5.7 21l2.3-7.2-6-4.4h7.6z"/>
-      </svg>
-    </div>`,
-    iconSize: [26, 26],
-    iconAnchor: [13, 26],
-    popupAnchor: [0, -26],
-  });
-};
-
 interface ClubMapProps {
   clubs: Club[];
   vibeCounts?: Record<string, number>;
   selectedClubId?: string;
-  experiences?: Experience[];
   showLabels?: boolean;
 }
 
@@ -122,7 +98,7 @@ const DensityControls = () => {
   );
 };
 
-const ClubMap = ({ clubs, vibeCounts = {}, selectedClubId, experiences = [], showLabels = false }: ClubMapProps) => {
+const ClubMap = ({ clubs, vibeCounts = {}, selectedClubId, showLabels = false }: ClubMapProps) => {
   const selectedClub = clubs.find(c => c.id === selectedClubId);
 
   const directionsUrl = (lat: number, lng: number, mode: 'driving' | 'walking' | 'transit') =>
@@ -196,27 +172,6 @@ const ClubMap = ({ clubs, vibeCounts = {}, selectedClubId, experiences = [], sho
             </Marker>
           );
         })}
-        {experiences.filter(e => e.lat != null && e.lng != null).map(exp => (
-          <Marker
-            key={exp.id}
-            position={[exp.lat as number, exp.lng as number]}
-            icon={createExperienceIcon(exp.category)}
-          >
-            <Tooltip direction="top" offset={[0, -22]} permanent={showLabels} className="exp-label">
-              {exp.name}
-            </Tooltip>
-            <Popup className="club-popup">
-              <div className="p-1 min-w-[200px]">
-                <h3 className="font-bold text-sm mb-1 flex items-center gap-1">
-                  <span style={{ textTransform: 'capitalize' }}>{exp.category.replace('_', ' ')}</span>
-                </h3>
-                <p className="text-xs text-gray-700 font-medium">{exp.name}</p>
-                <p className="text-xs text-gray-600 mb-2">{exp.area}</p>
-                <DirButtons lat={exp.lat as number} lng={exp.lng as number} />
-              </div>
-            </Popup>
-          </Marker>
-        ))}
       </MapContainer>
     </div>
   );
