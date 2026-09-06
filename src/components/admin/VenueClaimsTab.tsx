@@ -12,6 +12,7 @@ import { useVenueClaims, useClaimDocumentUrl, useModerateClaim, type VenueClaim 
 
 const STATUS_TONE: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
+  pending_approval: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
   submitted: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
   in_review: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
   approved: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
