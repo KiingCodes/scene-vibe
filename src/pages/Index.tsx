@@ -161,6 +161,17 @@ const Index = () => {
               {birthdayFriendly.length > 0 && (
                 <CuratedSection icon={<Cake className="w-5 h-5 text-secondary" />} title="Birthday Friendly Spots" clubs={birthdayFriendly} vibeCounts={vibeCounts} pullingUpCounts={pullingUpCounts} />
               )}
+              {(clubs?.length || 0) > 0 && (
+                <CuratedSection
+                  icon={<Flame className="w-5 h-5 text-primary" />}
+                  title={`All Clubs, Bars & Venues (${clubs?.length || 0})`}
+                  clubs={clubs || []}
+                  vibeCounts={vibeCounts}
+                  pullingUpCounts={pullingUpCounts}
+                />
+              )}
+
+
 
             </motion.div>
           )}
