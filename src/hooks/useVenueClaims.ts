@@ -64,7 +64,7 @@ export const useModerateClaim = () => {
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
-    mutationFn: async ({ id, status, note }: { id: string; status: 'approved' | 'rejected' | 'in_review' | 'submitted'; note?: string }) => {
+    mutationFn: async ({ id, status, note }: { id: string; status: 'approved' | 'rejected' | 'in_review' | 'pending_approval'; note?: string }) => {
       const { error } = await (supabase as any)
         .from('venue_claims')
         .update({
