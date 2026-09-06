@@ -165,7 +165,7 @@ const ClubDetailPage = () => {
             <p className="text-xs text-muted-foreground">
               This spot hasn't been claimed yet. Own or manage it? Verify it to post official updates.
             </p>
-            <Link to="/venue-onboarding">
+            <Link to={`/venue-onboarding?venue=${club.id}&name=${encodeURIComponent(club.name)}&address=${encodeURIComponent(club.address || '')}`}>
               <Button size="sm" variant="outline" className="rounded-full border-emerald-400/40 text-emerald-300 hover:text-emerald-200 hover:border-emerald-400/70">
                 Claim This Venue
               </Button>
