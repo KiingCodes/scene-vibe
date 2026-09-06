@@ -49,7 +49,6 @@ const MapPage = () => {
           ) : (
             <ClubMap
               clubs={showClubs ? clubs : []}
-              experiences={showExps ? (experiences || []) : []}
               vibeCounts={vibeCounts || {}}
               selectedClubId={selectedClubId}
               showLabels={showLabels}
