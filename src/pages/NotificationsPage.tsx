@@ -21,7 +21,7 @@ const CATEGORIES: { key: string; label: string; match: (t: string) => boolean }[
   { key: 'unread',     label: 'Unread',         match: () => true }, // handled separately
   { key: 'social',     label: 'Social',         match: t => ['follow','unfollow','crew_invite','crew_join','crew_vote'].includes(t) },
   { key: 'activity',   label: 'My activity',    match: t => ['vibe','pulling_up','favorite','checkin','going','interested'].includes(t) },
-  { key: 'venue',      label: 'Venues',         match: t => ['trending','spot_approved','spot_rejected','experience','experience_approved','experience_rejected','promotion','promotion_approved','promotion_rejected'].includes(t) },
+  { key: 'venue',      label: 'Venues',         match: t => ['trending','spot_approved','spot_rejected','promotion','promotion_approved','promotion_rejected'].includes(t) },
   { key: 'content',    label: 'Content',        match: t => ['video_like','video_comment','video_reaction','chat_message','review','rating','feedback'].includes(t) },
   { key: 'system',     label: 'System',         match: t => ['version_update','level_up','achievement','badge','warning','report'].includes(t) },
 ];
