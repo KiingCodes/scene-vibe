@@ -11,7 +11,6 @@ import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin, usePendingClubs, useApproveClub, useRejectClub } from '@/hooks/useAdmin';
 import { usePendingPromotions, useApprovePromotion, useRejectPromotion } from '@/hooks/usePromotions';
-import { usePendingExperiences, useModerateExperience } from '@/hooks/useExperiences';
 import { useAdminStats, useRecentActivity, useCheckinMonitor, useAdminUsers, useAdminAnalytics, useAdminUserActions, useAdminAuditLog, useAdminDelete, useAdminMessages, useTriggerSync } from '@/hooks/useAdminStats';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
@@ -36,7 +35,6 @@ const ACTIVITY_TABLE_MAP: Record<string, string> = {
   pulling_up: 'pulling_up',
   video: 'videos',
   follow: 'user_follows',
-  attendance: 'experience_attendances',
 };
 
 /* ---------------- Reusable bits ---------------- */
@@ -101,7 +99,6 @@ const OverviewTab = () => {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <StatCard icon={Users} label="Users" value={s?.users} sub={`+${s?.newUsers7 ?? 0} this week`} loading={isLoading} />
           <StatCard icon={Music} label="Clubs" value={s?.clubs} loading={isLoading} />
-          <StatCard icon={Sparkles} label="Experiences" value={s?.experiences} loading={isLoading} />
           <StatCard icon={Eye} label="Videos" value={s?.videos} sub={`+${s?.videos24 ?? 0} today`} loading={isLoading} />
         </div>
       </div>
@@ -110,7 +107,6 @@ const OverviewTab = () => {
         <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-bold mb-3">Quick Actions</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <ActionCard icon={Music} label="Pending spots" count={s?.pendingClubs} tone="primary" />
-          <ActionCard icon={Sparkles} label="Pending experiences" count={s?.pendingExp} tone="secondary" />
           <ActionCard icon={Megaphone} label="Pending promos" count={s?.pendingPromo} tone="destructive" />
         </div>
       </div>
@@ -417,9 +413,9 @@ const CheckinsTab = () => {
 };
 
 const ModerationTab = ({
-  pendingClubs, pendingPromos, pendingExperiences,
-  handleApprove, handleReject, handleApprovePromo, handleRejectPromo, handleModerateExp,
-  approveClub, rejectClub, moderateExperience,
+  pendingClubs, pendingPromos,
+  handleApprove, handleReject, handleApprovePromo, handleRejectPromo,
+  approveClub, rejectClub,
 }: any) => (
   <div className="space-y-6">
     {/* Promotions */}
@@ -438,29 +434,6 @@ const ModerationTab = ({
               <div className="flex gap-1.5 shrink-0">
                 <Button size="sm" onClick={() => handleApprovePromo(promo.id)} className="h-8 px-2 gradient-primary"><Check className="w-3.5 h-3.5" /></Button>
                 <Button size="sm" variant="outline" onClick={() => handleRejectPromo(promo.id)} className="h-8 px-2 border-destructive/30 text-destructive"><X className="w-3.5 h-3.5" /></Button>
-              </div>
-            </div>
-          ))}
-        </div>}
-    </section>
-
-    {/* Experiences */}
-    <section>
-      <h2 className="font-display font-semibold text-base text-foreground mb-3 flex items-center gap-2">
-        <Sparkles className="w-4 h-4 text-primary" /> Experiences ({pendingExperiences?.length || 0})
-      </h2>
-      {!pendingExperiences?.length ? <EmptyState icon={Sparkles} title="Nothing to review" /> :
-        <div className="space-y-2">
-          {pendingExperiences.map((x: any) => (
-            <div key={x.id} className="glass rounded-xl p-3 flex items-center gap-3">
-              {x.image_url && <img src={x.image_url} alt="" className="w-14 h-14 rounded-lg object-cover shrink-0" />}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold truncate">{x.name}</p>
-                <p className="text-[10px] text-muted-foreground truncate"><MapPin className="w-2.5 h-2.5 inline" /> {x.area}</p>
-              </div>
-              <div className="flex gap-1.5 shrink-0">
-                <Button size="sm" disabled={moderateExperience.isPending} onClick={() => handleModerateExp(x.id, 'approve', x.name)} className="h-8 px-2 gradient-primary"><Check className="w-3.5 h-3.5" /></Button>
-                <Button size="sm" variant="outline" disabled={moderateExperience.isPending} onClick={() => handleModerateExp(x.id, 'reject', x.name)} className="h-8 px-2 border-destructive/30 text-destructive"><X className="w-3.5 h-3.5" /></Button>
               </div>
             </div>
           ))}
@@ -524,22 +497,6 @@ const AnalyticsTab = () => {
           <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Geographic Spread</h3>
           <div className="space-y-2.5">{topAreas.map(([k,v]) => <Bar key={k} label={k} value={v} max={maxA} />)}</div>
         </div>
-        <div className="glass rounded-2xl p-4">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Experience Categories</h3>
-          <div className="space-y-2.5">{topCats.map(([k,v]) => <Bar key={k} label={k} value={v} max={maxC} />)}</div>
-        </div>
-        <div className="glass rounded-2xl p-4">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5"><Trophy className="w-3.5 h-3.5 text-primary" /> Most Popular Experiences (7d)</h3>
-          {isLoading ? <Skeleton className="h-20" /> : !a?.topExps?.length
-            ? <p className="text-xs text-muted-foreground">No check-ins yet</p>
-            : <div className="space-y-2">{a.topExps.map((e: any, i: number) => (
-                <div key={e.id} className="flex items-center gap-2 text-xs">
-                  <span className="w-5 h-5 rounded-full bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center">{i+1}</span>
-                  <span className="flex-1 truncate">{e.name}</span>
-                  <Badge variant="secondary" className="text-[10px]">{e.count}</Badge>
-                </div>
-              ))}</div>}
-        </div>
       </div>
     </div>
   );
@@ -592,8 +549,6 @@ const AdminPage = () => {
   const { data: pendingPromos } = usePendingPromotions();
   const approvePromo = useApprovePromotion();
   const rejectPromo = useRejectPromotion();
-  const { data: pendingExperiences } = usePendingExperiences();
-  const moderateExperience = useModerateExperience();
   const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem('scene_admin_unlocked') === '1');
   const [pw, setPw] = useState('');
   const tryUnlock = (e: React.FormEvent) => {
@@ -644,12 +599,6 @@ const AdminPage = () => {
   };
   const handleRejectPromo = async (id: string) => {
     try { await rejectPromo.mutateAsync({ id }); toast.success('Promotion rejected'); } catch { toast.error('Failed'); }
-  };
-  const handleModerateExp = async (id: string, action: 'approve' | 'reject', name: string) => {
-    try {
-      await moderateExperience.mutateAsync({ id, action });
-      toast.success(action === 'approve' ? `✅ ${name} approved` : `❌ ${name} rejected`);
-    } catch { toast.error('Failed'); }
   };
 
   return (
@@ -703,15 +652,12 @@ const AdminPage = () => {
                 : <ModerationTab
                     pendingClubs={pendingClubs}
                     pendingPromos={pendingPromos}
-                    pendingExperiences={pendingExperiences}
                     handleApprove={handleApprove}
                     handleReject={handleReject}
                     handleApprovePromo={handleApprovePromo}
                     handleRejectPromo={handleRejectPromo}
-                    handleModerateExp={handleModerateExp}
                     approveClub={approveClub}
                     rejectClub={rejectClub}
-                    moderateExperience={moderateExperience}
                   />}
             </TabsContent>
             <TabsContent value="analytics" className="mt-6"><AnalyticsTab /></TabsContent>
