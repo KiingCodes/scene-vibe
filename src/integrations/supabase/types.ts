@@ -83,21 +83,26 @@ export type Database = {
           capacity: string | null
           claim_id: string | null
           country: string
+          cover_charge: string | null
           created_at: string
           description: string | null
+          gallery: Json
           genre: string | null
           id: string
           image_url: string | null
           instagram: string | null
           is_community_added: boolean
+          is_live: boolean
           is_verified: boolean
           lat: number
+          live_status: string | null
           lng: number
           name: string
           opening_hours: string | null
           owner_id: string | null
           phone: string | null
           status: string
+          status_updated_at: string | null
           verified_at: string | null
           website: string | null
         }
@@ -107,21 +112,26 @@ export type Database = {
           capacity?: string | null
           claim_id?: string | null
           country?: string
+          cover_charge?: string | null
           created_at?: string
           description?: string | null
+          gallery?: Json
           genre?: string | null
           id?: string
           image_url?: string | null
           instagram?: string | null
           is_community_added?: boolean
+          is_live?: boolean
           is_verified?: boolean
           lat: number
+          live_status?: string | null
           lng: number
           name: string
           opening_hours?: string | null
           owner_id?: string | null
           phone?: string | null
           status?: string
+          status_updated_at?: string | null
           verified_at?: string | null
           website?: string | null
         }
@@ -131,21 +141,26 @@ export type Database = {
           capacity?: string | null
           claim_id?: string | null
           country?: string
+          cover_charge?: string | null
           created_at?: string
           description?: string | null
+          gallery?: Json
           genre?: string | null
           id?: string
           image_url?: string | null
           instagram?: string | null
           is_community_added?: boolean
+          is_live?: boolean
           is_verified?: boolean
           lat?: number
+          live_status?: string | null
           lng?: number
           name?: string
           opening_hours?: string | null
           owner_id?: string | null
           phone?: string | null
           status?: string
+          status_updated_at?: string | null
           verified_at?: string | null
           website?: string | null
         }
@@ -1355,6 +1370,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      venue_announcements: {
+        Row: {
+          club_id: string
+          content: string
+          created_at: string
+          expires_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          club_id: string
+          content: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          club_id?: string
+          content?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_announcements_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       venue_claims: {
         Row: {
