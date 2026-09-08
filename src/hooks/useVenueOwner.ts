@@ -198,3 +198,120 @@ export const useDeleteVenueEvent = () => {
     },
   });
 };
+
+/* ------------------------------------------------------------------ *
+ * Owner editing: venue row updates, imagery and live announcements
+ * ------------------------------------------------------------------ */
+
+export const CROWD_LEVELS = ['SPACIOUS', 'BUSY', 'PACKED', 'FULL LINE'] as const;
+export type CrowdLevel = (typeof CROWD_LEVELS)[number];
+
+export type VenueEditableFields = Partial<
+  Pick<
+    Club,
+    | 'live_status'
+    | 'is_live'
+    | 'opening_hours'
+    | 'genre'
+    | 'cover_charge'
+    | 'address'
+    | 'area'
+    | 'description'
+    | 'phone'
+    | 'website'
+    | 'instagram'
+    | 'image_url'
+    | 'gallery'
+    | 'lat'
+    | 'lng'
+  >
+>;
+
+/** Update an owned venue. RLS only allows the owner (or an admin) through. */
+export const useUpdateVenue = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ clubId, patch }: { clubId: string; patch: VenueEditableFields }) => {
+      const payload: Record<string, unknown> = { ...patch };
+      if ('live_status' in patch || 'is_live' in patch) payload.status_updated_at = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('clubs')
+        .update(payload)
+        .eq('id', clubId)
+        .select()
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error('You do not have permission to update this venue.');
+      return data as Club;
+    },
+    onSuccess: (club) => {
+      qc.setQueryData(['club', club.id], club);
+      qc.invalidateQueries({ queryKey: ['clubs'] });
+      qc.invalidateQueries({ queryKey: ['my-venues'] });
+    },
+  });
+};
+
+/** Upload a venue image (cover or gallery) and return its public URL. */
+export const uploadVenueImage = async (clubId: string, file: File) => {
+  const ext = file.name.split('.').pop() || 'jpg';
+  const path = `venues/${clubId}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage.from('chat-media').upload(path, file, { upsert: true });
+  if (error) throw error;
+  return supabase.storage.from('chat-media').getPublicUrl(path).data.publicUrl;
+};
+
+export type VenueAnnouncement = {
+  id: string;
+  club_id: string;
+  user_id: string;
+  content: string;
+  expires_at: string;
+  created_at: string;
+};
+
+/** Live (non-expired) announcements for a venue. */
+export const useVenueAnnouncements = (clubId?: string) =>
+  useQuery({
+    queryKey: ['venue-announcements', clubId],
+    enabled: !!clubId,
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('venue_announcements')
+        .select('*')
+        .eq('club_id', clubId!)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []) as VenueAnnouncement[];
+    },
+  });
+
+export const usePostAnnouncement = () => {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ clubId, content, hours }: { clubId: string; content: string; hours: number }) => {
+      const { error } = await supabase.from('venue_announcements').insert({
+        club_id: clubId,
+        user_id: user!.id,
+        content,
+        expires_at: new Date(Date.now() + hours * 3600_000).toISOString(),
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['venue-announcements'] }),
+  });
+};
+
+export const useDeleteAnnouncement = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('venue_announcements').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['venue-announcements'] }),
+  });
+};
