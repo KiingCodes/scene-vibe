@@ -1,20 +1,20 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
-import { useCountry } from '@/contexts/CountryContext';
-import { supabase } from '@/integrations/supabase/client';
-import { LogoSkeleton } from '@/components/BrandedSkeleton';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Flame, TrendingUp, Star, Sparkles, Cake } from 'lucide-react';
-import { useClubs } from '@/hooks/useClubs';
-import { useAllVibes } from '@/hooks/useVibes';
-import { useAllPullingUp } from '@/hooks/usePullingUp';
-import ClubCard from '@/components/ClubCard';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import HeroCarousel from '@/components/HeroCarousel';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
-import { useTypewriter } from '@/hooks/useTypewriter';
+import { useState, useMemo, useEffect, useRef } from "react";
+import { useCountry } from "@/contexts/CountryContext";
+import { supabase } from "@/integrations/supabase/client";
+import { LogoSkeleton } from "@/components/BrandedSkeleton";
+import { motion, AnimatePresence } from "framer-motion";
+import { Search, Flame, TrendingUp, Star, Sparkles, Cake } from "lucide-react";
+import { useClubs, type Club } from "@/hooks/useClubs";
+import { useAllVibes } from "@/hooks/useVibes";
+import { useAllPullingUp } from "@/hooks/usePullingUp";
+import ClubCard from "@/components/ClubCard";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import HeroCarousel from "@/components/HeroCarousel";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { useTypewriter } from "@/hooks/useTypewriter";
 
 const container = {
   hidden: { opacity: 0 },
@@ -34,71 +34,102 @@ const Index = () => {
     if (!clubs || clubs.length === 0) return;
     const key = `${country}`;
     if (healedRef.current.has(key)) return;
-    const missingCount = clubs.filter(c => !c.image_url || !c.opening_hours || !c.description).length;
+    const missingCount = clubs.filter(
+      (c) => !c.image_url || !c.opening_hours || !c.description,
+    ).length;
     if (missingCount === 0) return;
     healedRef.current.add(key);
-    supabase.functions.invoke('sync-venue-data', { body: { country } }).catch(() => {});
+    supabase.functions
+      .invoke("sync-venue-data", { body: { country } })
+      .catch(() => {});
   }, [clubs, country]);
-  const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<'all' | 'trending' | 'vibing'>('all');
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"all" | "trending" | "vibing">("all");
   const placeholder = useTypewriter([
-    'Search clubs, bars, lounges...',
+    "Search clubs, bars, lounges...",
     "Find tonight's vibe...",
     'Try "Sandton" or "Amapiano"...',
-    'Where are we going tonight?',
+    "Where are we going tonight?",
   ]);
 
-  const filteredClubs = clubs?.filter(club => {
-    const matchesSearch = club.name.toLowerCase().includes(search.toLowerCase()) ||
+  const filteredClubs = clubs?.filter((club) => {
+    const matchesSearch =
+      club.name.toLowerCase().includes(search.toLowerCase()) ||
       club.area.toLowerCase().includes(search.toLowerCase()) ||
-      (club.genre?.toLowerCase().includes(search.toLowerCase()));
+      club.genre?.toLowerCase().includes(search.toLowerCase());
     if (!matchesSearch) return false;
     const count = vibeCounts?.[club.id] || 0;
-    if (filter === 'trending') return count >= 3;
-    if (filter === 'vibing') return count > 0;
+    if (filter === "trending") return count >= 3;
+    if (filter === "vibing") return count > 0;
     return true;
   });
 
-  const trendingCount = clubs?.filter(c => (vibeCounts?.[c.id] || 0) >= 3).length || 0;
+  const trendingCount =
+    clubs?.filter((c) => (vibeCounts?.[c.id] || 0) >= 3).length || 0;
 
   const mostVibed = useMemo(() => {
     if (!clubs || !vibeCounts) return [];
-    return [...clubs].sort((a, b) => (vibeCounts[b.id] || 0) - (vibeCounts[a.id] || 0)).slice(0, 6);
+    return [...clubs]
+      .sort((a, b) => (vibeCounts[b.id] || 0) - (vibeCounts[a.id] || 0))
+      .slice(0, 6);
   }, [clubs, vibeCounts]);
 
   const newlyAdded = useMemo(() => {
     if (!clubs) return [];
-    return [...clubs].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 6);
+    return [...clubs]
+      .sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      )
+      .slice(0, 6);
   }, [clubs]);
 
   const topRatedJhb = useMemo(() => {
     if (!clubs) return [];
-    return clubs.filter(c =>
-      c.area.toLowerCase().includes('johannesburg') || c.area.toLowerCase().includes('jhb') ||
-      c.area.toLowerCase().includes('sandton') || c.area.toLowerCase().includes('rosebank') ||
-      c.area.toLowerCase().includes('maboneng') || c.area.toLowerCase().includes('melville') ||
-      c.area.toLowerCase().includes('braamfontein')
-    ).slice(0, 6);
+    return clubs
+      .filter(
+        (c) =>
+          c.area.toLowerCase().includes("johannesburg") ||
+          c.area.toLowerCase().includes("jhb") ||
+          c.area.toLowerCase().includes("sandton") ||
+          c.area.toLowerCase().includes("rosebank") ||
+          c.area.toLowerCase().includes("maboneng") ||
+          c.area.toLowerCase().includes("melville") ||
+          c.area.toLowerCase().includes("braamfontein"),
+      )
+      .slice(0, 6);
   }, [clubs]);
 
   const birthdayFriendly = useMemo(() => {
     if (!clubs) return [];
-    return clubs.filter(c => {
-      const cap = parseInt(c.capacity || '0');
-      return cap >= 200 || c.description?.toLowerCase().includes('birthday') || c.description?.toLowerCase().includes('vip') || c.description?.toLowerCase().includes('private');
-    }).slice(0, 6);
+    return clubs
+      .filter((c) => {
+        const cap = parseInt(c.capacity || "0");
+        return (
+          cap >= 200 ||
+          c.description?.toLowerCase().includes("birthday") ||
+          c.description?.toLowerCase().includes("vip") ||
+          c.description?.toLowerCase().includes("private")
+        );
+      })
+      .slice(0, 6);
   }, [clubs]);
 
-  const showCurated = !search && filter === 'all';
+  const showCurated = !search && filter === "all";
 
   return (
     <div className="min-h-screen gradient-dark">
       <Navbar />
-      
+
       <main className="container mx-auto px-4 pt-24 pb-8">
         {/* Auto-moving hero carousel */}
         {mostVibed.length > 0 && (
-          <HeroCarousel clubs={mostVibed.length >= 3 ? mostVibed : (clubs || []).slice(0, 6)} vibeCounts={vibeCounts} />
+          <HeroCarousel
+            clubs={
+              mostVibed.length >= 3 ? mostVibed : (clubs || []).slice(0, 6)
+            }
+            vibeCounts={vibeCounts}
+          />
         )}
 
         {/* Search & Filters */}
@@ -112,27 +143,48 @@ const Index = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder={placeholder || 'Search...'}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={placeholder || "Search..."}
               className="pl-10 bg-muted/50 border-border/50"
             />
           </div>
           <div className="flex justify-center gap-2">
             {[
-              { key: 'all' as const, label: `All (${clubs?.length || 0})`, icon: null },
-              { key: 'vibing' as const, label: 'Vibing', icon: <Flame className="w-3.5 h-3.5 mr-1" /> },
-              { key: 'trending' as const, label: `Trending (${trendingCount})`, icon: <TrendingUp className="w-3.5 h-3.5 mr-1" /> },
-            ].map(f => (
-              <motion.div key={f.key} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              {
+                key: "all" as const,
+                label: `All (${clubs?.length || 0})`,
+                icon: null,
+              },
+              {
+                key: "vibing" as const,
+                label: "Vibing",
+                icon: <Flame className="w-3.5 h-3.5 mr-1" />,
+              },
+              {
+                key: "trending" as const,
+                label: `Trending (${trendingCount})`,
+                icon: <TrendingUp className="w-3.5 h-3.5 mr-1" />,
+              },
+            ].map((f) => (
+              <motion.div
+                key={f.key}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 <Button
                   size="sm"
-                  variant={filter === f.key ? 'default' : 'outline'}
+                  variant={filter === f.key ? "default" : "outline"}
                   onClick={() => setFilter(f.key)}
-                  className={filter === f.key
-                    ? (f.key === 'trending' ? 'gradient-secondary text-secondary-foreground' : 'gradient-primary text-primary-foreground')
-                    : 'border-border/50 text-muted-foreground'}
+                  className={
+                    filter === f.key
+                      ? f.key === "trending"
+                        ? "gradient-secondary text-secondary-foreground"
+                        : "gradient-primary text-primary-foreground"
+                      : "border-border/50 text-muted-foreground"
+                  }
                 >
-                  {f.icon}{f.label}
+                  {f.icon}
+                  {f.label}
                 </Button>
               </motion.div>
             ))}
@@ -150,16 +202,40 @@ const Index = () => {
               className="space-y-10 mb-10"
             >
               {mostVibed.length > 0 && (
-                <CuratedSection icon={<Flame className="w-5 h-5 text-secondary" />} title="Most Visited This Weekend" clubs={mostVibed} vibeCounts={vibeCounts} pullingUpCounts={pullingUpCounts} />
+                <CuratedSection
+                  icon={<Flame className="w-5 h-5 text-secondary" />}
+                  title="Most Visited This Weekend"
+                  clubs={mostVibed}
+                  vibeCounts={vibeCounts}
+                  pullingUpCounts={pullingUpCounts}
+                />
               )}
               {topRatedJhb.length > 0 && (
-                <CuratedSection icon={<Star className="w-5 h-5 text-primary" />} title="Top Rated in Johannesburg" clubs={topRatedJhb} vibeCounts={vibeCounts} pullingUpCounts={pullingUpCounts} />
+                <CuratedSection
+                  icon={<Star className="w-5 h-5 text-primary" />}
+                  title="Top Rated in Johannesburg"
+                  clubs={topRatedJhb}
+                  vibeCounts={vibeCounts}
+                  pullingUpCounts={pullingUpCounts}
+                />
               )}
               {newlyAdded.length > 0 && (
-                <CuratedSection icon={<Sparkles className="w-5 h-5 text-accent" />} title="Newly Added" clubs={newlyAdded} vibeCounts={vibeCounts} pullingUpCounts={pullingUpCounts} />
+                <CuratedSection
+                  icon={<Sparkles className="w-5 h-5 text-accent" />}
+                  title="Newly Added"
+                  clubs={newlyAdded}
+                  vibeCounts={vibeCounts}
+                  pullingUpCounts={pullingUpCounts}
+                />
               )}
               {birthdayFriendly.length > 0 && (
-                <CuratedSection icon={<Cake className="w-5 h-5 text-secondary" />} title="Birthday Friendly Spots" clubs={birthdayFriendly} vibeCounts={vibeCounts} pullingUpCounts={pullingUpCounts} />
+                <CuratedSection
+                  icon={<Cake className="w-5 h-5 text-secondary" />}
+                  title="Birthday Friendly Spots"
+                  clubs={birthdayFriendly}
+                  vibeCounts={vibeCounts}
+                  pullingUpCounts={pullingUpCounts}
+                />
               )}
               {(clubs?.length || 0) > 0 && (
                 <CuratedSection
@@ -170,9 +246,6 @@ const Index = () => {
                   pullingUpCounts={pullingUpCounts}
                 />
               )}
-
-
-
             </motion.div>
           )}
         </AnimatePresence>
@@ -181,14 +254,26 @@ const Index = () => {
         {isLoading && (
           <div className="space-y-10">
             <LogoSkeleton label="Loading the scene…" />
-            {['Most Visited This Weekend', 'Top Rated in Johannesburg', 'Newly Added'].map((title) => (
+            {[
+              "Most Visited This Weekend",
+              "Top Rated in Johannesburg",
+              "Newly Added",
+            ].map((title) => (
               <section key={title}>
                 <div className="h-5 w-48 bg-muted/40 rounded animate-pulse mb-4" />
-                <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <motion.div
+                  variants={container}
+                  initial="hidden"
+                  animate="show"
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                >
                   {Array.from({ length: 3 }).map((_, i) => (
                     <motion.div
                       key={i}
-                      variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
+                      variants={{
+                        hidden: { opacity: 0, y: 20 },
+                        show: { opacity: 1, y: 0 },
+                      }}
                       className="glass rounded-xl h-60 overflow-hidden border border-border/30 relative shimmer-overlay"
                     >
                       <div className="absolute inset-0 flex items-center justify-center opacity-[0.06]">
@@ -204,32 +289,45 @@ const Index = () => {
 
         {/* All Clubs Grid (when searching/filtering) */}
         <AnimatePresence mode="wait">
-          {filteredClubs && (search || filter !== 'all') && (
-            <motion.div key="filtered" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+          {filteredClubs && (search || filter !== "all") && (
+            <motion.div
+              key="filtered"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+            >
               <div className="glass rounded-2xl border border-border/40 p-4 mb-5 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2 min-w-0">
-                  {filter === 'trending' ? (
+                  {filter === "trending" ? (
                     <TrendingUp className="w-5 h-5 text-secondary shrink-0" />
-                  ) : filter === 'vibing' ? (
+                  ) : filter === "vibing" ? (
                     <Flame className="w-5 h-5 text-primary shrink-0" />
                   ) : (
                     <Search className="w-5 h-5 text-primary shrink-0" />
                   )}
                   <div className="min-w-0">
                     <h2 className="font-display font-bold text-lg text-foreground truncate">
-                      {filter === 'all' ? 'Search Results' : filter === 'trending' ? 'Trending Now' : 'Currently Vibing'}
+                      {filter === "all"
+                        ? "Search Results"
+                        : filter === "trending"
+                          ? "Trending Now"
+                          : "Currently Vibing"}
                     </h2>
                     <p className="text-xs text-muted-foreground truncate">
-                      {filteredClubs.length} {filteredClubs.length === 1 ? 'spot' : 'spots'}
+                      {filteredClubs.length}{" "}
+                      {filteredClubs.length === 1 ? "spot" : "spots"}
                       {search && <> matching “{search}”</>}
                     </p>
                   </div>
                 </div>
-                {(search || filter !== 'all') && (
+                {(search || filter !== "all") && (
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => { setSearch(''); setFilter('all'); }}
+                    onClick={() => {
+                      setSearch("");
+                      setFilter("all");
+                    }}
                     className="text-xs text-muted-foreground hover:text-foreground shrink-0"
                   >
                     Clear
@@ -238,36 +336,55 @@ const Index = () => {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredClubs.map((club, i) => (
-                  <ClubCard key={club.id} club={club} vibeCount={vibeCounts?.[club.id] || 0} pullingUpCount={pullingUpCounts?.[club.id] || 0} index={i} />
+                  <ClubCard
+                    key={club.id}
+                    club={club}
+                    vibeCount={vibeCounts?.[club.id] || 0}
+                    pullingUpCount={pullingUpCounts?.[club.id] || 0}
+                    index={i}
+                  />
                 ))}
               </div>
-
             </motion.div>
           )}
         </AnimatePresence>
 
-        {filteredClubs?.length === 0 && (search || filter !== 'all') && !isLoading && (
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-16">
-            <p className="text-muted-foreground text-lg">Nothing found matching “{search}”.</p>
-          </motion.div>
-        )}
+        {filteredClubs?.length === 0 &&
+          (search || filter !== "all") &&
+          !isLoading && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center py-16"
+            >
+              <p className="text-muted-foreground text-lg">
+                Nothing found matching “{search}”.
+              </p>
+            </motion.div>
+          )}
       </main>
       <Footer />
     </div>
   );
 };
 
-const CuratedSection = ({ icon, title, clubs, vibeCounts, pullingUpCounts }: {
+const CuratedSection = ({
+  icon,
+  title,
+  clubs,
+  vibeCounts,
+  pullingUpCounts,
+}: {
   icon: React.ReactNode;
   title: string;
-  clubs: any[];
+  clubs: Club[];
   vibeCounts?: Record<string, number>;
   pullingUpCounts?: Record<string, number>;
 }) => (
   <motion.section
     initial={{ opacity: 0, y: 25 }}
     whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true, margin: '-50px' }}
+    viewport={{ once: true, margin: "-50px" }}
     transition={{ duration: 0.5 }}
   >
     <h2 className="font-display font-bold text-xl text-foreground mb-4 flex items-center gap-2">
@@ -275,7 +392,13 @@ const CuratedSection = ({ icon, title, clubs, vibeCounts, pullingUpCounts }: {
     </h2>
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {clubs.map((club, i) => (
-        <ClubCard key={club.id} club={club} vibeCount={vibeCounts?.[club.id] || 0} pullingUpCount={pullingUpCounts?.[club.id] || 0} index={i} />
+        <ClubCard
+          key={club.id}
+          club={club}
+          vibeCount={vibeCounts?.[club.id] || 0}
+          pullingUpCount={pullingUpCounts?.[club.id] || 0}
+          index={i}
+        />
       ))}
     </div>
   </motion.section>
