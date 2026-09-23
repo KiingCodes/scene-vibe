@@ -12,6 +12,7 @@ import {
   Loader2,
   Search,
   ArrowUp,
+  CheckCheck,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useAdmin";
@@ -198,8 +199,8 @@ const CommunityChat = () => {
       }
       setText("");
       setPreviewFile(null);
-    } catch (err: any) {
-      toast.error(err?.message || "Could not send");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Could not send");
     }
   };
 
@@ -327,8 +328,9 @@ const CommunityChat = () => {
     try {
       await flagMessage.mutateAsync({ messageId: id });
       toast.success("Reported. Thanks for keeping the scene safe.");
-    } catch (e: any) {
-      if (e?.message?.includes("duplicate")) toast.info("Already reported");
+    } catch (e: unknown) {
+      if (e instanceof Error && e.message.includes("duplicate"))
+        toast.info("Already reported");
       else toast.error("Could not flag");
     }
   };
@@ -358,9 +360,9 @@ const CommunityChat = () => {
   };
 
   return (
-    <div className="glass rounded-2xl flex flex-col flex-1 min-h-0 h-full overflow-hidden border border-border/50 shadow-2xl">
+    <div className="glass flex h-full min-h-0 flex-1 flex-col overflow-hidden border border-border/50 shadow-2xl sm:rounded-2xl">
       {/* Header */}
-      <div className="px-4 pt-4 pb-3 border-b border-primary/15 bg-[linear-gradient(110deg,hsl(240_12%_9%_/_0.94),hsl(290_22%_13%_/_0.9),hsl(190_18%_10%_/_0.94))] backdrop-blur-xl shadow-[inset_0_-1px_0_hsl(174_100%_50%_/_0.12),0_10px_35px_hsl(280_100%_60%_/_0.08)]">
+      <div className="sticky top-0 z-20 shrink-0 border-b border-primary/15 bg-background/95 px-4 pb-3 pt-4 backdrop-blur-md shadow-[inset_0_-1px_0_hsl(174_100%_50%_/_0.12),0_10px_35px_hsl(280_100%_60%_/_0.08)]">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-display font-bold text-lg text-foreground flex items-center gap-2">
@@ -389,7 +391,7 @@ const CommunityChat = () => {
             )}
           </div>
         </div>
-        <div className="mt-4 -mx-1 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <div className="no-scrollbar -mx-1 mt-4 flex gap-2 overflow-x-auto pb-1">
           {CHANNELS.map((channel) => (
             <button
               key={channel}
@@ -408,7 +410,7 @@ const CommunityChat = () => {
       </div>
 
       {/* Search bar */}
-      <div className="px-3 py-2 border-b border-border/30 bg-background/30">
+      <div className="z-10 shrink-0 border-b border-border/30 bg-background/95 px-4 py-2 backdrop-blur-md">
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
           <Input
@@ -424,7 +426,7 @@ const CommunityChat = () => {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="relative flex-1 overflow-y-auto px-3 py-4 space-y-3 bg-background/40"
+        className="relative flex min-h-0 flex-1 flex-col space-y-3 overflow-y-auto overscroll-contain px-4 py-2 pb-5 bg-background/40"
       >
         <AnimatePresence>
           {reactionParticles.map((particle) => (
@@ -464,11 +466,11 @@ const CommunityChat = () => {
         {filteredMessages?.length === 0 &&
           !isLoading &&
           (search ? (
-            <div className="text-center py-12 text-muted-foreground text-sm">
+            <div className="my-auto w-full py-12 text-center text-muted-foreground text-sm">
               No messages match your search.
             </div>
           ) : (
-            <div className="relative overflow-hidden rounded-2xl border border-secondary/25 bg-[radial-gradient(circle_at_85%_10%,hsl(330_100%_60%_/_0.22),transparent_38%),linear-gradient(135deg,hsl(240_10%_10%_/_0.96),hsl(280_25%_14%_/_0.8))] px-5 py-8 text-center shadow-[0_0_35px_hsl(330_100%_60%_/_0.1)]">
+            <div className="relative my-auto w-full max-w-md self-center overflow-hidden rounded-2xl border border-secondary/25 bg-[radial-gradient(circle_at_85%_10%,hsl(330_100%_60%_/_0.22),transparent_38%),linear-gradient(135deg,hsl(240_10%_10%_/_0.96),hsl(280_25%_14%_/_0.8))] px-5 py-8 text-center shadow-[0_0_35px_hsl(330_100%_60%_/_0.1)]">
               <div className="absolute -right-8 -top-10 h-28 w-28 rounded-full border border-primary/20" />
               <div className="absolute -bottom-16 -left-8 h-32 w-32 rounded-full border border-secondary/20" />
               <p className="text-3xl">✦</p>
@@ -496,14 +498,14 @@ const CommunityChat = () => {
         <AnimatePresence initial={false}>
           {filteredMessages?.map((msg) => {
             const isOwn = msg.user_id === user?.id;
-            const profile = (msg as any).profile;
+            const profile = msg.profile;
             const username = profile?.username || "Anon";
             const initials = username.slice(0, 2).toUpperCase();
             const color = getUserColor(msg.user_id);
-            const mediaUrl = (msg as any).media_url;
-            const msgType = (msg as any).message_type || "text";
-            const createdAt = (msg as any).created_at
-              ? new Date((msg as any).created_at).toLocaleTimeString([], {
+            const mediaUrl = msg.media_url;
+            const msgType = msg.message_type || "text";
+            const createdAt = msg.created_at
+              ? new Date(msg.created_at).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
                 })
@@ -552,6 +554,12 @@ const CommunityChat = () => {
                       <span className="text-[9px] text-muted-foreground">
                         {createdAt}
                       </span>
+                      {isOwn && (
+                        <CheckCheck
+                          className="h-3 w-3 text-primary"
+                          aria-label="Read"
+                        />
+                      )}
                     </div>
                     <div
                       className={`relative px-3.5 py-2 text-sm border backdrop-blur-sm ${isOwn ? "rounded-2xl rounded-br-md" : "rounded-2xl rounded-bl-md"}`}
@@ -664,7 +672,7 @@ const CommunityChat = () => {
 
       {/* Composer */}
       {user ? (
-        <div className="border-t border-border/40 bg-background/60 backdrop-blur">
+        <div className="sticky bottom-0 z-20 shrink-0 border-t border-border/40 bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md">
           {/* Preview */}
           {previewFile && previewUrl && (
             <div className="px-3 pt-3">
@@ -800,7 +808,7 @@ const CommunityChat = () => {
           </form>
         </div>
       ) : (
-        <div className="p-4 border-t border-border/40 text-center bg-background/60">
+        <div className="sticky bottom-0 z-20 shrink-0 border-t border-border/40 bg-background/95 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center backdrop-blur-md">
           <Link
             to="/auth"
             className="text-primary text-sm font-semibold hover:underline"
