@@ -28,6 +28,7 @@ import InsightsPage from "./pages/InsightsPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import VibeHistoryPage from "./pages/VibeHistoryPage";
 import ProfilePage from "./pages/ProfilePage";
+import SettingsPage from "./pages/SettingsPage";
 import CrewsPage from "./pages/CrewsPage";
 import EventsPage from "./pages/EventsPage";
 import VideosPage from "./pages/VideosPage";
@@ -45,7 +46,6 @@ import ActiveWalkBar from "./components/safety/ActiveWalkBar";
 import NotFound from "./pages/NotFound";
 import { useVenueRealtime } from "./hooks/useVenueRealtime";
 
-
 const queryClient = new QueryClient();
 
 const AuthGuard = ({ children }: { children: React.ReactNode }) => {
@@ -62,7 +62,6 @@ const AppContent = () => {
   useReminderNotifications();
   useVenueRealtime();
 
-
   return (
     <BrowserRouter>
       <SplashScreen />
@@ -72,7 +71,14 @@ const AppContent = () => {
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/index" element={<Navigate to="/" replace />} />
-        <Route path="/auth" element={<AuthGuard><AuthPage /></AuthGuard>} />
+        <Route
+          path="/auth"
+          element={
+            <AuthGuard>
+              <AuthPage />
+            </AuthGuard>
+          }
+        />
         <Route path="/map" element={<MapPage />} />
         <Route path="/chat" element={<ChatPage />} />
         <Route path="/crews" element={<CrewsPage />} />
@@ -89,18 +95,36 @@ const AppContent = () => {
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/history" element={<VibeHistoryPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/settings" element={<SettingsPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/how-it-works" element={<HowItWorksPage />} />
         <Route path="/admin" element={<AdminPage />} />
-        <Route path="/admin/super" element={<AdminOnly><SuperAdminPage /></AdminOnly>} />
-        <Route path="/admin/sponsorships" element={<AdminOnly><SponsorshipsPage /></AdminOnly>} />
+        <Route
+          path="/admin/super"
+          element={
+            <AdminOnly>
+              <SuperAdminPage />
+            </AdminOnly>
+          }
+        />
+        <Route
+          path="/admin/sponsorships"
+          element={
+            <AdminOnly>
+              <SponsorshipsPage />
+            </AdminOnly>
+          }
+        />
         <Route path="/business/billing" element={<BusinessBillingPage />} />
         <Route path="/safety" element={<SafetyPage />} />
         <Route path="/track/:sessionId" element={<TrackPage />} />
         <Route path="/experiences" element={<Navigate to="/" replace />} />
-        <Route path="/experiences/submit" element={<Navigate to="/suggest" replace />} />
+        <Route
+          path="/experiences/submit"
+          element={<Navigate to="/suggest" replace />}
+        />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

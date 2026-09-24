@@ -8,17 +8,16 @@ import {
   MessageCircle,
   Heart,
   Trophy,
-  LogOut,
   Calendar,
   MapPin,
   Edit3,
-  Trash2,
+  Settings,
   Shield,
   CheckCircle,
   Camera,
   Loader2,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
@@ -35,13 +34,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 
@@ -108,8 +100,7 @@ const useRecentActivity = () => {
 };
 
 const ProfilePage = () => {
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const { data: points } = useUserPoints();
   const { data: badges } = useUserBadges();
@@ -119,8 +110,6 @@ const ProfilePage = () => {
   const { data: followCounts } = useFollowCounts(user?.id);
   const [editingUsername, setEditingUsername] = useState(false);
   const [newUsername, setNewUsername] = useState("");
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState("");
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -202,27 +191,6 @@ const ProfilePage = () => {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    if (deleteConfirm !== "DELETE") {
-      toast.error("Type DELETE to confirm");
-      return;
-    }
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const res = await supabase.functions.invoke("delete-account", {
-        headers: { Authorization: `Bearer ${session?.access_token}` },
-      });
-      if (res.error) throw res.error;
-      await signOut();
-      navigate("/");
-      toast.success("Account deleted. We'll miss you 💔");
-    } catch {
-      toast.error("Could not delete account. Try again.");
-    }
-  };
-
   if (!user) {
     return (
       <div className="min-h-screen gradient-dark">
@@ -280,8 +248,15 @@ const ProfilePage = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass rounded-2xl p-6 mb-6 text-center"
+          className="glass relative rounded-2xl p-6 mb-6 text-center"
         >
+          <Link
+            to="/settings"
+            aria-label="Open settings"
+            className="absolute right-5 top-5 inline-flex h-9 w-9 items-center justify-center rounded-full border border-border/40 bg-background/20 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+          >
+            <Settings className="h-4 w-4" />
+          </Link>
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -552,53 +527,6 @@ const ProfilePage = () => {
               <Trophy className="w-4 h-4" /> Leaderboard
             </Button>
           </Link>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={signOut}
-            className="gap-2 border-border/50 text-muted-foreground"
-          >
-            <LogOut className="w-4 h-4" /> Sign Out
-          </Button>
-          <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-            <DialogTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2 border-destructive/30 text-destructive"
-              >
-                <Trash2 className="w-4 h-4" /> Delete Account
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="glass border-border/50">
-              <DialogHeader>
-                <DialogTitle className="text-destructive">
-                  Delete Account
-                </DialogTitle>
-              </DialogHeader>
-              <p className="text-sm text-muted-foreground">
-                This will permanently delete your account, all vibes, reviews,
-                messages, and badges. This cannot be undone.
-              </p>
-              <p className="text-sm text-foreground font-semibold mt-2">
-                Type DELETE to confirm:
-              </p>
-              <Input
-                value={deleteConfirm}
-                onChange={(e) => setDeleteConfirm(e.target.value)}
-                placeholder="DELETE"
-                className="bg-muted/50 border-destructive/30"
-              />
-              <Button
-                onClick={handleDeleteAccount}
-                variant="destructive"
-                disabled={deleteConfirm !== "DELETE"}
-                className="w-full"
-              >
-                Permanently Delete My Account
-              </Button>
-            </DialogContent>
-          </Dialog>
         </motion.div>
       </main>
       <Footer />
