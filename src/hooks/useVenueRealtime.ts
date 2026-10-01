@@ -4,7 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 
 /** Tables whose changes should refresh the public venue directory / map. */
 const WATCH: { table: string; keys: string[] }[] = [
-  { table: 'clubs', keys: ['clubs', 'club'] },
+  { table: 'clubs', keys: ['clubs', 'club', 'my-venues'] },
+  { table: 'venue_announcements', keys: ['venue-announcements'] },
   { table: 'pending_clubs', keys: ['clubs', 'pending-clubs'] },
   { table: 'venue_claims', keys: ['clubs', 'venue-claims'] },
 ];
