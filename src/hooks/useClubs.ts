@@ -54,6 +54,11 @@ export const useClubs = () => {
         claim_id: null,
         verified_at: null,
         is_verified: false,
+        live_status: null,
+        is_live: false,
+        cover_charge: null,
+        gallery: [],
+        status_updated_at: null,
 
 
       }));
