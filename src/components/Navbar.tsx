@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { MapPin, MessageCircle, Home, User, Heart, Shield, BarChart3, Trophy, Users, Calendar, Video, Moon, Sparkles, ChevronDown, Check, MoreHorizontal, Bell, Building2, Crown, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
+import { useMyVenues } from '@/hooks/useVenueOwner';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/components/NotificationBell';
 import { useUnreadCount } from '@/hooks/useNotifications';
@@ -91,6 +92,7 @@ const CountrySwitcher = ({ align = 'start' }: { align?: 'start' | 'end' }) => {
 const Navbar = () => {
   const { user } = useAuth();
   const { data: isAdmin } = useIsAdmin();
+  const { data: myVenues } = useMyVenues();
   const location = useLocation();
   const unread = useUnreadCount();
   const liveChat = useLiveChatCount();
@@ -220,6 +222,22 @@ const Navbar = () => {
                     </Link>
                   </DropdownMenuItem>
                 ))}
+                {!!myVenues?.length && (
+                  <>
+                    <DropdownMenuSeparator className="bg-white/10" />
+                    <DropdownMenuLabel className="text-[10px] uppercase tracking-[0.2em] text-emerald-300/80">
+                      My Venues
+                    </DropdownMenuLabel>
+                    {myVenues.map((v) => (
+                      <DropdownMenuItem key={v.id} asChild className="focus:bg-white/5 cursor-pointer">
+                        <Link to={`/venue-portal?venue=${v.id}`} className="gap-2.5 py-2 flex items-center">
+                          <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                          <span className="text-sm text-white/90 truncate">{v.name}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </>
+                )}
                 {isAdmin && (
                   <>
                     <DropdownMenuSeparator className="bg-white/10" />
