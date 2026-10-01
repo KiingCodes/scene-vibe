@@ -17,6 +17,8 @@ import { useCommunityMessages } from '@/hooks/useCommunityChat';
 import { useMemo } from 'react';
 import { VerifiedVenueBadge } from '@/components/VerifiedBadge';
 import { isVerifiedVenue } from '@/hooks/useVenueOwner';
+import { Settings2 } from 'lucide-react';
+import VenueAnnouncementBanner from '@/components/venue-portal/VenueAnnouncementBanner';
 
 // Neon capacity badge — replaces the faint grey bar next to "Empty"
 const CapacityBadge = ({ vibeCount }: { vibeCount: number }) => {
@@ -159,6 +161,19 @@ const ClubDetailPage = () => {
             </Button>
           </div>
         </motion.div>
+
+        {user && club.owner_id === user.id && (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/40 bg-primary/10 px-4 py-3">
+            <p className="text-xs text-foreground">You own this venue. Update door status, specials and photos.</p>
+            <Link to={`/venue-portal?venue=${club.id}`}>
+              <Button size="sm" className="rounded-full gradient-primary text-primary-foreground font-semibold gap-1.5">
+                <Settings2 className="w-4 h-4" /> Manage Venue / Owner Portal
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        <VenueAnnouncementBanner clubId={club.id} />
 
         {!isVerifiedVenue(club) && (
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/50 bg-white/[0.03] px-4 py-3">

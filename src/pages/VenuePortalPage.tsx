@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ShieldCheck, Building2 } from "lucide-react";
 import VenueManagementPortal from "@/components/venue-portal/VenueManagementPortal";
 import Navbar from "@/components/Navbar";
@@ -18,7 +18,8 @@ const Shell = ({ children }: { children: React.ReactNode }) => (
 const VenuePortalPage = () => {
   const { user, loading } = useAuth();
   const { data: venues, isLoading } = useMyVenues();
-  const [selected, setSelected] = useState<string | null>(null);
+  const [params] = useSearchParams();
+  const [selected, setSelected] = useState<string | null>(params.get("venue"));
 
   if (loading || (user && isLoading)) {
     return <Shell><div className="mx-auto max-w-6xl h-64 rounded-2xl bg-white/5 animate-pulse" /></Shell>;

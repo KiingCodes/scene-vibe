@@ -53,6 +53,13 @@ const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardPr
 
   // Crisp crowd micro-badge — colored, not gray.
   const crowdBadge = (() => {
+    // Owner-set door status wins over the vibe-derived estimate.
+    switch (club.live_status) {
+      case 'SPACIOUS': return { label: 'Spacious', text: 'text-sky-300', bg: 'bg-sky-500/15', border: 'border-sky-400/40', dot: 'bg-sky-400' };
+      case 'BUSY': return { label: 'Busy', text: 'text-cyan-300', bg: 'bg-cyan-500/15', border: 'border-cyan-400/40', dot: 'bg-cyan-400' };
+      case 'PACKED': return { label: 'Packed', text: 'text-orange-300', bg: 'bg-orange-500/15', border: 'border-orange-400/40', dot: 'bg-orange-400' };
+      case 'FULL LINE': return { label: 'Full Line', text: 'text-rose-300', bg: 'bg-rose-500/15', border: 'border-rose-400/40', dot: 'bg-rose-400' };
+    }
     if (vibeCount === 0) return { label: 'Spacious', text: 'text-sky-300', bg: 'bg-sky-500/15', border: 'border-sky-400/40', dot: 'bg-sky-400' };
     if (vibeCount < 3)   return { label: 'Warming Up', text: 'text-cyan-300', bg: 'bg-cyan-500/15', border: 'border-cyan-400/40', dot: 'bg-cyan-400' };
     if (vibeCount < 5)   return { label: 'Vibing', text: 'text-primary', bg: 'bg-primary/15', border: 'border-primary/40', dot: 'bg-primary' };
@@ -167,9 +174,16 @@ const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardPr
                 {isVerifiedVenue(club) && <ShieldCheck className="w-3.5 h-3.5 shrink-0 text-emerald-400" aria-label="Verified venue" />}
               </h3>
               {/* Crisp colored micro-badge crowd status */}
-              <div className={`shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full border ${crowdBadge.bg} ${crowdBadge.border}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${crowdBadge.dot} ${isFresh ? 'animate-pulse' : ''}`} />
-                <span className={`text-[10px] font-black tracking-wider uppercase ${crowdBadge.text}`}>{crowdBadge.label}</span>
+              <div className="shrink-0 flex items-center gap-1">
+                {club.is_live && (
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full border border-emerald-400/50 bg-emerald-500/15 text-[10px] font-black tracking-wider text-emerald-300">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> LIVE
+                  </span>
+                )}
+                <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full border ${crowdBadge.bg} ${crowdBadge.border}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${crowdBadge.dot} ${isFresh || club.live_status ? 'animate-pulse' : ''}`} />
+                  <span className={`text-[10px] font-black tracking-wider uppercase ${crowdBadge.text}`}>{crowdBadge.label}</span>
+                </div>
               </div>
             </div>
 

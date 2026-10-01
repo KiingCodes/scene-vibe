@@ -6,6 +6,9 @@ import { LiveCommandTab } from "./LiveCommandTab";
 import { ContentManagerTab } from "./ContentManagerTab";
 import { AnalyticsTab } from "./AnalyticsTab";
 import { VenueUpdatesTab } from "./VenueUpdatesTab";
+import { OwnerLiveStatusCard } from "./OwnerLiveStatusCard";
+import { AnnouncementsCard } from "./AnnouncementsCard";
+import { VenueProfileEditor } from "./VenueProfileEditor";
 import { PortalMode, VenueStatus } from "./types";
 import type { Club } from "@/hooks/useClubs";
 import { cn } from "@/lib/utils";
@@ -78,9 +81,14 @@ export const VenueManagementPortal = ({ venueName, venue }: VenueManagementPorta
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.22, ease: "easeOut" }}
         >
-          {tab === "live" && <LiveCommandTab status={status} onStatusChange={setStatus} />}
+          {tab === "live" && (venue ? (
+            <div className="grid gap-4 lg:grid-cols-2">
+              <OwnerLiveStatusCard venue={venue} />
+              <AnnouncementsCard venue={venue} />
+            </div>
+          ) : <LiveCommandTab status={status} onStatusChange={setStatus} />)}
           {tab === "updates" && venue && <VenueUpdatesTab venue={venue} />}
-          {tab === "content" && <ContentManagerTab />}
+          {tab === "content" && (venue ? <VenueProfileEditor key={venue.id} venue={venue} /> : <ContentManagerTab />)}
           {tab === "analytics" && <AnalyticsTab venue={venue} />}
         </motion.div>
       </AnimatePresence>
