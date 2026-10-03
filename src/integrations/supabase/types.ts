@@ -948,13 +948,19 @@ export type Database = {
           ban_reason: string | null
           bio: string | null
           created_at: string
+          email_notifications: boolean
           id: string
           is_banned: boolean
           is_blocked: boolean
           moderated_at: string | null
           moderated_by: string | null
+          profile_visibility: string
+          push_notifications: boolean
+          sound_effects: boolean
+          two_factor_enabled: boolean
           user_id: string
           username: string | null
+          walk_me_home_privacy: string
           warning_count: number
         }
         Insert: {
@@ -962,13 +968,19 @@ export type Database = {
           ban_reason?: string | null
           bio?: string | null
           created_at?: string
+          email_notifications?: boolean
           id?: string
           is_banned?: boolean
           is_blocked?: boolean
           moderated_at?: string | null
           moderated_by?: string | null
+          profile_visibility?: string
+          push_notifications?: boolean
+          sound_effects?: boolean
+          two_factor_enabled?: boolean
           user_id: string
           username?: string | null
+          walk_me_home_privacy?: string
           warning_count?: number
         }
         Update: {
@@ -976,13 +988,19 @@ export type Database = {
           ban_reason?: string | null
           bio?: string | null
           created_at?: string
+          email_notifications?: boolean
           id?: string
           is_banned?: boolean
           is_blocked?: boolean
           moderated_at?: string | null
           moderated_by?: string | null
+          profile_visibility?: string
+          push_notifications?: boolean
+          sound_effects?: boolean
+          two_factor_enabled?: boolean
           user_id?: string
           username?: string | null
+          walk_me_home_privacy?: string
           warning_count?: number
         }
         Relationships: []
