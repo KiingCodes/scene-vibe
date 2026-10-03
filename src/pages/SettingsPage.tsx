@@ -414,13 +414,57 @@ const SettingsPage = () => {
     );
   }
 
-  const toggle = (key: SettingKey) => (
-    <Switch
-      checked={settings[key]}
-      disabled={savingKey !== null}
-      onCheckedChange={(value) => updateSetting(key, value)}
-      aria-label={`Toggle ${key}`}
-    />
+  const spin = (key: string) =>
+    savingKey === key ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : null;
+
+  const prefToggle = (
+    key: "email_notifications" | "sound_effects" | "push_notifications" | "two_factor_enabled",
+    onChange: (v: boolean) => void = (v) => updatePref(key, v),
+  ) => (
+    <span className="flex items-center gap-2">
+      {spin(key)}
+      <Switch
+        checked={prefs[key]}
+        disabled={savingKey !== null || prefsLoading}
+        onCheckedChange={onChange}
+        aria-label={`Toggle ${key}`}
+      />
+    </span>
+  );
+
+  const toggle = (key: keyof ExtraState) => (
+    <span className="flex items-center gap-2">
+      {spin(key)}
+      <Switch
+        checked={extra[key]}
+        disabled={savingKey !== null}
+        onCheckedChange={(value) => updateExtra(key, value)}
+        aria-label={`Toggle ${key}`}
+      />
+    </span>
+  );
+
+  const prefSelect = <K extends "profile_visibility" | "walk_me_home_privacy">(
+    key: K,
+    options: { value: ProfilePrefs[K]; label: string }[],
+  ) => (
+    <span className="flex items-center gap-2">
+      {spin(key)}
+      <Select
+        value={prefs[key]}
+        disabled={savingKey !== null || prefsLoading}
+        onValueChange={(v) => updatePref(key, v as ProfilePrefs[K])}
+      >
+        <SelectTrigger className="h-9 w-[130px] border-white/10 bg-white/5 text-xs" aria-label={key}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((o) => (
+            <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </span>
   );
 
   return (
@@ -470,14 +514,14 @@ const SettingsPage = () => {
               title="Two-Factor Authentication"
               description="Add an extra layer of account protection"
             >
-              {toggle("twoFactor")}
+              {prefToggle("two_factor_enabled", toggleTwoFactor)}
             </SettingRow>
             <SettingRow
               icon={Bell}
               title="Email Preferences"
               description="Receive useful updates and community news"
             >
-              {toggle("emailPreferences")}
+              {prefToggle("email_notifications")}
             </SettingRow>
           </Section>
 
@@ -487,7 +531,7 @@ const SettingsPage = () => {
               title="Profile Discoverability"
               description="Let people find your profile in the SCENE community"
             >
-              {toggle("profileDiscoverable")}
+              {prefSelect("profile_visibility", [{ value: "public", label: "Everyone" }, { value: "followers", label: "Followers" }, { value: "private", label: "Only me" }])}
             </SettingRow>
             <SettingRow
               icon={Monitor}
@@ -501,11 +545,18 @@ const SettingsPage = () => {
               title="Walk Me Home Location Privacy"
               description="Keep your live safety location visible only to chosen contacts"
             >
-              {toggle("walkLocationPrivate")}
+              {prefSelect("walk_me_home_privacy", [{ value: "contacts", label: "My contacts" }, { value: "private", label: "Only me" }])}
             </SettingRow>
           </Section>
 
           <Section eyebrow="03 / Stay in the loop" title="Notifications">
+            <SettingRow
+              icon={Smartphone}
+              title="Push notifications"
+              description="Get alerts on this device, even when SCENE is closed"
+            >
+              {prefToggle("push_notifications", togglePush)}
+            </SettingRow>
             <SettingRow
               icon={Bell}
               title="Live venue vibes"
@@ -535,7 +586,7 @@ const SettingsPage = () => {
               title="Sound effects"
               description="Add subtle audio feedback to key moments"
             >
-              {toggle("soundEffects")}
+              {prefToggle("sound_effects")}
             </SettingRow>
             <SettingRow
               icon={Moon}
@@ -586,7 +637,7 @@ const SettingsPage = () => {
               icon={LogOut}
               title="Sign Out"
               description="Sign out of this device"
-              onClick={() => signOut()}
+              onClick={handleSignOut}
             >
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             </SettingRow>
@@ -619,7 +670,7 @@ const SettingsPage = () => {
                   </DialogTitle>
                 </DialogHeader>
                 <p className="text-sm text-muted-foreground">
-                  Type DELETE to confirm permanent account deletion.
+                  Type DELETE and confirm your password. Your profile, vibes, reviews, messages and badges will be permanently removed.
                 </p>
                 <Input
                   value={deleteConfirm}
@@ -627,10 +678,20 @@ const SettingsPage = () => {
                   placeholder="DELETE"
                   className="border-destructive/30 bg-muted/50"
                 />
+                {hasPassword && (
+                  <Input
+                    type="password"
+                    value={deletePassword}
+                    onChange={(event) => setDeletePassword(event.target.value)}
+                    placeholder="Your current password"
+                    autoComplete="current-password"
+                    className="border-destructive/30 bg-muted/50"
+                  />
+                )}
                 <Button
                   onClick={handleDeleteAccount}
                   variant="destructive"
-                  disabled={deleteConfirm !== "DELETE" || deletingAccount}
+                  disabled={deleteConfirm !== "DELETE" || (hasPassword && !deletePassword) || deletingAccount}
                   className="w-full"
                 >
                   {deletingAccount
@@ -643,6 +704,12 @@ const SettingsPage = () => {
         </div>
       </main>
       <Footer />
+
+      <TwoFactorDialog
+        open={mfaOpen}
+        onOpenChange={setMfaOpen}
+        onEnabled={() => updatePref("two_factor_enabled", true)}
+      />
 
       <Dialog open={passwordOpen} onOpenChange={setPasswordOpen}>
         <DialogContent className="glass border-border/50">
