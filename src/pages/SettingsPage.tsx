@@ -38,34 +38,56 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { APP_VERSION } from "@/lib/version";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import TwoFactorDialog from "@/components/settings/TwoFactorDialog";
+import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array } from "@/lib/pushConfig";
+import { useDeviceId } from "@/hooks/useDeviceId";
+import { useCountry } from "@/contexts/CountryContext";
 
-type SettingsState = {
-  twoFactor: boolean;
-  emailPreferences: boolean;
-  profileDiscoverable: boolean;
+/** Preferences persisted as columns on the user's profile row. */
+type ProfilePrefs = {
+  email_notifications: boolean;
+  push_notifications: boolean;
+  profile_visibility: "public" | "followers" | "private";
+  walk_me_home_privacy: "contacts" | "private";
+  sound_effects: boolean;
+  two_factor_enabled: boolean;
+};
+
+const DEFAULT_PREFS: ProfilePrefs = {
+  email_notifications: true,
+  push_notifications: false,
+  profile_visibility: "public",
+  walk_me_home_privacy: "contacts",
+  sound_effects: true,
+  two_factor_enabled: false,
+};
+
+const PREF_COLUMNS = Object.keys(DEFAULT_PREFS).join(",");
+
+/** Secondary alert/display toggles kept on the account metadata. */
+type ExtraState = {
   activityVisible: boolean;
-  walkLocationPrivate: boolean;
   liveVenueVibes: boolean;
   chatMentions: boolean;
   safetyCheckins: boolean;
-  soundEffects: boolean;
   highContrastNeon: boolean;
 };
 
-const DEFAULT_SETTINGS: SettingsState = {
-  twoFactor: false,
-  emailPreferences: true,
-  profileDiscoverable: true,
+const DEFAULT_EXTRA: ExtraState = {
   activityVisible: true,
-  walkLocationPrivate: true,
   liveVenueVibes: true,
   chatMentions: true,
   safetyCheckins: true,
-  soundEffects: true,
   highContrastNeon: false,
 };
-
-type SettingKey = keyof SettingsState;
 
 type RowProps = {
   icon: LucideIcon;
@@ -143,50 +165,171 @@ const Section = ({
 const SettingsPage = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const [settings, setSettings] = useState<SettingsState>(() => ({
-    ...DEFAULT_SETTINGS,
-    ...((user?.user_metadata?.scene_settings as
-      | Partial<SettingsState>
-      | undefined) ?? {}),
-  }));
-  const [savingKey, setSavingKey] = useState<SettingKey | null>(null);
+  const deviceId = useDeviceId();
+  const { country } = useCountry();
+  const [prefs, setPrefs] = useState<ProfilePrefs>(DEFAULT_PREFS);
+  const [prefsLoading, setPrefsLoading] = useState(true);
+  const [extra, setExtra] = useState<ExtraState>(DEFAULT_EXTRA);
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [mfaOpen, setMfaOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
   const [deletingAccount, setDeletingAccount] = useState(false);
 
+  const hasPassword = !!user?.identities?.some((i) => i.provider === "email");
+
+  // Load saved preferences from the profile row, and sync 2FA with real MFA factors.
   useEffect(() => {
     if (!user) return;
-    setSettings({
-      ...DEFAULT_SETTINGS,
-      ...((user.user_metadata?.scene_settings as
-        | Partial<SettingsState>
-        | undefined) ?? {}),
+    let cancelled = false;
+    setExtra({
+      ...DEFAULT_EXTRA,
+      ...((user.user_metadata?.scene_settings as Partial<ExtraState> | undefined) ?? {}),
     });
+    (async () => {
+      setPrefsLoading(true);
+      const [{ data, error }, { data: factors }] = await Promise.all([
+        supabase.from("profiles").select(PREF_COLUMNS).eq("user_id", user.id).maybeSingle(),
+        supabase.auth.mfa.listFactors(),
+      ]);
+      if (cancelled) return;
+      if (error) toast.error("Could not load your settings");
+      const loaded = { ...DEFAULT_PREFS, ...((data as Partial<ProfilePrefs> | null) ?? {}) };
+      const mfaOn = (factors?.totp ?? []).some((f) => f.status === "verified");
+      if (loaded.two_factor_enabled !== mfaOn) {
+        loaded.two_factor_enabled = mfaOn;
+        await supabase.from("profiles").update({ two_factor_enabled: mfaOn }).eq("user_id", user.id);
+      }
+      setPrefs(loaded);
+      setPrefsLoading(false);
+    })();
+    return () => { cancelled = true; };
   }, [user]);
 
-  const updateSetting = async <K extends SettingKey>(
-    key: K,
-    value: SettingsState[K],
-  ) => {
+  /** Write a patch to the profile row (insert it if missing). */
+  const persistPrefs = async (patch: Partial<ProfilePrefs>) => {
+    if (!user) return { error: new Error("Not signed in") };
+    const { data, error } = await supabase
+      .from("profiles")
+      .update(patch)
+      .eq("user_id", user.id)
+      .select("id");
+    if (error) return { error };
+    if (!data?.length) {
+      const { error: insErr } = await supabase.from("profiles").insert({ user_id: user.id, ...patch });
+      return { error: insErr };
+    }
+    return { error: null };
+  };
+
+  const updatePref = async <K extends keyof ProfilePrefs>(key: K, value: ProfilePrefs[K]) => {
     if (!user || savingKey) return;
-    const previous = settings;
-    const next = { ...settings, [key]: value };
-    setSettings(next);
+    const previous = prefs;
+    setPrefs({ ...prefs, [key]: value });
     setSavingKey(key);
-    const { error } = await supabase.auth.updateUser({
-      data: { scene_settings: next },
-    });
+    const { error } = await persistPrefs({ [key]: value } as Partial<ProfilePrefs>);
     setSavingKey(null);
     if (error) {
-      setSettings(previous);
+      setPrefs(previous);
+      toast.error("Could not save that setting");
+      return false;
+    }
+    toast.success("Setting saved");
+    return true;
+  };
+
+  const updateExtra = async (key: keyof ExtraState, value: boolean) => {
+    if (!user || savingKey) return;
+    const previous = extra;
+    const next = { ...extra, [key]: value };
+    setExtra(next);
+    setSavingKey(key);
+    const { error } = await supabase.auth.updateUser({ data: { scene_settings: next } });
+    setSavingKey(null);
+    if (error) {
+      setExtra(previous);
       toast.error("Could not save that setting");
       return;
     }
     toast.success("Setting saved");
+  };
+
+  // --- Push notifications: real browser permission + push subscription ---
+  const togglePush = async (on: boolean) => {
+    if (!user || savingKey) return;
+    if (!on) {
+      setSavingKey("push_notifications");
+      try {
+        const reg = "serviceWorker" in navigator ? await navigator.serviceWorker.getRegistration() : undefined;
+        const sub = await reg?.pushManager.getSubscription();
+        if (sub) {
+          await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
+          await sub.unsubscribe();
+        }
+      } catch { /* browser cleanup is best-effort */ }
+      setSavingKey(null);
+      await updatePref("push_notifications", false);
+      return;
+    }
+    if (!("Notification" in window)) {
+      toast.error("This browser doesn't support notifications");
+      return;
+    }
+    setSavingKey("push_notifications");
+    const permission = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
+    if (permission !== "granted") {
+      setSavingKey(null);
+      toast.error("Notifications are blocked. Allow them in your browser settings.");
+      return;
+    }
+    try {
+      if ("serviceWorker" in navigator && "PushManager" in window) {
+        const reg = await navigator.serviceWorker.ready;
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub) {
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY).buffer as ArrayBuffer,
+          });
+        }
+        await supabase.functions.invoke("push-subscribe", {
+          body: { subscription: sub.toJSON(), device_id: deviceId, country, user_id: user.id },
+        });
+      }
+    } catch {
+      // Permission granted but background push unavailable (e.g. preview iframe) — keep the preference.
+    }
+    setSavingKey(null);
+    await updatePref("push_notifications", true);
+  };
+
+  // --- 2FA ---
+  const toggleTwoFactor = async (on: boolean) => {
+    if (on) {
+      setMfaOpen(true);
+      return;
+    }
+    setSavingKey("two_factor_enabled");
+    const { data } = await supabase.auth.mfa.listFactors();
+    for (const f of data?.totp ?? []) {
+      const { error } = await supabase.auth.mfa.unenroll({ factorId: f.id });
+      if (error) {
+        setSavingKey(null);
+        toast.error(
+          error.message.includes("aal2")
+            ? "Sign in again with your 2FA code before turning it off."
+            : error.message,
+        );
+        return;
+      }
+    }
+    setSavingKey(null);
+    await updatePref("two_factor_enabled", false);
   };
 
   const clearLocalCache = () => {
@@ -198,8 +341,8 @@ const SettingsPage = () => {
   };
 
   const handlePasswordChange = async () => {
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters");
+    if (password.length < 8) {
+      toast.error("Password must be at least 8 characters");
       return;
     }
     if (password !== passwordConfirm) {
@@ -219,16 +362,29 @@ const SettingsPage = () => {
     toast.success("Password updated");
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+    toast.success("Signed out");
+  };
+
   const handleDeleteAccount = async () => {
     if (deleteConfirm !== "DELETE" || !user) return;
     setDeletingAccount(true);
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const { error } = await supabase.functions.invoke("delete-account", {
-        headers: { Authorization: `Bearer ${session?.access_token}` },
-      });
+      // Re-verify identity before deleting.
+      if (hasPassword) {
+        const { error: authErr } = await supabase.auth.signInWithPassword({
+          email: user.email!,
+          password: deletePassword,
+        });
+        if (authErr) {
+          toast.error("Password is incorrect");
+          setDeletingAccount(false);
+          return;
+        }
+      }
+      const { error } = await supabase.functions.invoke("delete-account");
       if (error) throw error;
       await signOut();
       navigate("/");
