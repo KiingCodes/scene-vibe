@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -16,6 +16,7 @@ export type CommunityMessage = {
   message_type: string | null;
   created_at: string;
   is_hidden: boolean;
+  channel_id: string;
   profile: ProfileLite | null;
 };
 
@@ -25,10 +26,10 @@ export type CommunityMessage = {
  * - Realtime INSERTs are appended directly to the cache (no refetch flicker).
  * - DELETEs are removed from the cache instantly.
  */
-export const useCommunityMessages = () => {
+export const useCommunityMessages = (channelId?: string) => {
   const qc = useQueryClient();
   const { country } = useCountry();
-  const KEY = ['community-messages', country];
+  const KEY = ['community-messages', country, channelId ?? 'all'];
 
   const query = useInfiniteQuery({
     queryKey: KEY,
@@ -44,6 +45,7 @@ export const useCommunityMessages = () => {
         .gte('created_at', since)
         .order('created_at', { ascending: false })
         .limit(PAGE_SIZE);
+      if (channelId) q = q.eq('channel_id', channelId);
       if (pageParam) q = q.lt('created_at', pageParam);
       const { data: msgs, error } = await q;
       if (error) throw error;
@@ -79,7 +81,7 @@ export const useCommunityMessages = () => {
   // Realtime stream — append new INSERTs and drop DELETEs without refetching.
   useEffect(() => {
     const channel = supabase
-      .channel(`community-messages-stream-${country}`)
+      .channel(`community-messages-stream-${country}-${channelId ?? 'all'}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
@@ -87,6 +89,7 @@ export const useCommunityMessages = () => {
           const row: any = payload.new;
           if (row.club_id !== null || row.is_hidden) return;
           if ((row.country ?? 'ZA') !== country) return;
+          if (channelId && (row.channel_id ?? 'global') !== channelId) return;
 
           // Fetch profile for the new sender (lightweight).
           const { data: profile } = await supabase
@@ -98,6 +101,7 @@ export const useCommunityMessages = () => {
           qc.setQueryData<any>(KEY, (old: any) => {
             if (!old) return old;
             const newMsg: CommunityMessage = { ...row, profile: profile ?? null };
+            if (old.pages.some((p: CommunityMessage[]) => p.some((m) => m.id === row.id))) return old;
             const pages = [...old.pages];
             // Append to the newest page (pages[0] in our paging direction).
             pages[0] = [...pages[0], newMsg];
@@ -132,7 +136,8 @@ export const useCommunityMessages = () => {
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [qc, country]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qc, country, channelId]);
 
   return {
     messages,
@@ -149,8 +154,8 @@ export const useSendCommunityMessage = () => {
   const { country } = useCountry();
   return useMutation({
     mutationFn: async ({
-      content, mediaUrl, messageType,
-    }: { content: string; mediaUrl?: string; messageType?: 'text' | 'image' | 'audio' | 'video' }) => {
+      content, mediaUrl, messageType, channelId,
+    }: { content: string; mediaUrl?: string; messageType?: 'text' | 'image' | 'audio' | 'video'; channelId?: string }) => {
       if (!user) throw new Error('Sign in to chat');
       const { error } = await supabase.from('messages').insert({
         club_id: null,
@@ -158,6 +163,7 @@ export const useSendCommunityMessage = () => {
         content,
         media_url: mediaUrl || null,
         message_type: messageType || 'text',
+        channel_id: channelId || 'global',
         country,
       });
       if (error) throw error;
@@ -191,6 +197,90 @@ export const useFlagMessage = () => {
         reason: reason || null,
       });
       if (error) throw error;
+    },
+  });
+};
+export const CHAT_REACTIONS = ['🔥', '🎧', '🍾', '⚡'] as const;
+type ReactionRow = { id: string; message_id: string; user_id: string; emoji: string };
+
+/** Persistent reactions for the visible messages, kept live via realtime. */
+export const useMessageReactions = (messageIds: string[]) => {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  const idsKey = [...messageIds].sort().join(',');
+  const KEY = ['message-reactions', idsKey];
+
+  const query = useQuery({
+    queryKey: KEY,
+    enabled: messageIds.length > 0,
+    queryFn: async () => {
+      const rows: ReactionRow[] = [];
+      for (let i = 0; i < messageIds.length; i += 100) {
+        const { data, error } = await supabase
+          .from('message_reactions')
+          .select('id,message_id,user_id,emoji')
+          .in('message_id', messageIds.slice(i, i + 100));
+        if (error) throw error;
+        rows.push(...((data || []) as ReactionRow[]));
+      }
+      return rows;
+    },
+  });
+
+  useEffect(() => {
+    const ch = supabase
+      .channel(`message-reactions-${Math.random().toString(36).slice(2)}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'message_reactions' }, (payload) => {
+        const row = (payload.eventType === 'DELETE' ? payload.old : payload.new) as ReactionRow;
+        if (!row?.message_id || !messageIds.includes(row.message_id)) return;
+        qc.setQueryData<ReactionRow[]>(KEY, (old = []) => {
+          if (payload.eventType === 'DELETE') return old.filter((r) => r.id !== row.id);
+          return old.some((r) => r.id === row.id) ? old : [...old, row];
+        });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idsKey, qc]);
+
+  const summary = useMemo(() => {
+    const map: Record<string, Record<string, { count: number; mine: boolean }>> = {};
+    (query.data || []).forEach((r) => {
+      const m = (map[r.message_id] ||= {});
+      const e = (m[r.emoji] ||= { count: 0, mine: false });
+      e.count += 1;
+      if (user && r.user_id === user.id) e.mine = true;
+    });
+    return map;
+  }, [query.data, user]);
+
+  return { summary, key: KEY };
+};
+
+export const useToggleMessageReaction = (cacheKey: unknown[]) => {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ messageId, emoji, on }: { messageId: string; emoji: string; on: boolean }) => {
+      if (!user) throw new Error('Sign in to react');
+      if (on) {
+        const { error } = await supabase.from('message_reactions').delete()
+          .eq('message_id', messageId).eq('user_id', user.id).eq('emoji', emoji);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase.from('message_reactions')
+          .insert({ message_id: messageId, user_id: user.id, emoji })
+          .select('id,message_id,user_id,emoji').single();
+        if (error) throw error;
+        return data as ReactionRow;
+      }
+    },
+    onSuccess: (row, { messageId, emoji, on }) => {
+      qc.setQueryData<ReactionRow[]>(cacheKey, (old = []) =>
+        on
+          ? old.filter((r) => !(r.message_id === messageId && r.emoji === emoji && r.user_id === user?.id))
+          : row && !old.some((r) => r.id === row.id) ? [...old, row] : old,
+      );
     },
   });
 };

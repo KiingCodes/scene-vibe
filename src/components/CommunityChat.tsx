@@ -19,6 +19,9 @@ import { useIsAdmin } from "@/hooks/useAdmin";
 import {
   useCommunityMessages,
   useSendCommunityMessage,
+  useMessageReactions,
+  useToggleMessageReaction,
+  CHAT_REACTIONS,
   useDeleteCommunityMessage,
   useFlagMessage,
 } from "@/hooks/useCommunityChat";
@@ -60,12 +63,19 @@ const CHANNELS = [
   "#Johannesburg / #CapeTown",
   "#Live-Clubs",
 ];
+/** Stable ids stored on each message for its channel. */
+const CHANNEL_IDS: Record<string, string> = {
+  "#Global-Vibes": "global",
+  "#Amapiano & Deep House": "amapiano",
+  "#Johannesburg / #CapeTown": "cities",
+  "#Live-Clubs": "live-clubs",
+};
 const VIBE_PROMPTS = [
   "Where's the pull up tonight? 🔥",
   "Who has the best line-up? 🎧",
   "Share a quick photo/vibe check 📸",
 ];
-const REACTIONS = ["🔥", "🍸", "⚡", "🎧"];
+const REACTIONS = CHAT_REACTIONS;
 
 const CommunityChat = () => {
   const { data: ownerIds } = useVenueOwnerIds();
@@ -73,13 +83,18 @@ const CommunityChat = () => {
   const { data: isAdmin } = useIsAdmin();
   const deviceId = useDeviceId();
   const [onlineCount, setOnlineCount] = useState(1);
+  const [activeChannel, setActiveChannel] = useState(CHANNELS[0]);
+  const channelId = CHANNEL_IDS[activeChannel] ?? "global";
   const {
     messages,
     isLoading,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useCommunityMessages();
+  } = useCommunityMessages(channelId);
+  const messageIds = useMemo(() => messages.map((m) => m.id), [messages]);
+  const { summary: reactions, key: reactionsKey } = useMessageReactions(messageIds);
+  const toggleReaction = useToggleMessageReaction(reactionsKey);
   const sendMessage = useSendCommunityMessage();
   const deleteMessage = useDeleteCommunityMessage();
   const flagMessage = useFlagMessage();
@@ -90,10 +105,6 @@ const CommunityChat = () => {
   const [previewFile, setPreviewFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [activeChannel, setActiveChannel] = useState(CHANNELS[0]);
-  const [reactions, setReactions] = useState<
-    Record<string, Record<string, number>>
-  >({});
   const [reactionParticles, setReactionParticles] = useState<
     { id: string; emoji: string }[]
   >([]);
@@ -195,6 +206,7 @@ const CommunityChat = () => {
         await sendMessage.mutateAsync({
           content: text.trim(),
           messageType: "text",
+          channelId,
         });
       }
       setText("");
@@ -245,6 +257,7 @@ const CommunityChat = () => {
           (isAudio ? "🎙️ Voice note" : isVideo ? "🎞️ Video" : "📸 Photo"),
         mediaUrl: urlData.publicUrl,
         messageType: isAudio ? "audio" : isVideo ? "video" : "image",
+        channelId,
       });
     } finally {
       clearInterval(tick);
@@ -341,13 +354,16 @@ const CommunityChat = () => {
   };
 
   const addReaction = (messageId: string, emoji: string) => {
-    setReactions((current) => ({
-      ...current,
-      [messageId]: {
-        ...current[messageId],
-        [emoji]: (current[messageId]?.[emoji] || 0) + 1,
-      },
-    }));
+    if (!user) {
+      toast.error("Sign in to react");
+      return;
+    }
+    const on = !!reactions[messageId]?.[emoji]?.mine;
+    toggleReaction.mutate(
+      { messageId, emoji, on },
+      { onError: () => toast.error("Could not save that reaction") },
+    );
+    if (on) return;
     const particleId = `${messageId}-${Date.now()}`;
     setReactionParticles((current) => [...current, { id: particleId, emoji }]);
     window.setTimeout(
@@ -648,13 +664,16 @@ const CommunityChat = () => {
                       className={`mt-1 flex items-center gap-1 ${isOwn ? "justify-end" : ""}`}
                     >
                       {REACTIONS.map((emoji) => {
-                        const count = reactions[msg.id]?.[emoji] || 0;
+                        const r = reactions[msg.id]?.[emoji];
+                        const count = r?.count || 0;
                         return (
                           <button
                             key={emoji}
                             type="button"
                             onClick={() => addReaction(msg.id, emoji)}
-                            className={`rounded-full border px-2 py-0.5 text-[11px] transition hover:-translate-y-0.5 ${count ? "border-primary/50 bg-primary/10" : "border-white/10 bg-white/[0.04]"}`}
+                            aria-pressed={!!r?.mine}
+                            disabled={toggleReaction.isPending}
+                            className={`rounded-full border px-2 py-0.5 text-[11px] transition hover:-translate-y-0.5 ${r?.mine ? "border-primary bg-primary/20 shadow-[0_0_10px_hsl(var(--primary)/0.4)]" : count ? "border-primary/50 bg-primary/10" : "border-white/10 bg-white/[0.04]"}`}
                           >
                             {emoji}
                             {count ? ` ${count}` : ""}
