@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Flame, TrendingUp, MapPin, Clock, Music, Users, Heart, Car, ShieldCheck } from 'lucide-react';
+import { Flame, TrendingUp, MapPin, Clock, Music, Users, Heart, Car, ShieldCheck, Crown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useHasVibed, useVibe, useVibeFreshness } from '@/hooks/useVibes';
@@ -32,6 +32,7 @@ const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardPr
   const toggleFav = useToggleFavorite();
   const isTrending = vibeCount >= 3;
   const isFav = favorites?.has(club.id) || false;
+  const isPartner = !!club.is_verified || !!club.owner_id || isVerifiedVenue(club);
 
   // Tick every minute to keep open/closed badge fresh
   const [now, setNow] = useState(() => new Date());
@@ -107,7 +108,8 @@ const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardPr
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
     >
       <Link to={`/club/${club.id}`}>
-        <div className={`glass rounded-2xl overflow-hidden group hover:border-primary/30 transition-all duration-300 ${isTrending ? 'trending-glow border-secondary/40' : ''}`}>
+        <div className={isPartner ? 'partner-frame group' : ''}>
+        <div className={`glass rounded-2xl overflow-hidden group hover:border-primary/30 transition-all duration-300 ${isPartner ? 'partner-inner' : ''} ${isTrending && !isPartner ? 'trending-glow border-secondary/40' : ''}`}>
           <div className="relative h-40 overflow-hidden rounded-2xl">
             <img
               src={club.image_url || logoFallback}
@@ -120,8 +122,13 @@ const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardPr
             <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/70" />
 
             {/* TOP-LEFT: LIVE / CLOSED glassmorphic badge with pulsing neon dot */}
+            {isPartner && (
+              <div className="absolute top-2.5 left-2.5 flex items-center gap-1 px-2 py-1 rounded-md bg-gradient-to-r from-gold via-gold to-primary text-gold-foreground text-[9px] font-black tracking-[0.18em] shadow-[0_0_14px_hsl(var(--gold)/0.55)]">
+                <Crown className="w-3 h-3" /> SCENE PARTNER
+              </div>
+            )}
             {status && (
-              <div className={`absolute top-2.5 left-2.5 flex items-center gap-1.5 px-2 py-1 rounded-full backdrop-blur-xl border text-[10px] font-black tracking-[0.15em] shadow-lg ${
+              <div className={`absolute ${isPartner ? 'top-10' : 'top-2.5'} left-2.5 flex items-center gap-1.5 px-2 py-1 rounded-full backdrop-blur-xl border text-[10px] font-black tracking-[0.15em] shadow-lg ${
                 status.isOpen
                   ? 'bg-white/5 border-emerald-400/50 text-emerald-300 shadow-emerald-500/20'
                   : 'bg-white/5 border-rose-400/40 text-rose-300 shadow-rose-500/10'
@@ -171,7 +178,11 @@ const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardPr
             <div className="flex items-start justify-between gap-2">
               <h3 className="font-display font-black text-[17px] leading-tight tracking-tight text-foreground group-hover:text-primary transition-colors truncate flex items-center gap-1.5">
                 <span className="truncate">{club.name}</span>
-                {isVerifiedVenue(club) && <ShieldCheck className="w-3.5 h-3.5 shrink-0 text-emerald-400" aria-label="Verified venue" />}
+                {isPartner && (
+                  <span className="shrink-0 inline-flex items-center gap-1 rounded-full border border-gold/60 bg-gold/15 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-gold shadow-[0_0_10px_hsl(var(--gold)/0.35)]" aria-label="Official spot">
+                    <ShieldCheck className="w-3 h-3 text-primary" /> Official Spot
+                  </span>
+                )}
               </h3>
               {/* Crisp colored micro-badge crowd status */}
               <div className="shrink-0 flex items-center gap-1">
@@ -223,6 +234,7 @@ const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardPr
               </div>
             )}
           </div>
+        </div>
         </div>
       </Link>
     </motion.div>
