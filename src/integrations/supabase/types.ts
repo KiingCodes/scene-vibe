@@ -615,8 +615,41 @@ export type Database = {
         }
         Relationships: []
       }
+      message_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
+          channel_id: string
           club_id: string | null
           content: string
           country: string
@@ -630,6 +663,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          channel_id?: string
           club_id?: string | null
           content: string
           country?: string
@@ -643,6 +677,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          channel_id?: string
           club_id?: string | null
           content?: string
           country?: string
