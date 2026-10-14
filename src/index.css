@@ -46,6 +46,10 @@
     --portal-cyan: 189 94% 43%;
     --portal-pink: 330 81% 60%;
 
+    /* Verified / partner venue accent */
+    --gold: 45 100% 60%;
+    --gold-foreground: 240 10% 4%;
+
     --sidebar-background: 240 10% 4%;
     --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 174 100% 50%;
@@ -157,6 +161,28 @@
   }
 }
 
+
+/* Claimed / verified venue: animated neon gradient frame */
+.partner-frame {
+  position: relative;
+  padding: 1.5px;
+  border-radius: 1rem;
+  background: linear-gradient(120deg, hsl(var(--accent)), hsl(var(--primary)), hsl(var(--gold)), hsl(var(--accent)));
+  background-size: 300% 300%;
+  animation: partnerFlow 6s linear infinite;
+  box-shadow: 0 0 22px -4px hsl(var(--primary) / 0.45), 0 0 34px -10px hsl(var(--accent) / 0.55);
+}
+.partner-frame > .partner-inner {
+  border: none;
+  background-color: hsl(var(--card) / 0.92);
+}
+@keyframes partnerFlow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .partner-frame { animation: none; }
+}
 
 /* Shimmer for skeletons */
 @keyframes shimmer-slide {
