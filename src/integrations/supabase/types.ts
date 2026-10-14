@@ -1251,6 +1251,51 @@ export type Database = {
         }
         Relationships: []
       }
+      walk_sessions: {
+        Row: {
+          created_at: string
+          current_lat: number | null
+          current_lng: number | null
+          destination_name: string
+          eta_minutes: number
+          id: string
+          share_token: string
+          start_lat: number
+          start_lng: number
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_lat?: number | null
+          current_lng?: number | null
+          destination_name: string
+          eta_minutes?: number
+          id?: string
+          share_token?: string
+          start_lat: number
+          start_lng: number
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_lat?: number | null
+          current_lng?: number | null
+          destination_name?: string
+          eta_minutes?: number
+          id?: string
+          share_token?: string
+          start_lat?: number
+          start_lng?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       sponsorship_campaigns: {
         Row: {
           asset_type: string
@@ -1802,6 +1847,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_public_walk_session: {
+        Args: {
+          p_share_token: string
+        }
+        Returns: {
+          created_at: string
+          current_lat: number | null
+          current_lng: number | null
+          destination_name: string
+          eta_minutes: number
+          id: string
+          start_lat: number
+          start_lng: number
+          status: string
+          updated_at: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

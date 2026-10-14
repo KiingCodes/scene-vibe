@@ -9,6 +9,8 @@ import {
   KeyRound,
   Siren,
   Navigation,
+  MessageCircle,
+  Share2,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -24,11 +26,12 @@ import {
   DURESS_PIN,
   getSafePin,
   setSafePin,
-  triggerSafetyEscalation,
+  triggerLocalSafetyAlert,
   useActiveSafetySession,
   useAddEmergencyContact,
   useDeleteEmergencyContact,
   useEmergencyContacts,
+  useSetSafetyAlert,
   useStartSafetySession,
 } from "@/hooks/useSafety";
 
@@ -47,6 +50,7 @@ const SafetyPage = () => {
   const delContact = useDeleteEmergencyContact();
   const { data: active } = useActiveSafetySession();
   const start = useStartSafetySession();
+  const setAlert = useSetSafetyAlert();
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -80,33 +84,61 @@ const SafetyPage = () => {
 
   const startWalk = async () => {
     if (!dest) return toast.error("Pick a destination first");
-    if (!getSafePin()) return toast.error("Set your 4-digit safe PIN first");
-    if (!contacts?.length)
-      return toast.error("Add at least one emergency contact");
+    if (!("geolocation" in navigator)) {
+      return toast.error("This device does not support location tracking");
+    }
 
-    const begin = (lat?: number, lng?: number) =>
-      start
-        .mutateAsync({
-          destination_lat: dest.lat,
-          destination_lng: dest.lng,
-          destination_label: dest.label || "Destination",
-          eta_minutes: eta,
-          current_lat: lat ?? null,
-          current_lng: lng ?? null,
-        })
-        .then(() =>
-          toast.success("Walk Me Home is live — share your track link"),
-        )
-        .catch((e) => toast.error((e as Error).message));
-
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (p) => begin(p.coords.latitude, p.coords.longitude),
-        () => begin(),
-        { enableHighAccuracy: true, timeout: 12000 },
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) =>
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 12000,
+        }),
       );
+      await start.mutateAsync({
+        destination_name: dest.label.trim() || "Destination",
+        start_lat: position.coords.latitude,
+        start_lng: position.coords.longitude,
+        eta_minutes: eta,
+      });
+      toast.success("Walk Me Home is live — share your tracking link");
+    } catch (e) {
+      toast.error((e as Error).message || "Could not get your location");
+    }
+  };
+
+  const trackingUrl = active
+    ? `${window.location.origin}/track/${active.share_token}`
+    : "";
+  const openWhatsApp = () => {
+    if (!active) return;
+    const text = `I'm walking to ${active.destination_name}. Follow my live location: ${trackingUrl}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+  };
+  const shareTrackingLink = async () => {
+    if (!active) return;
+    const text = `I'm walking to ${active.destination_name}. Follow my live location: ${trackingUrl}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Walk Me Home", text, url: trackingUrl });
+      } catch (e) {
+        if ((e as DOMException).name !== "AbortError") {
+          toast.error((e as Error).message || "Could not share tracking link");
+        }
+      }
     } else {
-      begin();
+      openWhatsApp();
+    }
+  };
+
+  const panic = async () => {
+    if (!active) return;
+    triggerLocalSafetyAlert();
+    try {
+      await setAlert.mutateAsync(active);
+      toast.error("Help alert activated. Your live tracking link now shows an emergency alert.");
+    } catch (e) {
+      toast.error(`Could not send the help alert: ${(e as Error).message}`);
     }
   };
 
@@ -145,33 +177,48 @@ const SafetyPage = () => {
             <h1 className="text-2xl font-black tracking-tight">Walk Me Home</h1>
           </div>
           <p className="text-white/55 text-sm">
-            Live location tracking with automatic alerts if you stop moving or
-            trigger duress.
+            Share your live location with someone you trust while you walk.
           </p>
         </motion.header>
 
         {active && (
           <div className="rounded-2xl border border-[#00e6d6]/40 bg-[#00e6d6]/10 p-4 text-sm">
-            <div className="font-bold text-[#00e6d6] mb-1">
-              A walk is already running
+            <div className={`font-bold mb-1 ${active.status === "alert" ? "text-[#ff2e93]" : "text-[#00e6d6]"}`}>
+              {active.status === "alert" ? "Help alert is active" : "A walk is already running"}
             </div>
             <p className="text-white/70 text-xs mb-3">
               Share this link so someone can watch you get home.
             </p>
             <div className="flex gap-2">
-              <Link to={`/track/${active.id}`} className="flex-1">
+              <Link to={`/track/${active.share_token}`} className="flex-1">
                 <Button className="w-full bg-[#00e6d6] text-black font-bold hover:bg-[#00c9bb]">
                   Open track page
                 </Button>
               </Link>
               <Button
+                onClick={openWhatsApp}
+                className="bg-[#25D366] text-black font-bold hover:bg-[#20bd5a]"
+              >
+                <MessageCircle className="w-4 h-4 mr-1" /> WhatsApp
+              </Button>
+              <Button
+                aria-label="Share tracking link"
                 variant="outline"
                 className="border-white/15 bg-transparent"
-                onClick={() => {
-                  navigator.clipboard.writeText(
-                    `${window.location.origin}/track/${active.id}`,
-                  );
-                  toast.success("Track link copied");
+                onClick={shareTrackingLink}
+              >
+                <Share2 className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                className="border-white/15 bg-transparent"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(trackingUrl);
+                    toast.success("Track link copied");
+                  } catch (e) {
+                    toast.error((e as Error).message || "Could not copy tracking link");
+                  }
                 }}
               >
                 Copy link
@@ -258,8 +305,7 @@ const SafetyPage = () => {
           <p className="text-[11px] text-white/50">
             Your safe PIN ends a walk normally. Entering{" "}
             <span className="text-[#ff2e93] font-bold">{DURESS_PIN}</span> (or a
-            wrong PIN) ends the walk on screen but silently alerts your
-            contacts.
+            wrong PIN) activates the on-screen help alert.
           </p>
           <div className="flex gap-2">
             <Input
@@ -324,16 +370,14 @@ const SafetyPage = () => {
         </Card>
 
         {active && (
-          <Button
-            variant="outline"
-            onClick={async () => {
-              await triggerSafetyEscalation(active.id, "manual");
-              toast.success("Your contacts have been alerted");
-            }}
-            className="w-full h-12 rounded-xl border-[#ff2e93]/50 bg-[#ff2e93]/10 text-[#ff2e93] font-black"
-          >
-            <Siren className="w-4 h-4 mr-2" /> Alert my contacts now
-          </Button>
+        <Button
+          onClick={panic}
+          disabled={setAlert.isPending || active.status === "alert"}
+          className="w-full h-16 rounded-xl border-2 border-[#ff2e93] bg-[#ff2e93] text-white font-black text-lg shadow-[0_0_28px_rgba(255,46,147,0.45)] hover:bg-[#e51e7d]"
+        >
+          <Siren className="w-6 h-6 mr-2" />
+          {active.status === "alert" ? "HELP ALERT ACTIVE" : "PANIC / NEED HELP"}
+        </Button>
         )}
       </main>
       <Footer />

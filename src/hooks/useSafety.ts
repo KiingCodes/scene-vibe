@@ -1,26 +1,27 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { ARRIVAL_RADIUS_M, STALE_PING_MS, distanceMeters } from '@/lib/geo';
 
 export type SafetySession = {
   id: string;
   user_id: string;
-  status: 'active' | 'completed' | 'escalated';
+  status: 'active' | 'completed' | 'alert';
+  start_lat: number;
+  start_lng: number;
   current_lat: number | null;
   current_lng: number | null;
-  destination_lat: number;
-  destination_lng: number;
-  destination_label: string | null;
-  battery_level: number | null;
+  destination_name: string;
   eta_minutes: number;
-  last_ping_at: string;
-  expires_at: string;
-  duress_flagged: boolean;
-  escalated_at: string | null;
+  share_token: string;
   created_at: string;
+  updated_at: string;
 };
+
+type PublicSafetySession = Pick<
+  SafetySession,
+  'id' | 'status' | 'start_lat' | 'start_lng' | 'current_lat' | 'current_lng' | 'destination_name' | 'eta_minutes' | 'created_at' | 'updated_at'
+>;
 
 export type EmergencyContact = {
   id: string;
@@ -89,11 +90,10 @@ export const useActiveSafetySession = () => {
     refetchInterval: 30000,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('safety_sessions')
+        .from('walk_sessions')
         .select('*')
         .eq('user_id', user!.id)
-        .in('status', ['active', 'escalated'])
-        .gt('expires_at', new Date().toISOString())
+        .in('status', ['active', 'alert'])
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -108,25 +108,23 @@ export const useStartSafetySession = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: {
-      destination_lat: number;
-      destination_lng: number;
-      destination_label?: string;
+      destination_name: string;
+      start_lat: number;
+      start_lng: number;
       eta_minutes: number;
-      current_lat?: number | null;
-      current_lng?: number | null;
     }) => {
       if (!user) throw new Error('Sign in required');
       const { data, error } = await supabase
-        .from('safety_sessions')
+        .from('walk_sessions')
         .insert({
           user_id: user.id,
-          destination_lat: input.destination_lat,
-          destination_lng: input.destination_lng,
-          destination_label: input.destination_label ?? null,
+          destination_name: input.destination_name,
           eta_minutes: input.eta_minutes,
-          current_lat: input.current_lat ?? null,
-          current_lng: input.current_lng ?? null,
-          expires_at: new Date(Date.now() + (input.eta_minutes + 120) * 60 * 1000).toISOString(),
+          start_lat: input.start_lat,
+          start_lng: input.start_lng,
+          current_lat: input.start_lat,
+          current_lng: input.start_lng,
+          share_token: crypto.randomUUID(),
         })
         .select()
         .single();
@@ -140,152 +138,202 @@ export const useStartSafetySession = () => {
 export const useEndSafetySession = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async (session: SafetySession) => {
       const { error } = await supabase
-        .from('safety_sessions')
+        .from('walk_sessions')
         .update({ status: 'completed' })
-        .eq('id', id);
+        .eq('id', session.id);
       if (error) throw error;
+      await broadcastWalkEvent(session.share_token, 'status_update', { status: 'completed' });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['safety-session'] }),
   });
 };
 
-/** Fires the emergency SMS escalation edge function. */
-export const triggerSafetyEscalation = async (
-  sessionId: string,
-  reason: 'duress' | 'stale' | 'manual',
+const broadcastWalkEvent = async (
+  shareToken: string,
+  event: 'position_update' | 'status_update',
+  payload: Record<string, number | string>,
 ) => {
-  try {
-    await supabase.functions.invoke('safety-alert', {
-      body: { sessionId, reason, origin: window.location.origin },
+  const channel = supabase.channel(`walk_session_${shareToken}`);
+  await new Promise<void>((resolve, reject) => {
+    channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        const result = await channel.send({ type: 'broadcast', event, payload });
+        await supabase.removeChannel(channel);
+        if (result !== 'ok') reject(new Error(`Walk update broadcast failed: ${result}`));
+        else resolve();
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        await supabase.removeChannel(channel);
+        reject(new Error(`Unable to connect to walk channel: ${status}`));
+      }
     });
-  } catch {
-    // Never let escalation failure break the UI.
-  }
+  });
 };
 
-/* ------------------------------------------------------------------ tracking */
-
-async function readBattery(): Promise<number | null> {
-  try {
-    // deno-lint-ignore no-explicit-any
-    const nav = navigator as any;
-    if (typeof nav.getBattery !== 'function') return null;
-    const b = await nav.getBattery();
-    return Math.round(b.level * 100);
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Streams high-accuracy position + battery to Supabase every 10 seconds while a
- * session is active, auto-completes within 50m of the destination and escalates
- * if position updates stop for more than 3 minutes.
- */
-export const useSafetyTracker = (session: SafetySession | null) => {
+export const useSetSafetyAlert = () => {
   const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (session: SafetySession) => {
+      const { error } = await supabase
+        .from('walk_sessions')
+        .update({ status: 'alert' })
+        .eq('id', session.id);
+      if (error) throw error;
+      await broadcastWalkEvent(session.share_token, 'status_update', { status: 'alert' });
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['safety-session'] }),
+  });
+};
+
+export const triggerLocalSafetyAlert = () => {
+  if ('vibrate' in navigator) navigator.vibrate([350, 120, 350, 120, 700]);
+  if (typeof AudioContext === 'undefined') return;
+
+  const context = new AudioContext();
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  oscillator.type = 'sawtooth';
+  oscillator.frequency.value = 880;
+  gain.gain.setValueAtTime(0.12, context.currentTime);
+  oscillator.connect(gain);
+  gain.connect(context.destination);
+  oscillator.start();
+  oscillator.stop(context.currentTime + 0.8);
+  oscillator.addEventListener('ended', () => void context.close(), { once: true });
+};
+
+/** Streams location fixes to a token-scoped public channel and persists them. */
+export const useSafetyTracker = (session: SafetySession | null) => {
   const [position, setPosition] = useState<GeolocationPosition | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const activeId = session && session.status !== 'completed' ? session.id : null;
   const lastSent = useRef(0);
-  const lastFix = useRef(Date.now());
-  const escalated = useRef(false);
-  const activeId = session?.status === 'active' ? session.id : null;
 
   useEffect(() => {
-    escalated.current = false;
-    lastFix.current = Date.now();
-  }, [activeId]);
+    if (!activeId) return;
+    if (!('geolocation' in navigator)) {
+      setError('Geolocation is not available on this device.');
+      return;
+    }
 
-  useEffect(() => {
-    if (!activeId || !('geolocation' in navigator)) return;
-    const dest = { lat: session!.destination_lat, lng: session!.destination_lng };
+    let cancelled = false;
+    lastSent.current = 0;
+    const channel = supabase.channel(`walk_session_${session.share_token}`, {
+      config: { broadcast: { self: true } },
+    });
+    const channelReady = new Promise<void>((resolve, reject) => {
+      channel.subscribe((status) => {
+        if (status === 'SUBSCRIBED') resolve();
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          setError(`Unable to connect to walk channel: ${status}`);
+          reject(new Error(`Unable to connect to walk channel: ${status}`));
+        }
+      });
+    });
+    void channelReady.catch(() => undefined);
 
     const watchId = navigator.geolocation.watchPosition(
       async (pos) => {
         setPosition(pos);
         setError(null);
-        lastFix.current = Date.now();
-
         const now = Date.now();
-        const { latitude, longitude } = pos.coords;
-        const arrived = distanceMeters(latitude, longitude, dest.lat, dest.lng) <= ARRIVAL_RADIUS_M;
-        if (now - lastSent.current < 10000 && !arrived) return;
+        if (now - lastSent.current < 5000) return;
         lastSent.current = now;
 
-        const battery = await readBattery();
-        await supabase
-          .from('safety_sessions')
-          .update({
-            current_lat: latitude,
-            current_lng: longitude,
-            battery_level: battery,
-            last_ping_at: new Date().toISOString(),
-            ...(arrived ? { status: 'completed' as const } : {}),
-          })
-          .eq('id', activeId);
-
-        if (arrived) qc.invalidateQueries({ queryKey: ['safety-session'] });
+        const { latitude, longitude } = pos.coords;
+        const updatedAt = new Date(now).toISOString();
+        try {
+          await channelReady;
+        } catch {
+          return;
+        }
+        if (cancelled) return;
+        try {
+          const [persist, result] = await Promise.all([
+            supabase
+              .from('walk_sessions')
+              .update({ current_lat: latitude, current_lng: longitude, updated_at: updatedAt })
+              .eq('id', activeId),
+            channel.send({
+              type: 'broadcast',
+              event: 'position_update',
+              payload: { current_lat: latitude, current_lng: longitude, updated_at: updatedAt },
+            }),
+          ]);
+          if (persist.error) throw new Error(`Could not save location: ${persist.error.message}`);
+          if (result !== 'ok') throw new Error(`Walk update broadcast failed: ${result}`);
+        } catch (updateError) {
+          setError((updateError as Error).message);
+        }
       },
       (err) => setError(err.message),
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 },
     );
-
-    const watchdog = window.setInterval(() => {
-      if (escalated.current) return;
-      if (Date.now() - lastFix.current > STALE_PING_MS) {
-        escalated.current = true;
-        triggerSafetyEscalation(activeId, 'stale');
-        qc.invalidateQueries({ queryKey: ['safety-session'] });
-      }
-    }, 30000);
-
     return () => {
+      cancelled = true;
       navigator.geolocation.clearWatch(watchId);
-      window.clearInterval(watchdog);
+      supabase.removeChannel(channel);
     };
-  }, [activeId, session?.destination_lat, session?.destination_lng, qc]);
+  }, [activeId, session?.share_token]);
 
   return { position, error };
 };
 
-/** Realtime subscription used by the public /track/:id page. */
+/** Loads a public walk with its bearer token and listens for live broadcasts. */
 export const usePublicSafetySession = (sessionId?: string) => {
-  const [session, setSession] = useState<SafetySession | null>(null);
+  const [session, setSession] = useState<PublicSafetySession | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
-  const load = useCallback(async () => {
-    if (!sessionId) return;
-    const { data } = await supabase
-      .from('safety_sessions')
-      .select('*')
-      .eq('id', sessionId)
-      .maybeSingle();
-    setSession((data as SafetySession | null) ?? null);
-    setNotFound(!data);
-    setLoading(false);
-  }, [sessionId]);
-
   useEffect(() => {
-    load();
-  }, [load]);
+    let mounted = true;
+    setLoading(true);
+    setNotFound(false);
+    if (!sessionId) {
+      setNotFound(true);
+      setLoading(false);
+      return;
+    }
+    supabase
+      .rpc('get_public_walk_session', { p_share_token: sessionId })
+      .then(({ data, error }) => {
+        if (!mounted) return;
+        if (error) {
+          setNotFound(true);
+          setSession(null);
+        } else {
+          const result = (data?.[0] as PublicSafetySession | undefined) ?? null;
+          setSession(result);
+          setNotFound(!result);
+        }
+        setLoading(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [sessionId]);
 
   useEffect(() => {
     if (!sessionId) return;
     const channel = supabase
-      .channel(`safety-${sessionId}`)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'safety_sessions', filter: `id=eq.${sessionId}` },
-        (payload) => setSession(payload.new as SafetySession),
-      )
+      .channel(`walk_session_${sessionId}`)
+      .on('broadcast', { event: 'position_update' }, ({ payload }) => {
+        setSession((current) => current ? {
+          ...current,
+          current_lat: Number(payload.current_lat),
+          current_lng: Number(payload.current_lng),
+          updated_at: String(payload.updated_at),
+        } : current);
+      })
+      .on('broadcast', { event: 'status_update' }, ({ payload }) => {
+        setSession((current) => current ? { ...current, status: payload.status as SafetySession['status'] } : current);
+      })
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
   }, [sessionId]);
 
-  return { session, loading, notFound, reload: load };
+  return { session, loading, notFound };
 };

@@ -119,7 +119,7 @@ const AppContent = () => {
         />
         <Route path="/business/billing" element={<BusinessBillingPage />} />
         <Route path="/safety" element={<SafetyPage />} />
-        <Route path="/track/:sessionId" element={<TrackPage />} />
+        <Route path="/track/:token" element={<TrackPage />} />
         <Route path="/experiences" element={<Navigate to="/" replace />} />
         <Route
           path="/experiences/submit"
