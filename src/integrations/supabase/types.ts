@@ -1256,6 +1256,8 @@ export type Database = {
           created_at: string
           current_lat: number | null
           current_lng: number | null
+          destination_lat: number | null
+          destination_lng: number | null
           destination_name: string
           eta_minutes: number
           id: string
@@ -1270,6 +1272,8 @@ export type Database = {
           created_at?: string
           current_lat?: number | null
           current_lng?: number | null
+          destination_lat?: number | null
+          destination_lng?: number | null
           destination_name: string
           eta_minutes?: number
           id?: string
@@ -1284,6 +1288,8 @@ export type Database = {
           created_at?: string
           current_lat?: number | null
           current_lng?: number | null
+          destination_lat?: number | null
+          destination_lng?: number | null
           destination_name?: string
           eta_minutes?: number
           id?: string
@@ -1855,6 +1861,8 @@ export type Database = {
           created_at: string
           current_lat: number | null
           current_lng: number | null
+          destination_lat: number | null
+          destination_lng: number | null
           destination_name: string
           eta_minutes: number
           id: string

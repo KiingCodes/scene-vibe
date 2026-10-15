@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Shield, MapPin, X, Siren } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -22,6 +22,7 @@ import {
  * live help alert instead of ending location sharing.
  */
 const ActiveWalkBar = () => {
+  const { pathname } = useLocation();
   const { data: session } = useActiveSafetySession();
   const { position, error } = useSafetyTracker(session ?? null);
   const end = useEndSafetySession();
@@ -29,7 +30,7 @@ const ActiveWalkBar = () => {
   const [pinOpen, setPinOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  if (!session) return null;
+  if (!session || pathname === '/safety') return null;
 
   const handlePin = async (pin: string) => {
     setBusy(true);

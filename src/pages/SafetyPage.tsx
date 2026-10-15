@@ -1,386 +1,417 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { MapContainer, Marker, Polyline, TileLayer, Tooltip, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import { formatDistanceToNow } from 'date-fns';
 import {
-  Shield,
-  Plus,
-  Trash2,
-  Phone,
-  KeyRound,
-  Siren,
-  Navigation,
+  Check,
+  Clock3,
+  Copy,
+  LocateFixed,
+  MapPin,
   MessageCircle,
+  Navigation,
+  Radio,
   Share2,
-} from "lucide-react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
-import DestinationPicker, {
-  type Destination,
-} from "@/components/safety/DestinationPicker";
+  Shield,
+  Siren,
+} from 'lucide-react';
+import Navbar from '@/components/Navbar';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+import DestinationPicker, { type Destination } from '@/components/safety/DestinationPicker';
 import {
-  DURESS_PIN,
-  getSafePin,
-  setSafePin,
   triggerLocalSafetyAlert,
   useActiveSafetySession,
-  useAddEmergencyContact,
-  useDeleteEmergencyContact,
-  useEmergencyContacts,
+  useEndSafetySession,
   useSetSafetyAlert,
   useStartSafetySession,
-} from "@/hooks/useSafety";
+} from '@/hooks/useSafety';
 
-const ETAS = [10, 15, 20, 30, 45, 60];
+const WALK_TIMES = [10, 15, 20, 30, 45, 60];
 
-const Card = ({ children }: { children: React.ReactNode }) => (
-  <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl p-4 space-y-3">
-    {children}
-  </div>
-);
+const walkerIcon = L.divIcon({
+  className: 'safety-hud-marker',
+  html: '<div style="width:22px;height:22px;border:3px solid white;border-radius:50%;background:#10b981;box-shadow:0 0 22px rgba(16,185,129,.9)"></div>',
+  iconSize: [22, 22],
+  iconAnchor: [11, 11],
+});
+
+const destinationIcon = L.divIcon({
+  className: 'safety-hud-destination',
+  html: '<div style="width:18px;height:18px;border:3px solid white;border-radius:6px;background:#f43f5e;box-shadow:0 0 18px rgba(244,63,94,.8)"></div>',
+  iconSize: [18, 18],
+  iconAnchor: [9, 9],
+});
+
+const FollowWalker = ({ lat, lng }: { lat: number; lng: number }) => {
+  const map = useMap();
+  useEffect(() => {
+    map.panTo([lat, lng], { animate: true, duration: 0.5 });
+  }, [lat, lng, map]);
+  return null;
+};
 
 const SafetyPage = () => {
   const { user } = useAuth();
-  const { data: contacts } = useEmergencyContacts();
-  const addContact = useAddEmergencyContact();
-  const delContact = useDeleteEmergencyContact();
-  const { data: active } = useActiveSafetySession();
+  const { data: active, isLoading: activeLoading } = useActiveSafetySession();
   const start = useStartSafetySession();
+  const end = useEndSafetySession();
   const setAlert = useSetSafetyAlert();
+  const [destination, setDestination] = useState<Destination | null>(null);
+  const [walkMinutes, setWalkMinutes] = useState(20);
+  const [now, setNow] = useState(Date.now());
+  const activeId = active?.id;
 
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [pin, setPin] = useState(getSafePin());
-  const [dest, setDest] = useState<Destination | null>(null);
-  const [eta, setEta] = useState(20);
+  useEffect(() => {
+    if (!activeId) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [activeId]);
 
-  const savePin = () => {
-    if (!/^\d{4}$/.test(pin)) return toast.error("PIN must be 4 digits");
-    if (pin === DURESS_PIN)
-      return toast.error(`${DURESS_PIN} is reserved as the duress PIN`);
-    setSafePin(pin);
-    toast.success("Safe PIN saved on this device");
-  };
-
-  const addNew = async () => {
-    if (!name.trim() || !phone.trim())
-      return toast.error("Name and phone number required");
-    try {
-      await addContact.mutateAsync({
-        name: name.trim(),
-        phone_number: phone.trim(),
-      });
-      setName("");
-      setPhone("");
-      toast.success("Emergency contact added");
-    } catch (e) {
-      toast.error((e as Error).message);
-    }
-  };
+  const trackingUrl = active ? `${window.location.origin}/track/${active.share_token}` : '';
+  const remainingSeconds = useMemo(() => {
+    if (!active) return 0;
+    const expiresAt = new Date(active.created_at).getTime() + active.eta_minutes * 60_000;
+    return Math.max(0, Math.ceil((expiresAt - now) / 1000));
+  }, [active, now]);
+  const countdown = `${String(Math.floor(remainingSeconds / 60)).padStart(2, '0')}:${String(
+    remainingSeconds % 60,
+  ).padStart(2, '0')}`;
 
   const startWalk = async () => {
-    if (!dest) return toast.error("Pick a destination first");
-    if (!("geolocation" in navigator)) {
-      return toast.error("This device does not support location tracking");
+    if (!destination) {
+      toast.error('Choose your destination on the map first');
+      return;
     }
-
+    if (!('geolocation' in navigator)) {
+      toast.error('This device does not support location tracking');
+      return;
+    }
     try {
       const position = await new Promise<GeolocationPosition>((resolve, reject) =>
         navigator.geolocation.getCurrentPosition(resolve, reject, {
           enableHighAccuracy: true,
-          timeout: 12000,
+          timeout: 12_000,
         }),
       );
       await start.mutateAsync({
-        destination_name: dest.label.trim() || "Destination",
+        destination_name: destination.label.trim() || 'Destination',
+        destination_lat: destination.lat,
+        destination_lng: destination.lng,
         start_lat: position.coords.latitude,
         start_lng: position.coords.longitude,
-        eta_minutes: eta,
+        eta_minutes: walkMinutes,
       });
-      toast.success("Walk Me Home is live — share your tracking link");
-    } catch (e) {
-      toast.error((e as Error).message || "Could not get your location");
+      toast.success('Your safety walk is live');
+    } catch (error) {
+      toast.error((error as Error).message || 'Could not start your safety walk');
     }
   };
 
-  const trackingUrl = active
-    ? `${window.location.origin}/track/${active.share_token}`
-    : "";
-  const openWhatsApp = () => {
+  const shareViaWhatsApp = () => {
     if (!active) return;
-    const text = `I'm walking to ${active.destination_name}. Follow my live location: ${trackingUrl}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+    const message = `I'm walking to ${active.destination_name}. Follow my live location: ${trackingUrl}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
   };
-  const shareTrackingLink = async () => {
+
+  const shareViaDevice = async () => {
     if (!active) return;
-    const text = `I'm walking to ${active.destination_name}. Follow my live location: ${trackingUrl}`;
+    const shareData = {
+      title: 'Walk Me Home',
+      text: `I'm walking to ${active.destination_name}. Follow my live location:`,
+      url: trackingUrl,
+    };
     if (navigator.share) {
       try {
-        await navigator.share({ title: "Walk Me Home", text, url: trackingUrl });
-      } catch (e) {
-        if ((e as DOMException).name !== "AbortError") {
-          toast.error((e as Error).message || "Could not share tracking link");
+        await navigator.share(shareData);
+      } catch (error) {
+        if ((error as DOMException).name !== 'AbortError') {
+          toast.error((error as Error).message || 'Could not open device sharing');
         }
       }
-    } else {
-      openWhatsApp();
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(trackingUrl);
+      toast.success('Device sharing is unavailable here. Link copied instead.');
+    } catch (error) {
+      toast.error((error as Error).message || 'Could not share or copy the tracking link');
+    }
+  };
+
+  const copyTrackingLink = async () => {
+    try {
+      await navigator.clipboard.writeText(trackingUrl);
+      toast.success('Tracking link copied');
+    } catch (error) {
+      toast.error((error as Error).message || 'Could not copy the tracking link');
     }
   };
 
   const panic = async () => {
-    if (!active) return;
+    if (!active || active.status === 'alert') return;
     triggerLocalSafetyAlert();
     try {
       await setAlert.mutateAsync(active);
-      toast.error("Help alert activated. Your live tracking link now shows an emergency alert.");
-    } catch (e) {
-      toast.error(`Could not send the help alert: ${(e as Error).message}`);
+      toast.error('Help alert activated. Your shared tracking page now shows the alert.');
+    } catch (error) {
+      toast.error(`Could not activate help alert: ${(error as Error).message}`);
+    }
+  };
+
+  const arriveSafely = async () => {
+    if (!active) return;
+    try {
+      await end.mutateAsync(active);
+      toast.success('Walk completed. Glad you made it safely.');
+    } catch (error) {
+      toast.error(`Could not finish the walk: ${(error as Error).message}`);
     }
   };
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f] text-white">
+      <div className="min-h-screen w-full overflow-x-hidden bg-[#070b0a] text-white">
         <Navbar />
-        <main className="pt-24 pb-28 px-4 max-w-lg mx-auto text-center space-y-4">
-          <Shield className="w-10 h-10 mx-auto text-[#00e6d6]" />
-          <h1 className="text-2xl font-black">Walk Me Home</h1>
-          <p className="text-white/60 text-sm">
-            Sign in to set up live safety tracking and emergency contacts.
+        <main className="w-full max-w-md mx-auto px-4 pt-28 pb-16 text-center">
+          <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-2xl border border-emerald-400/20 bg-emerald-400/10 text-emerald-300">
+            <Shield className="h-8 w-8" />
+          </div>
+          <h1 className="text-2xl font-black tracking-tight">Walk Me Home</h1>
+          <p className="mt-2 text-sm leading-6 text-white/55">
+            Sign in to start a private live safety walk.
           </p>
-          <Link to="/auth">
-            <Button className="bg-[#00e6d6] text-black font-bold hover:bg-[#00c9bb]">
-              Sign in
+          <Link to="/auth" className="mt-6 block w-full">
+            <Button className="h-12 w-full rounded-xl bg-emerald-400 font-bold text-emerald-950 hover:bg-emerald-300">
+              Sign in to continue
             </Button>
           </Link>
         </main>
-        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white">
+    <div className="min-h-screen w-full overflow-x-hidden bg-[#070b0a] text-white">
       <Navbar />
-      <main className="pt-24 pb-32 px-4 max-w-lg mx-auto space-y-4">
-        <motion.header
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-1"
-        >
-          <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-[#00e6d6]" />
-            <h1 className="text-2xl font-black tracking-tight">Walk Me Home</h1>
+      <main className="w-full max-w-md mx-auto px-4 pt-24 pb-12">
+        {activeLoading ? (
+          <div className="flex min-h-48 w-full items-center justify-center gap-3 text-sm text-white/55">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-300/30 border-t-emerald-300" />
+            Checking your safety status…
           </div>
-          <p className="text-white/55 text-sm">
-            Share your live location with someone you trust while you walk.
-          </p>
-        </motion.header>
-
-        {active && (
-          <div className="rounded-2xl border border-[#00e6d6]/40 bg-[#00e6d6]/10 p-4 text-sm">
-            <div className={`font-bold mb-1 ${active.status === "alert" ? "text-[#ff2e93]" : "text-[#00e6d6]"}`}>
-              {active.status === "alert" ? "Help alert is active" : "A walk is already running"}
-            </div>
-            <p className="text-white/70 text-xs mb-3">
-              Share this link so someone can watch you get home.
-            </p>
-            <div className="flex gap-2">
-              <Link to={`/track/${active.share_token}`} className="flex-1">
-                <Button className="w-full bg-[#00e6d6] text-black font-bold hover:bg-[#00c9bb]">
-                  Open track page
-                </Button>
-              </Link>
-              <Button
-                onClick={openWhatsApp}
-                className="bg-[#25D366] text-black font-bold hover:bg-[#20bd5a]"
-              >
-                <MessageCircle className="w-4 h-4 mr-1" /> WhatsApp
-              </Button>
-              <Button
-                aria-label="Share tracking link"
-                variant="outline"
-                className="border-white/15 bg-transparent"
-                onClick={shareTrackingLink}
-              >
-                <Share2 className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="outline"
-                className="border-white/15 bg-transparent"
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(trackingUrl);
-                    toast.success("Track link copied");
-                  } catch (e) {
-                    toast.error((e as Error).message || "Could not copy tracking link");
-                  }
-                }}
-              >
-                Copy link
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Emergency contacts */}
-        <Card>
-          <div className="flex items-center gap-2 text-sm font-bold">
-            <Phone className="w-4 h-4 text-[#ff2e93]" /> Emergency contacts
-          </div>
-          <div className="space-y-2">
-            {(contacts ?? []).map((c) => (
-              <div
-                key={c.id}
-                className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold truncate">{c.name}</div>
-                  <div className="text-[11px] text-white/50">
-                    {c.phone_number}
-                  </div>
-                </div>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  aria-label={`Remove ${c.name}`}
-                  onClick={() => delContact.mutate(c.id)}
-                  className="h-8 w-8 text-white/50 hover:text-[#ff2e93]"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+        ) : !active ? (
+          <section className="w-full space-y-5">
+            <header className="flex min-w-0 items-center gap-3 py-1">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-emerald-400/20 bg-emerald-400/10 text-emerald-300 shadow-[0_0_24px_rgba(16,185,129,.12)]">
+                <Shield className="h-6 w-6" />
               </div>
-            ))}
-            {!contacts?.length && (
-              <p className="text-xs text-white/45">
-                No contacts yet. Add at least one.
-              </p>
-            )}
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1">
-              <Label htmlFor="c-name" className="text-[11px] text-white/60">
-                Name
-              </Label>
-              <Input
-                id="c-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="bg-white/5 border-white/10"
-                placeholder="Sis Thandi"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="c-phone" className="text-[11px] text-white/60">
-                Phone
-              </Label>
-              <Input
-                id="c-phone"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="bg-white/5 border-white/10"
-                placeholder="+2771234567"
-              />
-            </div>
-          </div>
-          <Button
-            onClick={addNew}
-            disabled={addContact.isPending}
-            className="w-full bg-white/10 hover:bg-white/15"
-          >
-            <Plus className="w-4 h-4 mr-1" /> Add contact
-          </Button>
-        </Card>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-300/75">
+                  Personal safety
+                </p>
+                <h1 className="truncate text-2xl font-black tracking-tight">Walk Me Home</h1>
+              </div>
+            </header>
 
-        {/* PIN */}
-        <Card>
-          <div className="flex items-center gap-2 text-sm font-bold">
-            <KeyRound className="w-4 h-4 text-[#facc15]" /> Safe &amp; duress
-            PIN
-          </div>
-          <p className="text-[11px] text-white/50">
-            Your safe PIN ends a walk normally. Entering{" "}
-            <span className="text-[#ff2e93] font-bold">{DURESS_PIN}</span> (or a
-            wrong PIN) activates the on-screen help alert.
-          </p>
-          <div className="flex gap-2">
-            <Input
-              value={pin}
-              onChange={(e) =>
-                setPin(e.target.value.replace(/\D/g, "").slice(0, 4))
-              }
-              inputMode="numeric"
-              placeholder="4-digit PIN"
-              aria-label="Safe PIN"
-              className="bg-white/5 border-white/10 tracking-[0.4em]"
-            />
+            <div className="w-full min-w-0 rounded-3xl border border-white/[0.09] bg-white/[0.035] p-4 shadow-[0_24px_80px_rgba(0,0,0,.28)] backdrop-blur-xl">
+              <div className="mb-4 flex items-center gap-2">
+                <Navigation className="h-4 w-4 text-emerald-300" />
+                <h2 className="text-sm font-bold">Where are you headed?</h2>
+              </div>
+              <DestinationPicker value={destination} onChange={setDestination} />
+              <label htmlFor="destination-name" className="mt-4 block text-xs font-semibold text-white/55">
+                Destination name
+              </label>
+              <Input
+                id="destination-name"
+                value={destination?.label ?? ''}
+                onChange={(event) =>
+                  destination && setDestination({ ...destination, label: event.target.value })
+                }
+                disabled={!destination}
+                placeholder="Home, hotel, or a friend's place"
+                className="mt-1.5 h-11 w-full min-w-0 rounded-xl border-white/10 bg-black/25 text-white placeholder:text-white/30 focus-visible:ring-emerald-400/50"
+              />
+            </div>
+
+            <div className="w-full min-w-0 rounded-3xl border border-white/[0.09] bg-white/[0.035] p-4 backdrop-blur-xl">
+              <div className="mb-3 flex items-center gap-2">
+                <Clock3 className="h-4 w-4 text-emerald-300" />
+                <h2 className="text-sm font-bold">Estimated walk time</h2>
+              </div>
+              <div className="grid w-full grid-cols-3 gap-2">
+                {WALK_TIMES.map((minutes) => (
+                  <button
+                    key={minutes}
+                    type="button"
+                    aria-pressed={walkMinutes === minutes}
+                    onClick={() => setWalkMinutes(minutes)}
+                    className={`h-10 min-w-0 rounded-xl border text-sm font-bold transition-colors ${
+                      walkMinutes === minutes
+                        ? 'border-emerald-300/50 bg-emerald-300 text-emerald-950'
+                        : 'border-white/10 bg-black/20 text-white/65 hover:border-white/25'
+                    }`}
+                  >
+                    {minutes} min
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <Button
-              onClick={savePin}
-              className="bg-[#facc15] text-black font-bold hover:bg-[#eab308]"
+              onClick={startWalk}
+              disabled={start.isPending || !!active}
+              className="h-14 w-full rounded-2xl bg-emerald-400 text-base font-black tracking-wide text-emerald-950 shadow-[0_0_32px_rgba(16,185,129,.25)] transition-shadow hover:bg-emerald-300 hover:shadow-[0_0_42px_rgba(16,185,129,.36)] disabled:opacity-60"
             >
-              Save
+              <Shield className="mr-2 h-5 w-5" />
+              {start.isPending ? 'Starting your walk…' : 'Start Walk'}
             </Button>
-          </div>
-        </Card>
-
-        {/* Start walk */}
-        <Card>
-          <div className="flex items-center gap-2 text-sm font-bold">
-            <Navigation className="w-4 h-4 text-[#00e6d6]" /> Destination &amp;
-            ETA
-          </div>
-          <DestinationPicker value={dest} onChange={setDest} />
-          <Input
-            value={dest?.label ?? ""}
-            onChange={(e) =>
-              dest && setDest({ ...dest, label: e.target.value })
-            }
-            disabled={!dest}
-            placeholder="Label (e.g. Home, Res, Mom's place)"
-            aria-label="Destination label"
-            className="bg-white/5 border-white/10"
-          />
-          <div className="flex flex-wrap gap-2">
-            {ETAS.map((m) => (
-              <button
-                key={m}
-                onClick={() => setEta(m)}
-                className={`px-3 h-9 rounded-full text-xs font-bold border transition-all ${
-                  eta === m
-                    ? "bg-[#00e6d6] text-black border-[#00e6d6]"
-                    : "bg-white/5 text-white/70 border-white/10 hover:border-white/25"
-                }`}
+            <p className="px-2 text-center text-[11px] leading-5 text-white/35">
+              Your live location is shared only with people you send your private link to.
+            </p>
+          </section>
+        ) : (
+          <section className="w-full min-w-0 space-y-4">
+            <header className="flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.07] px-4 py-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="relative grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-300/10 text-emerald-300">
+                  {active.status === 'alert' ? (
+                    <Siren className="h-5 w-5 text-rose-400" />
+                  ) : (
+                    <Radio className="h-5 w-5" />
+                  )}
+                  {active.status === 'active' && (
+                    <span className="absolute right-1 top-1 h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-300" />
+                  )}
+                </span>
+                <div className="min-w-0">
+                  <p className={`truncate text-[10px] font-black uppercase tracking-[0.2em] ${active.status === 'alert' ? 'text-rose-300' : 'text-emerald-300'}`}>
+                    {active.status === 'alert' ? 'Help alert active' : 'Safety walk active'}
+                  </p>
+                  <h1 className="truncate text-base font-bold">{active.destination_name}</h1>
+                </div>
+              </div>
+              <Link
+                to={`/track/${active.share_token}`}
+                className="shrink-0 text-xs font-bold text-emerald-300 underline-offset-4 hover:underline"
               >
-                {m} min
-              </button>
-            ))}
-          </div>
-          <Button
-            onClick={startWalk}
-            disabled={start.isPending || !!active}
-            className="w-full h-12 rounded-xl bg-gradient-to-r from-[#00e6d6] to-[#ff2e93] text-black font-black tracking-wide"
-          >
-            <Shield className="w-4 h-4 mr-2" />
-            {active ? "Walk already active" : "Start Walk Me Home"}
-          </Button>
-        </Card>
+                Live link
+              </Link>
+            </header>
 
-        {active && (
-        <Button
-          onClick={panic}
-          disabled={setAlert.isPending || active.status === "alert"}
-          className="w-full h-16 rounded-xl border-2 border-[#ff2e93] bg-[#ff2e93] text-white font-black text-lg shadow-[0_0_28px_rgba(255,46,147,0.45)] hover:bg-[#e51e7d]"
-        >
-          <Siren className="w-6 h-6 mr-2" />
-          {active.status === "alert" ? "HELP ALERT ACTIVE" : "PANIC / NEED HELP"}
-        </Button>
+            <div className="relative h-[min(42vh,360px)] min-h-[250px] w-full min-w-0 overflow-hidden rounded-3xl border border-white/10 bg-[#0b1110] shadow-[0_16px_50px_rgba(0,0,0,.4)]">
+              {active.current_lat != null && active.current_lng != null ? (
+                <MapContainer
+                  center={[active.current_lat, active.current_lng]}
+                  zoom={16}
+                  className="h-full w-full"
+                  zoomControl={false}
+                  scrollWheelZoom={false}
+                >
+                  <TileLayer
+                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                    attribution="&copy; OpenStreetMap, &copy; CARTO"
+                  />
+                  {active.destination_lat != null && active.destination_lng != null && (
+                    <>
+                      <Polyline
+                        positions={[
+                          [active.current_lat, active.current_lng],
+                          [active.destination_lat, active.destination_lng],
+                        ]}
+                        pathOptions={{ color: '#10b981', weight: 4, opacity: 0.75, dashArray: '7 8' }}
+                      />
+                      <Marker position={[active.destination_lat, active.destination_lng]} icon={destinationIcon}>
+                        <Tooltip>{active.destination_name}</Tooltip>
+                      </Marker>
+                    </>
+                  )}
+                  <Marker position={[active.current_lat, active.current_lng]} icon={walkerIcon}>
+                    <Tooltip permanent direction="top" offset={[0, -12]}>You · live</Tooltip>
+                  </Marker>
+                  <FollowWalker lat={active.current_lat} lng={active.current_lng} />
+                </MapContainer>
+              ) : (
+                <div className="flex h-full flex-col items-center justify-center gap-2 text-white/45">
+                  <LocateFixed className="h-6 w-6 text-emerald-300" />
+                  <span className="text-sm">Waiting for your location…</span>
+                </div>
+              )}
+              <div className="pointer-events-none absolute left-3 top-3 z-[500] flex max-w-[calc(100%-1.5rem)] items-center gap-2 rounded-full border border-white/10 bg-[#07100d]/85 px-3 py-1.5 text-[10px] font-bold text-emerald-200 backdrop-blur-md">
+                <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-emerald-300" />
+                <span className="truncate">
+                  {active.current_lat != null && active.current_lng != null
+                    ? `Updated ${formatDistanceToNow(new Date(active.updated_at), { addSuffix: true })}`
+                    : 'Getting live location'}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid w-full grid-cols-[1fr_auto] items-center gap-3 rounded-2xl border border-white/[0.09] bg-white/[0.035] px-4 py-3 backdrop-blur-xl">
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">Walk countdown</p>
+                <p className={`mt-0.5 font-mono text-3xl font-black tabular-nums ${remainingSeconds === 0 ? 'text-amber-300' : 'text-emerald-300'}`}>
+                  {countdown}
+                </p>
+              </div>
+              <div className="min-w-0 text-right">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">Destination</p>
+                <p className="mt-1 max-w-36 truncate text-sm font-semibold text-white/80">
+                  <MapPin className="mr-1 inline h-3.5 w-3.5 text-rose-300" />
+                  {active.destination_name}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid w-full grid-cols-2 gap-2.5">
+              <Button
+                onClick={shareViaWhatsApp}
+                className="h-12 min-w-0 rounded-xl bg-[#25D366] px-2 text-sm font-black text-[#062c16] hover:bg-[#55e487]"
+              >
+                <MessageCircle className="mr-1.5 h-4 w-4 shrink-0" />
+                <span className="truncate">Share on WhatsApp</span>
+              </Button>
+              <Button
+                onClick={shareViaDevice}
+                variant="outline"
+                className="h-12 min-w-0 rounded-xl border-emerald-300/30 bg-emerald-300/[0.08] px-2 text-sm font-bold text-emerald-100 hover:bg-emerald-300/[0.15]"
+              >
+                <Share2 className="mr-1.5 h-4 w-4 shrink-0" />
+                <span className="truncate">Share via Device</span>
+              </Button>
+            </div>
+            <Button
+              onClick={copyTrackingLink}
+              variant="outline"
+              className="h-11 w-full rounded-xl border-white/10 bg-white/[0.035] font-semibold text-white/75 hover:bg-white/[0.08]"
+            >
+              <Copy className="mr-2 h-4 w-4" /> Copy tracking link
+            </Button>
+
+            <Button
+              onClick={panic}
+              disabled={active.status === 'alert' || setAlert.isPending}
+              className="h-14 w-full rounded-2xl border border-rose-300/25 bg-rose-500/[0.12] text-base font-black tracking-wide text-rose-300 shadow-[0_0_24px_rgba(244,63,94,.08)] hover:bg-rose-500/20 disabled:opacity-70"
+            >
+              <Siren className="mr-2 h-5 w-5" />
+              {active.status === 'alert' ? 'HELP ALERT IS ACTIVE' : 'PANIC / NEED HELP'}
+            </Button>
+            <Button
+              onClick={arriveSafely}
+              disabled={end.isPending}
+              className="h-14 w-full rounded-2xl bg-emerald-300 text-base font-black text-emerald-950 shadow-[0_0_28px_rgba(16,185,129,.2)] hover:bg-emerald-200 disabled:opacity-60"
+            >
+              <Check className="mr-2 h-5 w-5" />
+              {end.isPending ? 'Finishing walk…' : 'I Arrived Safely'}
+            </Button>
+          </section>
         )}
       </main>
-      <Footer />
     </div>
   );
 };

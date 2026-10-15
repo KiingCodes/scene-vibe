@@ -12,6 +12,8 @@ export type SafetySession = {
   current_lat: number | null;
   current_lng: number | null;
   destination_name: string;
+  destination_lat: number | null;
+  destination_lng: number | null;
   eta_minutes: number;
   share_token: string;
   created_at: string;
@@ -20,7 +22,7 @@ export type SafetySession = {
 
 type PublicSafetySession = Pick<
   SafetySession,
-  'id' | 'status' | 'start_lat' | 'start_lng' | 'current_lat' | 'current_lng' | 'destination_name' | 'eta_minutes' | 'created_at' | 'updated_at'
+  'id' | 'status' | 'start_lat' | 'start_lng' | 'current_lat' | 'current_lng' | 'destination_name' | 'destination_lat' | 'destination_lng' | 'eta_minutes' | 'created_at' | 'updated_at'
 >;
 
 export type EmergencyContact = {
@@ -87,7 +89,7 @@ export const useActiveSafetySession = () => {
   return useQuery({
     queryKey: ['safety-session', user?.id],
     enabled: !!user,
-    refetchInterval: 30000,
+    refetchInterval: 5000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('walk_sessions')
@@ -109,6 +111,8 @@ export const useStartSafetySession = () => {
   return useMutation({
     mutationFn: async (input: {
       destination_name: string;
+      destination_lat: number;
+      destination_lng: number;
       start_lat: number;
       start_lng: number;
       eta_minutes: number;
@@ -119,6 +123,8 @@ export const useStartSafetySession = () => {
         .insert({
           user_id: user.id,
           destination_name: input.destination_name,
+          destination_lat: input.destination_lat,
+          destination_lng: input.destination_lng,
           eta_minutes: input.eta_minutes,
           start_lat: input.start_lat,
           start_lng: input.start_lng,

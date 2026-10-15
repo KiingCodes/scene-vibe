@@ -14,6 +14,13 @@ const walkerIcon = L.divIcon({
   iconAnchor: [12, 12],
 });
 
+const destinationIcon = L.divIcon({
+  className: 'custom-marker',
+  html: '<div style="width:20px;height:20px;border-radius:6px;background:#f43f5e;border:3px solid white;box-shadow:0 0 14px rgba(244,63,94,.8)"></div>',
+  iconSize: [20, 20],
+  iconAnchor: [10, 10],
+});
+
 const Follow = ({ lat, lng }: { lat: number; lng: number }) => {
   const map = useMap();
   useEffect(() => {
@@ -78,10 +85,22 @@ const TrackPage = () => {
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
             attribution="&copy; OpenStreetMap, &copy; CARTO"
           />
-          <Polyline positions={[start, current]} pathOptions={{ color: '#00e6d6', weight: 4, opacity: 0.75 }} />
+          <Polyline
+            positions={
+              session.destination_lat != null && session.destination_lng != null
+                ? [current, [session.destination_lat, session.destination_lng]]
+                : [start, current]
+            }
+            pathOptions={{ color: '#10b981', weight: 4, opacity: 0.75, dashArray: '7 8' }}
+          />
           <Marker position={current} icon={walkerIcon}>
             <Tooltip permanent direction="top" offset={[0, -12]}>Live position</Tooltip>
           </Marker>
+          {session.destination_lat != null && session.destination_lng != null && (
+            <Marker position={[session.destination_lat, session.destination_lng]} icon={destinationIcon}>
+              <Tooltip>{session.destination_name}</Tooltip>
+            </Marker>
+          )}
           <Follow lat={current[0]} lng={current[1]} />
         </MapContainer>
       </div>
