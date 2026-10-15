@@ -183,8 +183,8 @@ const SafetyPage = () => {
 
         {active && (
           <div className="rounded-2xl border border-[#00e6d6]/40 bg-[#00e6d6]/10 p-4 text-sm">
-            <div className={`font-bold mb-1 ${active.status === "alert" ? "text-[#ff2e93]" : "text-[#00e6d6]"}`}>
-              {active.status === "alert" ? "Help alert is active" : "A walk is already running"}
+            <div className={`font-bold mb-1 ${active.status === "panic_alert" ? "text-[#ff2e93]" : "text-[#00e6d6]"}`}>
+              {active.status === "panic_alert" ? "Help alert is active" : "A walk is already running"}
             </div>
             <p className="text-white/70 text-xs mb-3">
               Share this link so someone can watch you get home.
@@ -372,11 +372,11 @@ const SafetyPage = () => {
         {active && (
         <Button
           onClick={panic}
-          disabled={setAlert.isPending || active.status === "alert"}
+          disabled={setAlert.isPending || active.status === "panic_alert"}
           className="w-full h-16 rounded-xl border-2 border-[#ff2e93] bg-[#ff2e93] text-white font-black text-lg shadow-[0_0_28px_rgba(255,46,147,0.45)] hover:bg-[#e51e7d]"
         >
           <Siren className="w-6 h-6 mr-2" />
-          {active.status === "alert" ? "HELP ALERT ACTIVE" : "PANIC / NEED HELP"}
+          {active.status === "panic_alert" ? "HELP ALERT ACTIVE" : "PANIC / NEED HELP"}
         </Button>
         )}
       </main>
