@@ -109,7 +109,7 @@ const Navbar = () => {
         className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center px-3 sm:px-4 gap-2 bg-[#0a0a0f]/85 backdrop-blur-xl border-b border-white/5"
       >
         <CountrySwitcher align="start" />
-        <Link to="/" className="ml-1 font-display font-black tracking-[0.25em] text-[13px] bg-gradient-to-r from-[#00e6d6] via-[#ff2e93] to-[#facc15] bg-clip-text text-transparent">
+        <Link to="/" className="ml-1 font-display text-[13px] bg-gradient-to-r from-[#FF5E62] via-[#D946EF] to-[#00C6FF] bg-clip-text text-transparent font-black tracking-wider">
           SCENE
         </Link>
         <div className="ml-auto flex items-center gap-1">

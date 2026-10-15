@@ -123,7 +123,7 @@ const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardPr
 
             {/* TOP-LEFT: LIVE / CLOSED glassmorphic badge with pulsing neon dot */}
             {isPartner && (
-              <div className="absolute top-2.5 left-2.5 flex items-center gap-1 px-2 py-1 rounded-md bg-gradient-to-r from-gold via-gold to-primary text-gold-foreground text-[9px] font-black tracking-[0.18em] shadow-[0_0_14px_hsl(var(--gold)/0.55)]">
+              <div className="absolute top-2.5 left-2.5 flex items-center gap-1 px-2 py-1 rounded-md bg-[#FFC700] text-black text-[9px] font-bold tracking-[0.18em] shadow-[0_0_14px_hsl(var(--gold)/0.55)]">
                 <Crown className="w-3 h-3" /> SCENE PARTNER
               </div>
             )}
