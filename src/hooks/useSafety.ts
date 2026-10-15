@@ -6,29 +6,43 @@ import { useAuth } from './useAuth';
 export type SafetySession = {
   id: string;
   user_id: string;
-  status: 'active' | 'completed' | 'alert';
+  status: 'active' | 'completed' | 'cancelled' | 'panic_alert';
   start_lat: number;
   start_lng: number;
   current_lat: number | null;
   current_lng: number | null;
-  destination_name: string;
-  destination_lat: number | null;
-  destination_lng: number | null;
+  destination_name: string | null;
   eta_minutes: number;
   share_token: string;
+  started_at: string;
+  ended_at: string | null;
+  last_ping_at: string;
   created_at: string;
   updated_at: string;
 };
 
 type PublicSafetySession = Pick<
   SafetySession,
-  'id' | 'status' | 'start_lat' | 'start_lng' | 'current_lat' | 'current_lng' | 'destination_name' | 'destination_lat' | 'destination_lng' | 'eta_minutes' | 'created_at' | 'updated_at'
+  | 'id'
+  | 'status'
+  | 'start_lat'
+  | 'start_lng'
+  | 'current_lat'
+  | 'current_lng'
+  | 'destination_name'
+  | 'eta_minutes'
+  | 'started_at'
+  | 'ended_at'
+  | 'last_ping_at'
+  | 'created_at'
+  | 'updated_at'
 >;
 
 export type EmergencyContact = {
   id: string;
   user_id: string;
   name: string;
+  contact_name: string | null;
   phone_number: string;
 };
 
@@ -95,7 +109,7 @@ export const useActiveSafetySession = () => {
         .from('walk_sessions')
         .select('*')
         .eq('user_id', user!.id)
-        .in('status', ['active', 'alert'])
+        .in('status', ['active', 'panic_alert'])
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -110,9 +124,7 @@ export const useStartSafetySession = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: {
-      destination_name: string;
-      destination_lat: number;
-      destination_lng: number;
+      destination_name: string | null;
       start_lat: number;
       start_lng: number;
       eta_minutes: number;
@@ -123,14 +135,11 @@ export const useStartSafetySession = () => {
         .insert({
           user_id: user.id,
           destination_name: input.destination_name,
-          destination_lat: input.destination_lat,
-          destination_lng: input.destination_lng,
           eta_minutes: input.eta_minutes,
           start_lat: input.start_lat,
           start_lng: input.start_lng,
           current_lat: input.start_lat,
           current_lng: input.start_lng,
-          share_token: crypto.randomUUID(),
         })
         .select()
         .single();
@@ -183,10 +192,10 @@ export const useSetSafetyAlert = () => {
     mutationFn: async (session: SafetySession) => {
       const { error } = await supabase
         .from('walk_sessions')
-        .update({ status: 'alert' })
+        .update({ status: 'panic_alert' })
         .eq('id', session.id);
       if (error) throw error;
-      await broadcastWalkEvent(session.share_token, 'status_update', { status: 'alert' });
+      await broadcastWalkEvent(session.share_token, 'status_update', { status: 'panic_alert' });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['safety-session'] }),
   });
@@ -213,7 +222,7 @@ export const triggerLocalSafetyAlert = () => {
 export const useSafetyTracker = (session: SafetySession | null) => {
   const [position, setPosition] = useState<GeolocationPosition | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const activeId = session && session.status !== 'completed' ? session.id : null;
+  const activeId = session && session.status !== 'completed' && session.status !== 'cancelled' ? session.id : null;
   const lastSent = useRef(0);
 
   useEffect(() => {
@@ -259,12 +268,12 @@ export const useSafetyTracker = (session: SafetySession | null) => {
           const [persist, result] = await Promise.all([
             supabase
               .from('walk_sessions')
-              .update({ current_lat: latitude, current_lng: longitude, updated_at: updatedAt })
+              .update({ current_lat: latitude, current_lng: longitude })
               .eq('id', activeId),
             channel.send({
               type: 'broadcast',
               event: 'position_update',
-              payload: { current_lat: latitude, current_lng: longitude, updated_at: updatedAt },
+              payload: { current_lat: latitude, current_lng: longitude, last_ping_at: updatedAt },
             }),
           ]);
           if (persist.error) throw new Error(`Could not save location: ${persist.error.message}`);
@@ -291,11 +300,20 @@ export const usePublicSafetySession = (sessionId?: string) => {
   const [session, setSession] = useState<PublicSafetySession | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const pendingPosition = useRef<{
+    current_lat: number;
+    current_lng: number;
+    last_ping_at: string;
+  } | null>(null);
+  const pendingStatus = useRef<SafetySession['status'] | null>(null);
 
   useEffect(() => {
     let mounted = true;
     setLoading(true);
     setNotFound(false);
+    setSession(null);
+    pendingPosition.current = null;
+    pendingStatus.current = null;
     if (!sessionId) {
       setNotFound(true);
       setLoading(false);
@@ -309,7 +327,14 @@ export const usePublicSafetySession = (sessionId?: string) => {
           setNotFound(true);
           setSession(null);
         } else {
-          const result = (data?.[0] as PublicSafetySession | undefined) ?? null;
+          const loaded = (data?.[0] as PublicSafetySession | undefined) ?? null;
+          const result = loaded
+            ? {
+                ...loaded,
+                ...(pendingPosition.current ?? {}),
+                ...(pendingStatus.current ? { status: pendingStatus.current } : {}),
+              }
+            : null;
           setSession(result);
           setNotFound(!result);
         }
@@ -325,15 +350,25 @@ export const usePublicSafetySession = (sessionId?: string) => {
     const channel = supabase
       .channel(`walk_session_${sessionId}`)
       .on('broadcast', { event: 'position_update' }, ({ payload }) => {
-        setSession((current) => current ? {
-          ...current,
+        const position = {
           current_lat: Number(payload.current_lat),
           current_lng: Number(payload.current_lng),
-          updated_at: String(payload.updated_at),
+          last_ping_at: String(payload.last_ping_at),
+        };
+        pendingPosition.current = position;
+        setSession((current) => current ? {
+          ...current,
+          ...position,
+          updated_at: position.last_ping_at,
         } : current);
       })
       .on('broadcast', { event: 'status_update' }, ({ payload }) => {
-        setSession((current) => current ? { ...current, status: payload.status as SafetySession['status'] } : current);
+        const status = payload.status;
+        if (status !== 'active' && status !== 'completed' && status !== 'cancelled' && status !== 'panic_alert') {
+          return;
+        }
+        pendingStatus.current = status;
+        setSession((current) => current ? { ...current, status } : current);
       })
       .subscribe();
     return () => {

@@ -40,13 +40,6 @@ const walkerIcon = L.divIcon({
   iconAnchor: [11, 11],
 });
 
-const destinationIcon = L.divIcon({
-  className: 'safety-hud-destination',
-  html: '<div style="width:18px;height:18px;border:3px solid white;border-radius:6px;background:#f43f5e;box-shadow:0 0 18px rgba(244,63,94,.8)"></div>',
-  iconSize: [18, 18],
-  iconAnchor: [9, 9],
-});
-
 const FollowWalker = ({ lat, lng }: { lat: number; lng: number }) => {
   const map = useMap();
   useEffect(() => {
@@ -75,7 +68,8 @@ const SafetyPage = () => {
   const trackingUrl = active ? `${window.location.origin}/track/${active.share_token}` : '';
   const remainingSeconds = useMemo(() => {
     if (!active) return 0;
-    const expiresAt = new Date(active.created_at).getTime() + active.eta_minutes * 60_000;
+    const startedAt = new Date(active.started_at).getTime();
+    const expiresAt = startedAt + active.eta_minutes * 60_000;
     return Math.max(0, Math.ceil((expiresAt - now) / 1000));
   }, [active, now]);
   const countdown = `${String(Math.floor(remainingSeconds / 60)).padStart(2, '0')}:${String(
@@ -100,8 +94,6 @@ const SafetyPage = () => {
       );
       await start.mutateAsync({
         destination_name: destination.label.trim() || 'Destination',
-        destination_lat: destination.lat,
-        destination_lng: destination.lng,
         start_lat: position.coords.latitude,
         start_lng: position.coords.longitude,
         eta_minutes: walkMinutes,
@@ -114,7 +106,8 @@ const SafetyPage = () => {
 
   const shareViaWhatsApp = () => {
     if (!active) return;
-    const message = `I'm walking to ${active.destination_name}. Follow my live location: ${trackingUrl}`;
+    const destinationName = active.destination_name || 'my destination';
+    const message = `I'm walking to ${destinationName}. Follow my live location: ${trackingUrl}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
   };
 
@@ -122,7 +115,7 @@ const SafetyPage = () => {
     if (!active) return;
     const shareData = {
       title: 'Walk Me Home',
-      text: `I'm walking to ${active.destination_name}. Follow my live location:`,
+      text: `I'm walking to ${active.destination_name || 'my destination'}. Follow my live location:`,
       url: trackingUrl,
     };
     if (navigator.share) {
@@ -153,7 +146,7 @@ const SafetyPage = () => {
   };
 
   const panic = async () => {
-    if (!active || active.status === 'alert') return;
+    if (!active || active.status === 'panic_alert') return;
     triggerLocalSafetyAlert();
     try {
       await setAlert.mutateAsync(active);
@@ -265,7 +258,7 @@ const SafetyPage = () => {
 
             <Button
               onClick={startWalk}
-              disabled={start.isPending || !!active}
+              disabled={start.isPending}
               className="h-14 w-full rounded-2xl bg-emerald-400 text-base font-black tracking-wide text-emerald-950 shadow-[0_0_32px_rgba(16,185,129,.25)] transition-shadow hover:bg-emerald-300 hover:shadow-[0_0_42px_rgba(16,185,129,.36)] disabled:opacity-60"
             >
               <Shield className="mr-2 h-5 w-5" />
@@ -280,7 +273,7 @@ const SafetyPage = () => {
             <header className="flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.07] px-4 py-3">
               <div className="flex min-w-0 items-center gap-3">
                 <span className="relative grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-300/10 text-emerald-300">
-                  {active.status === 'alert' ? (
+                  {active.status === 'panic_alert' ? (
                     <Siren className="h-5 w-5 text-rose-400" />
                   ) : (
                     <Radio className="h-5 w-5" />
@@ -290,10 +283,10 @@ const SafetyPage = () => {
                   )}
                 </span>
                 <div className="min-w-0">
-                  <p className={`truncate text-[10px] font-black uppercase tracking-[0.2em] ${active.status === 'alert' ? 'text-rose-300' : 'text-emerald-300'}`}>
-                    {active.status === 'alert' ? 'Help alert active' : 'Safety walk active'}
+                  <p className={`truncate text-[10px] font-black uppercase tracking-[0.2em] ${active.status === 'panic_alert' ? 'text-rose-300' : 'text-emerald-300'}`}>
+                    {active.status === 'panic_alert' ? 'Help alert active' : 'Safety walk active'}
                   </p>
-                  <h1 className="truncate text-base font-bold">{active.destination_name}</h1>
+                  <h1 className="truncate text-base font-bold">{active.destination_name || 'Your destination'}</h1>
                 </div>
               </div>
               <Link
@@ -317,20 +310,10 @@ const SafetyPage = () => {
                     url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                     attribution="&copy; OpenStreetMap, &copy; CARTO"
                   />
-                  {active.destination_lat != null && active.destination_lng != null && (
-                    <>
-                      <Polyline
-                        positions={[
-                          [active.current_lat, active.current_lng],
-                          [active.destination_lat, active.destination_lng],
-                        ]}
-                        pathOptions={{ color: '#10b981', weight: 4, opacity: 0.75, dashArray: '7 8' }}
-                      />
-                      <Marker position={[active.destination_lat, active.destination_lng]} icon={destinationIcon}>
-                        <Tooltip>{active.destination_name}</Tooltip>
-                      </Marker>
-                    </>
-                  )}
+                  <Polyline
+                    positions={[[active.start_lat, active.start_lng], [active.current_lat, active.current_lng]]}
+                    pathOptions={{ color: '#10b981', weight: 4, opacity: 0.75, dashArray: '7 8' }}
+                  />
                   <Marker position={[active.current_lat, active.current_lng]} icon={walkerIcon}>
                     <Tooltip permanent direction="top" offset={[0, -12]}>You · live</Tooltip>
                   </Marker>
@@ -346,7 +329,7 @@ const SafetyPage = () => {
                 <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-emerald-300" />
                 <span className="truncate">
                   {active.current_lat != null && active.current_lng != null
-                    ? `Updated ${formatDistanceToNow(new Date(active.updated_at), { addSuffix: true })}`
+                    ? `Updated ${formatDistanceToNow(new Date(active.last_ping_at), { addSuffix: true })}`
                     : 'Getting live location'}
                 </span>
               </div>
@@ -363,7 +346,7 @@ const SafetyPage = () => {
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">Destination</p>
                 <p className="mt-1 max-w-36 truncate text-sm font-semibold text-white/80">
                   <MapPin className="mr-1 inline h-3.5 w-3.5 text-rose-300" />
-                  {active.destination_name}
+                  {active.destination_name || 'Destination'}
                 </p>
               </div>
             </div>
@@ -395,11 +378,11 @@ const SafetyPage = () => {
 
             <Button
               onClick={panic}
-              disabled={active.status === 'alert' || setAlert.isPending}
+              disabled={active.status === 'panic_alert' || setAlert.isPending}
               className="h-14 w-full rounded-2xl border border-rose-300/25 bg-rose-500/[0.12] text-base font-black tracking-wide text-rose-300 shadow-[0_0_24px_rgba(244,63,94,.08)] hover:bg-rose-500/20 disabled:opacity-70"
             >
               <Siren className="mr-2 h-5 w-5" />
-              {active.status === 'alert' ? 'HELP ALERT IS ACTIVE' : 'PANIC / NEED HELP'}
+              {active.status === 'panic_alert' ? 'HELP ALERT IS ACTIVE' : 'PANIC / NEED HELP'}
             </Button>
             <Button
               onClick={arriveSafely}

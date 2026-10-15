@@ -14,13 +14,6 @@ const walkerIcon = L.divIcon({
   iconAnchor: [12, 12],
 });
 
-const destinationIcon = L.divIcon({
-  className: 'custom-marker',
-  html: '<div style="width:20px;height:20px;border-radius:6px;background:#f43f5e;border:3px solid white;box-shadow:0 0 14px rgba(244,63,94,.8)"></div>',
-  iconSize: [20, 20],
-  iconAnchor: [10, 10],
-});
-
 const Follow = ({ lat, lng }: { lat: number; lng: number }) => {
   const map = useMap();
   useEffect(() => {
@@ -56,7 +49,7 @@ const TrackPage = () => {
     session.current_lng ?? session.start_lng,
   ];
   const start: [number, number] = [session.start_lat, session.start_lng];
-  const alerted = session.status === 'alert';
+  const alerted = session.status === 'panic_alert';
   const completed = session.status === 'completed';
 
   return (
@@ -73,7 +66,7 @@ const TrackPage = () => {
               {completed ? 'Walk completed' : alerted ? 'PANIC / HELP NEEDED' : 'Live walk tracking'}
             </h1>
             <p className="text-[11px] text-white/55 truncate">
-              Destination: {session.destination_name} · ETA {session.eta_minutes} min
+              Destination: {session.destination_name || 'Unknown'} · ETA {session.eta_minutes} min
             </p>
           </div>
         </div>
@@ -85,22 +78,10 @@ const TrackPage = () => {
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
             attribution="&copy; OpenStreetMap, &copy; CARTO"
           />
-          <Polyline
-            positions={
-              session.destination_lat != null && session.destination_lng != null
-                ? [current, [session.destination_lat, session.destination_lng]]
-                : [start, current]
-            }
-            pathOptions={{ color: '#10b981', weight: 4, opacity: 0.75, dashArray: '7 8' }}
-          />
+          <Polyline positions={[start, current]} pathOptions={{ color: '#10b981', weight: 4, opacity: 0.75 }} />
           <Marker position={current} icon={walkerIcon}>
             <Tooltip permanent direction="top" offset={[0, -12]}>Live position</Tooltip>
           </Marker>
-          {session.destination_lat != null && session.destination_lng != null && (
-            <Marker position={[session.destination_lat, session.destination_lng]} icon={destinationIcon}>
-              <Tooltip>{session.destination_name}</Tooltip>
-            </Marker>
-          )}
           <Follow lat={current[0]} lng={current[1]} />
         </MapContainer>
       </div>
@@ -111,7 +92,7 @@ const TrackPage = () => {
             <MapPin className="w-3 h-3" /> Last location update
           </div>
           <div className="text-sm font-bold">
-            {formatDistanceToNow(new Date(session.updated_at), { addSuffix: true })}
+            {formatDistanceToNow(new Date(session.last_ping_at), { addSuffix: true })}
           </div>
         </div>
         <a

@@ -59,7 +59,7 @@ const ActiveWalkBar = () => {
     }
   };
 
-  const alerted = session.status === 'alert';
+  const alerted = session.status === 'panic_alert';
 
   return (
     <>

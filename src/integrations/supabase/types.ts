@@ -302,6 +302,7 @@ export type Database = {
       }
       emergency_contacts: {
         Row: {
+          contact_name: string | null
           created_at: string
           id: string
           name: string
@@ -310,6 +311,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          contact_name?: string | null
           created_at?: string
           id?: string
           name: string
@@ -318,6 +320,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          contact_name?: string | null
           created_at?: string
           id?: string
           name?: string
@@ -1251,57 +1254,6 @@ export type Database = {
         }
         Relationships: []
       }
-      walk_sessions: {
-        Row: {
-          created_at: string
-          current_lat: number | null
-          current_lng: number | null
-          destination_lat: number | null
-          destination_lng: number | null
-          destination_name: string
-          eta_minutes: number
-          id: string
-          share_token: string
-          start_lat: number
-          start_lng: number
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          current_lat?: number | null
-          current_lng?: number | null
-          destination_lat?: number | null
-          destination_lng?: number | null
-          destination_name: string
-          eta_minutes?: number
-          id?: string
-          share_token?: string
-          start_lat: number
-          start_lng: number
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          current_lat?: number | null
-          current_lng?: number | null
-          destination_lat?: number | null
-          destination_lng?: number | null
-          destination_name?: string
-          eta_minutes?: number
-          id?: string
-          share_token?: string
-          start_lat?: number
-          start_lng?: number
-          status?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       sponsorship_campaigns: {
         Row: {
           asset_type: string
@@ -1848,26 +1800,79 @@ export type Database = {
           },
         ]
       }
+      walk_sessions: {
+        Row: {
+          created_at: string
+          current_lat: number | null
+          current_lng: number | null
+          destination_name: string | null
+          ended_at: string | null
+          eta_minutes: number
+          id: string
+          last_ping_at: string
+          share_token: string
+          start_lat: number
+          start_lng: number
+          started_at: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_lat?: number | null
+          current_lng?: number | null
+          destination_name?: string | null
+          ended_at?: string | null
+          eta_minutes?: number
+          id?: string
+          last_ping_at?: string
+          share_token?: string
+          start_lat: number
+          start_lng: number
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_lat?: number | null
+          current_lng?: number | null
+          destination_name?: string | null
+          ended_at?: string | null
+          eta_minutes?: number
+          id?: string
+          last_ping_at?: string
+          share_token?: string
+          start_lat?: number
+          start_lng?: number
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       get_public_walk_session: {
-        Args: {
-          p_share_token: string
-        }
+        Args: { p_share_token: string }
         Returns: {
           created_at: string
           current_lat: number | null
           current_lng: number | null
-          destination_lat: number | null
-          destination_lng: number | null
-          destination_name: string
+          destination_name: string | null
+          ended_at: string | null
           eta_minutes: number
           id: string
+          last_ping_at: string
           start_lat: number
           start_lng: number
+          started_at: string
           status: string
           updated_at: string
         }[]
