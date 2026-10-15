@@ -6,7 +6,7 @@ import { useAuth } from './useAuth';
 export type SafetySession = {
   id: string;
   user_id: string;
-  status: 'active' | 'completed' | 'alert';
+  status: 'active' | 'completed' | 'cancelled' | 'panic_alert';
   start_lat: number;
   start_lng: number;
   current_lat: number | null;
@@ -93,7 +93,7 @@ export const useActiveSafetySession = () => {
         .from('walk_sessions')
         .select('*')
         .eq('user_id', user!.id)
-        .in('status', ['active', 'alert'])
+        .in('status', ['active', 'panic_alert'])
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -177,10 +177,10 @@ export const useSetSafetyAlert = () => {
     mutationFn: async (session: SafetySession) => {
       const { error } = await supabase
         .from('walk_sessions')
-        .update({ status: 'alert' })
+        .update({ status: 'panic_alert' })
         .eq('id', session.id);
       if (error) throw error;
-      await broadcastWalkEvent(session.share_token, 'status_update', { status: 'alert' });
+      await broadcastWalkEvent(session.share_token, 'status_update', { status: 'panic_alert' });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['safety-session'] }),
   });
@@ -207,7 +207,7 @@ export const triggerLocalSafetyAlert = () => {
 export const useSafetyTracker = (session: SafetySession | null) => {
   const [position, setPosition] = useState<GeolocationPosition | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const activeId = session && session.status !== 'completed' ? session.id : null;
+  const activeId = session && session.status !== 'completed' && session.status !== 'cancelled' ? session.id : null;
   const lastSent = useRef(0);
 
   useEffect(() => {
