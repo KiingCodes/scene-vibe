@@ -49,7 +49,7 @@ const TrackPage = () => {
     session.current_lng ?? session.start_lng,
   ];
   const start: [number, number] = [session.start_lat, session.start_lng];
-  const alerted = session.status === 'alert';
+  const alerted = session.status === 'panic_alert';
   const completed = session.status === 'completed';
 
   return (
