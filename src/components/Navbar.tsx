@@ -6,6 +6,7 @@ import { useIsAdmin } from '@/hooks/useAdmin';
 import { useMyVenues } from '@/hooks/useVenueOwner';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/components/NotificationBell';
+import navbarLogo from '@/assets/scene-navbar-logo.png.asset.json';
 import { useUnreadCount } from '@/hooks/useNotifications';
 import { useLiveChatCount } from '@/hooks/useLiveChatCount';
 import { useCountry, COUNTRIES, type CountryCode } from '@/contexts/CountryContext';
@@ -106,8 +107,8 @@ const Navbar = () => {
         className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center px-3 sm:px-4 gap-2 bg-[#0a0a0f]/85 backdrop-blur-xl border-b border-white/5"
       >
         <CountrySwitcher align="start" />
-        <Link to="/" className="ml-1 font-display text-[13px] bg-gradient-to-r from-[#FF5E62] via-[#D946EF] to-[#00C6FF] bg-clip-text text-transparent font-black tracking-wider">
-          SCENE
+        <Link to="/" aria-label="SCENE home" className="ml-1 flex h-11 w-28 shrink-0 items-center justify-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-32">
+          <img src={navbarLogo.url} alt="SCENE" className="block h-auto w-full object-contain" />
         </Link>
         <div className="ml-auto flex items-center gap-1">
           {user ? (
