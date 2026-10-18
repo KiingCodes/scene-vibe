@@ -14,7 +14,6 @@ import SplashScreen from "./components/SplashScreen";
 import TermsGate from "./components/TermsGate";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
-import MapPage from "./pages/MapPage";
 import ChatPage from "./pages/ChatPage";
 import ClubDetailPage from "./pages/ClubDetailPage";
 import SuggestSpotPage from "./pages/SuggestSpotPage";
@@ -30,8 +29,6 @@ import VibeHistoryPage from "./pages/VibeHistoryPage";
 import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
 import CrewsPage from "./pages/CrewsPage";
-import EventsPage from "./pages/EventsPage";
-import VideosPage from "./pages/VideosPage";
 import NightReplayPage from "./pages/NightReplayPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import VenueOnboardingPage from "./pages/VenueOnboardingPage";
@@ -79,11 +76,9 @@ const AppContent = () => {
             </AuthGuard>
           }
         />
-        <Route path="/map" element={<MapPage />} />
         <Route path="/chat" element={<ChatPage />} />
         <Route path="/crews" element={<CrewsPage />} />
-        <Route path="/events" element={<EventsPage />} />
-        <Route path="/videos" element={<VideosPage />} />
+        <Route path="/videos" element={<Navigate to="/night-replay" replace />} />
         <Route path="/night-replay" element={<NightReplayPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/venue-onboarding" element={<VenueOnboardingPage />} />

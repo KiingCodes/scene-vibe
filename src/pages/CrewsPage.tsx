@@ -43,9 +43,11 @@ const CrewsPage = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen gradient-dark">
+      <div className="relative isolate min-h-screen bg-[#0B0E14]">
         <Navbar />
-        <div className="pt-24 container mx-auto px-4 text-center">
+        <div aria-hidden="true" className="pointer-events-none absolute -top-20 -left-20 z-0 h-80 w-80 rounded-full bg-cyan-500/10 blur-[120px]" />
+        <div aria-hidden="true" className="pointer-events-none absolute top-1/2 left-1/2 z-0 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-fuchsia-500/10 blur-[120px]" />
+        <div className="relative z-10 pt-24 container mx-auto px-4 text-center">
           <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
           <h1 className="font-display font-bold text-2xl text-foreground mb-2">Crews</h1>
           <p className="text-muted-foreground mb-6">Sign in to create or join a crew.</p>
@@ -56,9 +58,11 @@ const CrewsPage = () => {
   }
 
   return (
-    <div className="min-h-screen gradient-dark">
+    <div className="relative isolate min-h-screen bg-[#0B0E14]">
       <Navbar />
-      <main className="container mx-auto px-4 pt-24 pb-8 max-w-2xl">
+      <div aria-hidden="true" className="pointer-events-none absolute -top-20 -left-20 z-0 h-80 w-80 rounded-full bg-cyan-500/10 blur-[120px]" />
+      <div aria-hidden="true" className="pointer-events-none absolute top-1/2 left-1/2 z-0 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-fuchsia-500/10 blur-[120px]" />
+      <main className="relative z-10 container mx-auto px-4 pt-24 pb-8 max-w-2xl">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-display font-bold text-2xl text-foreground mb-1 flex items-center gap-2">
             <Users className="w-6 h-6 text-primary" /> Your Crews
@@ -70,12 +74,12 @@ const CrewsPage = () => {
         <div className="flex gap-2 mb-6">
           <Dialog>
             <DialogTrigger asChild>
-              <Button size="sm" className="gradient-primary text-primary-foreground gap-1"><Plus className="w-4 h-4" /> Create Crew</Button>
+              <Button size="sm" className="bg-gradient-to-r from-cyan-400 to-blue-600 text-black font-bold shadow-lg shadow-cyan-500/20 gap-1 hover:brightness-110"><Plus className="w-4 h-4" /> Create Crew</Button>
             </DialogTrigger>
-            <DialogContent className="glass border-border/50">
+            <DialogContent className="bg-slate-950/90 backdrop-blur-xl border border-white/10 rounded-3xl text-white">
               <DialogHeader><DialogTitle className="text-foreground">Create a Crew</DialogTitle></DialogHeader>
               <div className="space-y-3">
-                <Input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Crew name" className="bg-muted/50 border-border/50" maxLength={30} />
+                <Input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Crew name" className="bg-slate-900/80 text-white border-white/10 rounded-xl focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/30" maxLength={30} />
                 <Button onClick={handleCreate} disabled={createCrew.isPending} className="w-full gradient-primary text-primary-foreground">Create</Button>
               </div>
             </DialogContent>
@@ -83,12 +87,12 @@ const CrewsPage = () => {
 
           <Dialog>
             <DialogTrigger asChild>
-              <Button size="sm" variant="outline" className="border-border/50 text-muted-foreground gap-1"><Users className="w-4 h-4" /> Join Crew</Button>
+              <Button size="sm" variant="outline" className="bg-white/5 border border-white/20 text-white font-medium hover:bg-white/10 gap-1"><Users className="w-4 h-4" /> Join Crew</Button>
             </DialogTrigger>
-            <DialogContent className="glass border-border/50">
+            <DialogContent className="bg-slate-950/90 backdrop-blur-xl border border-white/10 rounded-3xl text-white">
               <DialogHeader><DialogTitle className="text-foreground">Join a Crew</DialogTitle></DialogHeader>
               <div className="space-y-3">
-                <Input value={joinCode} onChange={e => setJoinCode(e.target.value)} placeholder="Enter invite code" className="bg-muted/50 border-border/50" />
+                <Input value={joinCode} onChange={e => setJoinCode(e.target.value)} placeholder="Enter invite code" className="bg-slate-900/80 text-white border-white/10 rounded-xl focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/30" />
                 <Button onClick={handleJoin} disabled={joinCrew.isPending} className="w-full gradient-primary text-primary-foreground">Join</Button>
               </div>
             </DialogContent>
@@ -122,7 +126,9 @@ const CrewsPage = () => {
         {/* Crew Detail */}
         {selectedCrewId && <CrewDetail crewId={selectedCrewId} />}
       </main>
-      <Footer />
+      <div className="relative z-10">
+        <Footer />
+      </div>
     </div>
   );
 };
@@ -171,26 +177,34 @@ const CrewDetail = ({ crewId }: { crewId: string }) => {
   };
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 space-y-4">
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 bg-slate-900/70 backdrop-blur-xl border border-cyan-500/20 rounded-3xl p-5 shadow-2xl space-y-4">
+      <h2 className="font-display font-bold text-xl bg-gradient-to-r from-cyan-300 to-blue-500 bg-clip-text text-transparent">
+        {crew?.name}
+      </h2>
+
       {/* Actions */}
       <div className="flex gap-2 flex-wrap">
-        <Button size="sm" variant="outline" onClick={copyInvite} className="gap-1 border-border/50 text-muted-foreground">
+        <Button size="sm" variant="outline" onClick={copyInvite} className="gap-1 bg-white/5 border border-white/15 hover:bg-white/10 text-white rounded-xl">
           <Copy className="w-3.5 h-3.5" /> Copy Invite Code
         </Button>
-        <Button size="sm" onClick={() => setShowVote(!showVote)} className="gap-1 gradient-secondary text-secondary-foreground">
+        <Button size="sm" onClick={() => setShowVote(!showVote)} className="gap-1 bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white font-bold shadow-lg shadow-fuchsia-500/25 rounded-xl hover:brightness-110">
           <Vote className="w-3.5 h-3.5" /> Vote Where To Go
         </Button>
-        <Button size="sm" variant="outline" onClick={handleLeave} className="gap-1 border-destructive/30 text-destructive">
+        <Button size="sm" variant="ghost" onClick={handleLeave} className="h-auto gap-1 px-2 py-1 text-red-400/80 hover:text-red-400 hover:bg-transparent text-xs font-medium">
           <LogOut className="w-3.5 h-3.5" /> Leave
         </Button>
       </div>
 
       {/* Members */}
-      <div className="glass rounded-xl p-4">
-        <h4 className="font-display font-semibold text-sm text-foreground mb-2">Members ({members?.length || 0})</h4>
+      <div className="bg-black/30 border border-white/10 rounded-2xl p-4">
+        <h4 className="font-display font-semibold text-sm text-cyan-100/90 mb-3 flex items-center gap-2">
+          <Users className="w-4 h-4 text-cyan-300 drop-shadow-[0_0_8px_rgba(34,211,238,0.55)]" />
+          Members ({members?.length || 0})
+        </h4>
         <div className="flex flex-wrap gap-2">
           {members?.map(m => (
-            <span key={m.id} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${m.role === 'leader' ? 'gradient-primary text-primary-foreground' : 'bg-muted/30 text-foreground'}`}>
+            <span key={m.id} className={`inline-flex items-center gap-1.5 rounded-full text-xs ${m.role === 'leader' ? 'bg-cyan-500/20 border border-cyan-400 text-cyan-300 font-semibold px-3 py-1' : 'bg-white/5 border border-white/10 text-white px-3 py-1 font-medium'}`}>
+              {m.role !== 'leader' && <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.65)]" />}
               {m.profile?.username || 'Anon'}
               {m.role === 'leader' && ' 👑'}
             </span>

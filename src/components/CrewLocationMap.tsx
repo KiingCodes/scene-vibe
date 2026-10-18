@@ -63,11 +63,11 @@ const CrewLocationMap = ({ crewId }: { crewId: string }) => {
     <motion.div
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: 'auto' }}
-      className="glass rounded-xl overflow-hidden"
+      className="bg-black/40 border border-white/10 rounded-2xl p-4 overflow-hidden"
     >
-      <div className="flex items-center justify-between p-3">
-        <h4 className="font-display font-semibold text-sm text-foreground flex items-center gap-1.5">
-          <Navigation className="w-4 h-4 text-primary" /> Live Locations
+      <div className="flex items-center justify-between gap-3 pb-3">
+        <h4 className="font-display font-semibold text-sm text-cyan-100 flex items-center gap-1.5">
+          <Navigation className="w-4 h-4 text-cyan-300" /> Live Locations
           {locations && locations.length > 0 && (
             <motion.span
               animate={{ scale: [1, 1.2, 1] }}
@@ -77,7 +77,7 @@ const CrewLocationMap = ({ crewId }: { crewId: string }) => {
           )}
         </h4>
         {!sharing ? (
-          <Button size="sm" onClick={startSharing} className="gap-1 gradient-primary text-primary-foreground text-xs">
+          <Button size="sm" onClick={startSharing} className="gap-1 bg-cyan-400 text-black font-bold shadow-md shadow-cyan-400/20 rounded-xl text-xs animate-pulse hover:bg-cyan-300">
             <MapPin className="w-3 h-3" /> Share My Location
           </Button>
         ) : (
@@ -110,8 +110,11 @@ const CrewLocationMap = ({ crewId }: { crewId: string }) => {
       )}
 
       {(!locations || locations.length === 0) && !sharing && (
-        <div className="px-3 pb-3">
-          <p className="text-xs text-muted-foreground text-center py-4">No one is sharing their location yet</p>
+        <div className="pb-1">
+          <p className="text-xs text-white/50 text-center py-4 flex items-center justify-center gap-2">
+            <MapPin className="w-3.5 h-3.5 text-white/40" />
+            No one is sharing their location yet
+          </p>
         </div>
       )}
     </motion.div>

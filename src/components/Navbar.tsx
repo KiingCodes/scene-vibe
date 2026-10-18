@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
-import { MapPin, MessageCircle, Home, User, Heart, Shield, BarChart3, Trophy, Users, Calendar, Video, Moon, Sparkles, ChevronDown, Check, MoreHorizontal, Bell, Building2, Crown, ShieldCheck } from 'lucide-react';
+import { MessageCircle, Home, User, Heart, Shield, BarChart3, Trophy, Users, Moon, Sparkles, ChevronDown, Check, MoreHorizontal, Bell, Building2, Crown, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
 import { useMyVenues } from '@/hooks/useVenueOwner';
@@ -28,10 +28,7 @@ const PRIMARY_ITEMS = [
 
 // Everything else lives inside the "More" sheet — one tap from the dock.
 const MORE_ITEMS = [
-  { path: '/map',          icon: MapPin,    label: 'Map' },
   { path: '/crews',        icon: Users,     label: 'Crews' },
-  { path: '/events',       icon: Calendar,  label: 'Events' },
-  { path: '/videos',       icon: Video,     label: 'Videos' },
   { path: '/night-replay', icon: Moon,      label: 'Night Replay' },
   { path: '/saved',        icon: Heart,     label: 'Saved' },
   { path: '/insights',     icon: BarChart3, label: 'Insights' },

@@ -1764,6 +1764,7 @@ export type Database = {
           id: string
           is_premium: boolean
           like_count: number
+          replay_status: string
           user_id: string
           video_url: string
           view_count: number
@@ -1775,6 +1776,7 @@ export type Database = {
           id?: string
           is_premium?: boolean
           like_count?: number
+          replay_status?: string
           user_id: string
           video_url: string
           view_count?: number
@@ -1786,6 +1788,7 @@ export type Database = {
           id?: string
           is_premium?: boolean
           like_count?: number
+          replay_status?: string
           user_id?: string
           video_url?: string
           view_count?: number
@@ -1876,6 +1879,10 @@ export type Database = {
           status: string
           updated_at: string
         }[]
+      }
+      review_night_replay_submission: {
+        Args: { _status: string; _video_id: string }
+        Returns: undefined
       }
       has_role: {
         Args: {
