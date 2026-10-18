@@ -1,0 +1,3 @@
+- [ ] Configure Night Replay storage and secure schema.
+- [ ] Connect highlight uploads, active feed, and venue reviews.
+- [ ] Test upload rules and signed-in flow.
