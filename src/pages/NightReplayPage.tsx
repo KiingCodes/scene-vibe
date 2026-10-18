@@ -11,12 +11,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
 import { useClubs } from '@/hooks/useClubs';
-import { useSubmitNightReplay, useVideos } from '@/hooks/useVideos';
+import { useSubmitNightReplay, useNightReplays } from '@/hooks/useNightReplays';
+import { validateReplayFile } from '@/lib/nightReplay';
 import { toast } from 'sonner';
 
 const NightReplayPage = () => {
   const { user } = useAuth();
-  const { data: videos, isLoading } = useVideos();
+  const { data: videos, isLoading, isError, refetch } = useNightReplays();
   const { data: clubs } = useClubs();
   const submissionVenues = clubs?.filter(club => club.is_community_added !== true) ?? [];
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
@@ -29,9 +30,9 @@ const NightReplayPage = () => {
   const submitReplay = useSubmitNightReplay();
   const navigate = useNavigate();
 
-  const replays = videos?.filter(video => video.club_id) ?? [];
+  const replays = videos ?? [];
   const activeVideo = replays.find(video => video.id === activeVideoId);
-  const activeVenue = clubs?.find(club => club.id === activeVideo?.club_id);
+  const activeVenue = clubs?.find(club => club.id === activeVideo?.venue_id);
 
   useEffect(() => {
     if (!selectedVenueId && clubs?.length) {
@@ -42,13 +43,10 @@ const NightReplayPage = () => {
 
   const validateFile = (file: File) => {
     setSelectedFile(null);
-    const extension = file.name.split('.').pop()?.toLowerCase();
-    if (!['mp4', 'mov'].includes(extension || '')) {
-      toast.error('Choose an MP4 or MOV video');
-      return;
-    }
-    if (file.size > 100 * 1024 * 1024) {
-      toast.error('Video must be smaller than 100 MB');
+    try {
+      validateReplayFile(file);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Invalid video');
       return;
     }
 
@@ -90,14 +88,12 @@ const NightReplayPage = () => {
     }
 
     try {
-      await submitReplay.mutateAsync({
+      const result = await submitReplay.mutateAsync({
         file: selectedFile,
         clubId: selectedVenueId,
         caption,
       });
-      toast.success('Clip submitted! Once approved by the venue team, it will go live on Night Replay.', {
-        className: 'border border-cyan-400/30 bg-slate-950/95 text-white shadow-xl',
-      });
+      toast.success(result.status === 'approved' ? 'Highlight is live on Night Replay for 72 hours.' : 'Clip submitted! Once approved by the venue team, it will go live on Night Replay.');
       setSelectedFile(null);
       setCaption('');
       setSubmitOpen(false);
@@ -110,7 +106,7 @@ const NightReplayPage = () => {
   const shareToCrew = async () => {
     if (!activeVideo) return;
     try {
-      await navigator.clipboard.writeText(activeVideo.video_url);
+      await navigator.clipboard.writeText(`${window.location.origin}/night-replay`);
       setActiveVideoId(null);
       toast.success('Replay link copied. Paste it into your crew conversation.');
       navigate('/crews');
@@ -160,15 +156,16 @@ const NightReplayPage = () => {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="video/mp4,video/quicktime,.mp4,.mov"
+                  accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm"
                   className="sr-only"
                   onChange={event => {
                     const file = event.target.files?.[0];
                     if (file) validateFile(file);
                   }}
                 />
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={() => fileInputRef.current?.click()}
                   onDragOver={event => { event.preventDefault(); setIsDragging(true); }}
                   onDragLeave={() => setIsDragging(false)}
@@ -178,14 +175,15 @@ const NightReplayPage = () => {
                     const file = event.dataTransfer.files[0];
                     if (file) validateFile(file);
                   }}
-                  className={`w-full rounded-2xl border-2 border-dashed p-6 text-center transition-colors ${isDragging ? 'border-cyan-300 bg-cyan-500/10' : 'border-cyan-500/40 bg-slate-900/50 hover:border-cyan-400'}`}
+                  disabled={submitReplay.isPending}
+                  className={`block h-auto w-full whitespace-normal rounded-lg border-2 border-dashed p-6 text-center transition-colors ${isDragging ? 'border-primary bg-primary/10' : 'border-primary/40 bg-muted/50 hover:border-primary'}`}
                 >
                   <Video className="mx-auto mb-3 h-8 w-8 text-cyan-300" />
                   <span className="block text-sm font-semibold text-white">
                     {selectedFile ? selectedFile.name : 'Drop your highlight here or choose a video'}
                   </span>
-                  <span className="mt-1 block text-xs text-white/50">Vertical MP4 or MOV · under 15 seconds · max 100 MB</span>
-                </button>
+                  <span className="mt-1 block text-xs text-muted-foreground">Vertical MP4, MOV or WEBM · under 15 seconds · max 25 MB</span>
+                </Button>
 
                 <div className="space-y-2">
                   <label htmlFor="replay-caption" className="text-sm font-medium text-white/85">Caption <span className="text-white/40">(optional)</span></label>
@@ -223,7 +221,12 @@ const NightReplayPage = () => {
           <p className="mt-2 text-sm text-white/60">The clips, the crowds, the nights worth replaying.</p>
         </motion.header>
 
-        {isLoading ? (
+        {isError ? (
+          <div role="alert" className="py-12 text-center text-muted-foreground">
+            <p>Could not load Night Replay.</p>
+            <Button variant="outline" className="mt-4" onClick={() => refetch()}>Try again</Button>
+          </div>
+        ) : isLoading ? (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             {Array.from({ length: 6 }).map((_, index) => (
               <div key={index} className="aspect-[9/16] animate-pulse rounded-2xl border border-fuchsia-500/20 bg-slate-900/80" />
@@ -240,14 +243,14 @@ const NightReplayPage = () => {
             </div>
             <h2 className="font-display text-xl font-bold text-white">No replays just yet</h2>
             <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-white/60">
-              Weekend Replay drops every Monday at midnight. Check back soon for recap highlights from top SCENE venues!
+               No active highlights right now.
             </p>
           </motion.div>
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             {replays.map((replay, index) => {
-              const venue = clubs?.find(club => club.id === replay.club_id);
-              const venueName = venue?.name || replay.caption || 'SCENE Venue';
+              const venue = clubs?.find(club => club.id === replay.venue_id);
+              const venueName = replay.venue?.name || venue?.name || 'SCENE Venue';
               return (
                 <motion.button
                   key={replay.id}
@@ -333,9 +336,9 @@ const NightReplayPage = () => {
                 </div>
               </div>
               <div className="absolute inset-x-0 bottom-0 space-y-3 bg-gradient-to-t from-black/90 via-black/65 to-transparent p-5 pt-16">
-                {activeVideo.club_id && (
+                {activeVideo.venue_id && (
                   <Button asChild className="h-auto w-full bg-gradient-to-r from-[#FF6B4A] via-[#D946EF] to-[#06B6D4] px-4 py-2 font-bold text-white shadow-lg hover:brightness-110">
-                    <Link to={`/club/${activeVideo.club_id}`} onClick={() => setActiveVideoId(null)}>
+                    <Link to={`/club/${activeVideo.venue_id}`} onClick={() => setActiveVideoId(null)}>
                       <MapPin className="mr-2 h-4 w-4" />
                       Explore {activeVenue?.name || 'Tagged Venue'}
                     </Link>
