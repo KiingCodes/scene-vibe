@@ -1764,7 +1764,6 @@ export type Database = {
           id: string
           is_premium: boolean
           like_count: number
-          replay_status: string
           user_id: string
           video_url: string
           view_count: number
@@ -1776,7 +1775,6 @@ export type Database = {
           id?: string
           is_premium?: boolean
           like_count?: number
-          replay_status?: string
           user_id: string
           video_url: string
           view_count?: number
@@ -1788,7 +1786,6 @@ export type Database = {
           id?: string
           is_premium?: boolean
           like_count?: number
-          replay_status?: string
           user_id?: string
           video_url?: string
           view_count?: number
@@ -1866,10 +1863,10 @@ export type Database = {
         Args: { p_share_token: string }
         Returns: {
           created_at: string
-          current_lat: number | null
-          current_lng: number | null
-          destination_name: string | null
-          ended_at: string | null
+          current_lat: number
+          current_lng: number
+          destination_name: string
+          ended_at: string
           eta_minutes: number
           id: string
           last_ping_at: string
@@ -1879,10 +1876,6 @@ export type Database = {
           status: string
           updated_at: string
         }[]
-      }
-      review_night_replay_submission: {
-        Args: { _status: string; _video_id: string }
-        Returns: undefined
       }
       has_role: {
         Args: {
