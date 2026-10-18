@@ -8,6 +8,13 @@
       "when": 1792055392690,
       "tag": "0000_walk_sessions",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792326090623,
+      "tag": "0001_night_replay_video_submissions",
+      "breakpoints": true
     }
   ]
 }

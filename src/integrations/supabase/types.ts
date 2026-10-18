@@ -771,42 +771,70 @@ export type Database = {
       }
       night_replays: {
         Row: {
+          caption: string | null
           created_at: string
           data_json: Json | null
+          expires_at: string
           id: string
           peak_hour: number | null
           replay_date: string
+          status: string
           top_club_id: string | null
           top_club_name: string | null
           total_messages: number
           total_vibes: number
+          user_id: string | null
+          venue_id: string | null
+          video_url: string | null
+          views_count: number
         }
         Insert: {
+          caption?: string | null
           created_at?: string
           data_json?: Json | null
-          id?: string
-          peak_hour?: number | null
-          replay_date: string
-          top_club_id?: string | null
-          top_club_name?: string | null
-          total_messages?: number
-          total_vibes?: number
-        }
-        Update: {
-          created_at?: string
-          data_json?: Json | null
+          expires_at?: string
           id?: string
           peak_hour?: number | null
           replay_date?: string
+          status?: string
           top_club_id?: string | null
           top_club_name?: string | null
           total_messages?: number
           total_vibes?: number
+          user_id?: string | null
+          venue_id?: string | null
+          video_url?: string | null
+          views_count?: number
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          data_json?: Json | null
+          expires_at?: string
+          id?: string
+          peak_hour?: number | null
+          replay_date?: string
+          status?: string
+          top_club_id?: string | null
+          top_club_name?: string | null
+          total_messages?: number
+          total_vibes?: number
+          user_id?: string | null
+          venue_id?: string | null
+          video_url?: string | null
+          views_count?: number
         }
         Relationships: [
           {
             foreignKeyName: "night_replays_top_club_id_fkey"
             columns: ["top_club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "night_replays_venue_id_fkey"
+            columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "clubs"
             referencedColumns: ["id"]
