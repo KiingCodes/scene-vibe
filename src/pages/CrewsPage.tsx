@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Users, Plus, Copy, LogOut, Vote, MapPin, Flame, Navigation } from 'lucide-react';
 import CrewLocationMap from '@/components/CrewLocationMap';
+import CrewChatPanel from '@/components/CrewChatPanel';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/hooks/useAuth';
@@ -10,7 +11,7 @@ import { useClubs } from '@/hooks/useClubs';
 import { useAllVibes } from '@/hooks/useVibes';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 
@@ -187,7 +188,7 @@ const CrewDetail = ({ crewId }: { crewId: string }) => {
         <Button size="sm" variant="outline" onClick={copyInvite} className="gap-1 bg-white/5 border border-white/15 hover:bg-white/10 text-white rounded-xl">
           <Copy className="w-3.5 h-3.5" /> Copy Invite Code
         </Button>
-        <Button size="sm" onClick={() => setShowVote(!showVote)} className="gap-1 bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white font-bold shadow-lg shadow-fuchsia-500/25 rounded-xl hover:brightness-110">
+        <Button size="sm" onClick={() => setShowVote(true)} className="gap-1 bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white font-bold shadow-lg shadow-fuchsia-500/25 rounded-xl hover:brightness-110">
           <Vote className="w-3.5 h-3.5" /> Vote Where To Go
         </Button>
         <Button size="sm" variant="ghost" onClick={handleLeave} className="h-auto gap-1 px-2 py-1 text-red-400/80 hover:text-red-400 hover:bg-transparent text-xs font-medium">
@@ -235,23 +236,33 @@ const CrewDetail = ({ crewId }: { crewId: string }) => {
       )}
 
       {/* Vote Picker */}
-      {showVote && (
-        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="glass rounded-xl p-4">
-          <h4 className="font-display font-semibold text-sm text-foreground mb-2">Pick a club</h4>
-          <div className="max-h-48 overflow-y-auto space-y-1">
+      <Dialog open={showVote} onOpenChange={setShowVote}>
+        <DialogContent className="rounded-3xl border border-white/10 bg-slate-950/95 text-white backdrop-blur-xl">
+          <DialogHeader>
+            <DialogTitle className="font-display text-white">Live Vote · Where to tonight?</DialogTitle>
+            <DialogDescription className="text-white/55">Your squad’s votes update live.</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-72 space-y-1 overflow-y-auto">
             {clubs?.map(club => (
               <button
                 key={club.id}
                 onClick={() => handleVote(club.id)}
-                className="w-full text-left flex items-center justify-between bg-muted/10 hover:bg-muted/30 rounded-lg px-3 py-2 transition-all"
+                className="flex w-full items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-left transition-all hover:bg-white/10"
               >
-                <span className="text-sm text-foreground">{club.name}</span>
-                <span className="text-xs text-muted-foreground">{club.area}</span>
+                <span className="text-sm text-white">{club.name}</span>
+                <span className="text-xs text-white/50">{club.area}</span>
               </button>
             ))}
           </div>
-        </motion.div>
-      )}
+        </DialogContent>
+      </Dialog>
+
+      <CrewChatPanel
+        crewId={crewId}
+        crewName={crew?.name || 'Your Crew'}
+        memberCount={members?.length || 0}
+        onOpenVote={() => setShowVote(true)}
+      />
 
       {/* Live Location Map */}
       <CrewLocationMap crewId={crewId} />
