@@ -1,3 +1,4 @@
-- [ ] Configure Night Replay storage and secure schema.
-- [ ] Connect highlight uploads, active feed, and venue reviews.
-- [ ] Test upload rules and signed-in flow.
+- [x] Configure protected Night Replay storage and secure schema.
+- [x] Connect highlight uploads, active feed, and venue reviews.
+- [x] Test upload rules, signed-in upload/playback, persisted approval and 72-hour lifetime, and public feed access.
+- [ ] Make replay storage public — blocked by workspace policy; an admin must enable public buckets in Settings → Privacy & Security.
