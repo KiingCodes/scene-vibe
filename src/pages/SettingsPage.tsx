@@ -106,7 +106,7 @@ const SettingRow = ({
 }: RowProps) => {
   const content = (
     <>
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-cyan-300 shadow-[0_0_14px_rgba(6,182,212,0.1)]">
         <Icon className="h-4 w-4" />
       </span>
       <span className="min-w-0 flex-1 text-left">
@@ -125,12 +125,12 @@ const SettingRow = ({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors hover:bg-white/5"
+      className="flex w-full items-center gap-3 rounded-xl p-3 text-left transition-all hover:bg-white/5"
     >
       {content}
     </button>
   ) : (
-    <div className="flex items-center gap-3 rounded-xl px-3 py-3">
+    <div className="flex items-center gap-3 rounded-xl p-3 transition-all hover:bg-white/5">
       {content}
     </div>
   );
@@ -148,17 +148,17 @@ const Section = ({
   <motion.section
     initial={{ opacity: 0, y: 14 }}
     animate={{ opacity: 1, y: 0 }}
-    className="glass overflow-hidden rounded-2xl border border-white/10"
+    className="mb-6 overflow-hidden rounded-3xl border border-white/10 bg-slate-900/60 p-5 shadow-xl backdrop-blur-xl"
   >
-    <div className="border-b border-white/10 px-5 py-4">
-      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/80">
+    <div className="px-1 pb-3">
+      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-300">
         {eyebrow}
       </p>
-      <h2 className="mt-1 font-display text-lg font-semibold text-foreground">
+      <h2 className="mt-1 font-display text-lg font-semibold text-white">
         {title}
       </h2>
     </div>
-    <div className="divide-y divide-white/5 p-2">{children}</div>
+    <div className="space-y-1">{children}</div>
   </motion.section>
 );
 
@@ -397,7 +397,13 @@ const SettingsPage = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen gradient-dark">
+      <div
+        className="min-h-screen bg-slate-950"
+        style={{
+          backgroundImage:
+            "radial-gradient(ellipse at 15% 5%, rgba(6, 182, 212, 0.13), transparent 38%), radial-gradient(ellipse at 88% 35%, rgba(217, 70, 239, 0.1), transparent 40%)",
+        }}
+      >
         <Navbar />
         <main className="container mx-auto px-4 pb-24 pt-24 text-center">
           <LockKeyhole className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
@@ -428,6 +434,7 @@ const SettingsPage = () => {
         disabled={savingKey !== null || prefsLoading}
         onCheckedChange={onChange}
         aria-label={`Toggle ${key}`}
+        className="data-[state=checked]:bg-cyan-500 data-[state=unchecked]:bg-slate-800"
       />
     </span>
   );
@@ -440,6 +447,7 @@ const SettingsPage = () => {
         disabled={savingKey !== null}
         onCheckedChange={(value) => updateExtra(key, value)}
         aria-label={`Toggle ${key}`}
+        className="data-[state=checked]:bg-cyan-500 data-[state=unchecked]:bg-slate-800"
       />
     </span>
   );
@@ -455,10 +463,13 @@ const SettingsPage = () => {
         disabled={savingKey !== null || prefsLoading}
         onValueChange={(v) => updatePref(key, v as ProfilePrefs[K])}
       >
-        <SelectTrigger className="h-9 w-[130px] border-white/10 bg-white/5 text-xs" aria-label={key}>
+        <SelectTrigger
+          className="h-9 w-[130px] rounded-xl border border-white/10 bg-slate-950/80 text-xs text-white"
+          aria-label={key}
+        >
           <SelectValue />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="border-white/10 bg-slate-950/95 text-white backdrop-blur-xl">
           {options.map((o) => (
             <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
           ))}
@@ -468,38 +479,44 @@ const SettingsPage = () => {
   );
 
   return (
-    <div className="min-h-screen gradient-dark">
+    <div
+      className="min-h-screen bg-slate-950"
+      style={{
+        backgroundImage:
+          "radial-gradient(ellipse at 15% 5%, rgba(6, 182, 212, 0.13), transparent 38%), radial-gradient(ellipse at 88% 35%, rgba(217, 70, 239, 0.1), transparent 40%)",
+      }}
+    >
       <Navbar />
-      <main className="container mx-auto max-w-2xl px-4 pb-24 pt-20 sm:pt-24">
+      <main className="container mx-auto max-w-2xl px-4 pb-24 pt-20 backdrop-blur-[1px] sm:pt-24">
         <div className="mb-6 flex items-center gap-3">
           <Link
             to="/profile"
             aria-label="Back to profile"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border/40 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-300 transition-colors hover:border-cyan-500/40 hover:text-cyan-300"
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
+            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-cyan-300">
               Your SCENE
             </p>
-            <h1 className="font-display text-2xl font-bold text-foreground">
+            <h1 className="font-display text-2xl font-bold text-white">
               Settings
             </h1>
           </div>
         </div>
 
-        <div className="mb-6 rounded-2xl border border-primary/20 bg-primary/5 px-5 py-4">
-          <p className="text-sm font-semibold text-foreground">
+        <div className="mb-6 rounded-2xl border border-cyan-500/30 bg-slate-900/80 p-5 shadow-[0_0_25px_rgba(6,182,212,0.15)] backdrop-blur-xl">
+          <p className="text-sm font-semibold text-white">
             Tune your night, your way.
           </p>
-          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+          <p className="mt-1 text-xs leading-relaxed text-slate-400">
             Your preferences are synced securely to your SCENE account and
             follow you between devices.
           </p>
         </div>
 
-        <div className="space-y-4">
+        <div>
           <Section eyebrow="01 / Account" title="Account & Security">
             <SettingRow
               icon={KeyRound}

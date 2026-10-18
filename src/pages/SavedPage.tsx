@@ -1,62 +1,42 @@
 import { useState } from 'react';
-import { motion, Reorder } from 'framer-motion';
-import { Heart, Plus, Trash2, GripVertical, MapPin, ArrowLeft, PartyPopper } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ArrowLeft, ArrowUpRight, Heart, MapPin, Radar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useFavoriteClubs } from '@/hooks/useFavorites';
-import { useNightPlans, useCreatePlan, useDeletePlan, useUpdatePlanItems } from '@/hooks/useNightPlans';
+import { useFavoriteClubs, useToggleFavorite } from '@/hooks/useFavorites';
+import type { Club } from '@/hooks/useClubs';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 
 const SavedPage = () => {
   const { user } = useAuth();
-  const { data: favoriteClubs, isLoading: favsLoading } = useFavoriteClubs();
-  const { data: plans, isLoading: plansLoading } = useNightPlans();
-  const createPlan = useCreatePlan();
-  const deletePlan = useDeletePlan();
-  const updatePlanItems = useUpdatePlanItems();
+  const {
+    data: favoriteClubs,
+    isLoading: favsLoading,
+    isError: favsError,
+  } = useFavoriteClubs();
+  const toggleFavorite = useToggleFavorite();
 
-  const [tab, setTab] = useState<'saved' | 'plans'>('saved');
-  const [creating, setCreating] = useState(false);
-  const [planTitle, setPlanTitle] = useState("Tonight's Plan");
-  const [selectedClubs, setSelectedClubs] = useState<Set<string>>(new Set());
-
-  const toggleSelect = (id: string) => {
-    setSelectedClubs(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
-
-  const handleCreate = async () => {
-    if (selectedClubs.size === 0) {
-      toast.error('Select at least one club');
-      return;
-    }
+  const handleRemove = async (clubId: string) => {
     try {
-      await createPlan.mutateAsync({ title: planTitle, clubIds: Array.from(selectedClubs) });
-      toast.success('🎉 Plan created!');
-      setCreating(false);
-      setSelectedClubs(new Set());
-      setPlanTitle("Tonight's Plan");
+      await toggleFavorite.mutateAsync({ clubId, isFav: true });
+      toast.success('Spot removed from your saved list');
     } catch {
-      toast.error('Failed to create plan');
+      toast.error('Could not remove this spot. Please try again.');
     }
   };
-
 
   if (!user) {
     return (
       <div className="min-h-screen gradient-dark">
         <Navbar />
         <main className="container mx-auto px-4 pt-24 pb-8 text-center">
-          <Heart className="w-12 h-12 text-secondary mx-auto mb-4" />
-          <p className="text-muted-foreground mb-4">Sign in to save your favorite clubs</p>
-          <Link to="/auth"><Button className="gradient-primary text-primary-foreground">Sign In</Button></Link>
+          <Heart className="mx-auto mb-4 h-12 w-12 text-fuchsia-400" />
+          <p className="mb-4 text-muted-foreground">Sign in to save your favorite spots</p>
+          <Link to="/auth">
+            <Button className="gradient-primary text-primary-foreground">Sign In</Button>
+          </Link>
         </main>
       </div>
     );
@@ -65,152 +45,120 @@ const SavedPage = () => {
   return (
     <div className="min-h-screen gradient-dark">
       <Navbar />
-      <main className="container mx-auto px-4 pt-24 pb-8 max-w-2xl">
+      <main className="container mx-auto max-w-2xl px-4 pb-8 pt-24">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="flex items-center gap-2 mb-6">
-            <Link to="/" className="text-muted-foreground hover:text-foreground"><ArrowLeft className="w-5 h-5" /></Link>
-            <h1 className="font-display font-bold text-2xl text-foreground">Your Night Out</h1>
+          <div className="mb-6 flex items-center justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <Link to="/" aria-label="Back to home" className="text-muted-foreground transition-colors hover:text-white">
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
+              <h1 className="bg-gradient-to-r from-white via-cyan-200 to-cyan-400 bg-clip-text text-2xl font-black text-transparent">
+                Saved Spots
+              </h1>
+            </div>
+            <span className="shrink-0 text-sm font-semibold text-cyan-400">
+              {favsLoading ? '— Saved Spots' : `${favoriteClubs?.length ?? 0} Saved Spots`}
+            </span>
           </div>
 
-          {/* Tabs */}
-          <div className="flex gap-2 mb-6">
-            <Button size="sm" variant={tab === 'saved' ? 'default' : 'outline'} onClick={() => setTab('saved')}
-              className={tab === 'saved' ? 'gradient-primary text-primary-foreground' : 'border-border/50 text-muted-foreground'}>
-              <Heart className="w-3.5 h-3.5 mr-1" /> Saved ({favoriteClubs?.length || 0})
-            </Button>
-            <Button size="sm" variant={tab === 'plans' ? 'default' : 'outline'} onClick={() => setTab('plans')}
-              className={tab === 'plans' ? 'gradient-secondary text-secondary-foreground' : 'border-border/50 text-muted-foreground'}>
-              <PartyPopper className="w-3.5 h-3.5 mr-1" /> Plans ({plans?.length || 0})
-            </Button>
+          <div className="space-y-3">
+            {favsLoading ? (
+              Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="h-24 animate-pulse rounded-2xl border border-white/10 bg-slate-950/80" />
+              ))
+            ) : favsError ? (
+              <div role="alert" className="rounded-2xl border border-rose-400/20 bg-slate-950/80 px-5 py-8 text-center text-sm text-slate-300">
+                Unable to load your saved spots. Please try again.
+              </div>
+            ) : favoriteClubs?.length === 0 ? (
+              <div className="rounded-3xl border border-white/10 bg-slate-950/80 px-6 py-12 text-center shadow-lg shadow-cyan-950/20 backdrop-blur-xl">
+                <div className="relative mx-auto mb-5 flex h-24 w-24 items-center justify-center">
+                  <span className="absolute inset-0 rounded-full border border-cyan-400/15" />
+                  <span className="absolute inset-3 rounded-full border border-cyan-400/25" />
+                  <span className="absolute inset-6 rounded-full border border-fuchsia-400/30" />
+                  <Radar className="h-9 w-9 text-cyan-400 drop-shadow-[0_0_12px_rgba(6,182,212,0.5)]" />
+                  <span className="absolute right-5 top-5 h-2 w-2 rounded-full bg-fuchsia-400 shadow-[0_0_12px_rgba(217,70,239,0.8)]" />
+                </div>
+                <h2 className="mb-2 text-lg font-bold text-white">Your vault is waiting</h2>
+                <p className="mx-auto max-w-sm text-sm leading-relaxed text-slate-400">
+                  No saved spots yet. Tap the heart on any venue to save your favorite spots for quick access!
+                </p>
+              </div>
+            ) : (
+              favoriteClubs?.map((club) => (
+                <SavedSpotCard
+                  key={club.id}
+                  club={club as Club}
+                  onRemove={() => handleRemove(club.id)}
+                  removing={toggleFavorite.isPending}
+                />
+              ))
+            )}
           </div>
-
-          {tab === 'saved' && (
-            <div className="space-y-3">
-              {favsLoading ? (
-                Array.from({ length: 3 }).map((_, i) => <div key={i} className="glass rounded-xl h-20 animate-pulse" />)
-              ) : favoriteClubs?.length === 0 ? (
-                <div className="text-center py-12">
-                  <Heart className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-muted-foreground">No saved clubs yet. Tap the heart icon on any club to save it.</p>
-                </div>
-              ) : (
-                <>
-                  {!creating && (
-                    <Button onClick={() => setCreating(true)} className="w-full gap-2 bg-secondary/20 border border-secondary/30 text-secondary hover:bg-secondary/30" variant="outline">
-                      <Plus className="w-4 h-4" /> Create Tonight's Plan
-                    </Button>
-                  )}
-                  {creating && (
-                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="glass rounded-xl p-4 space-y-3">
-                      <Input value={planTitle} onChange={e => setPlanTitle(e.target.value)} placeholder="Plan name..." className="bg-muted/50 border-border/50" />
-                      <p className="text-xs text-muted-foreground">Select clubs for your plan:</p>
-                      {(favoriteClubs as any[])?.map(club => (
-                        <label key={club.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/30 cursor-pointer">
-                          <Checkbox checked={selectedClubs.has(club.id)} onCheckedChange={() => toggleSelect(club.id)} />
-                          <span className="text-sm text-foreground">{club.name}</span>
-                          <span className="text-xs text-muted-foreground ml-auto">{club.area}</span>
-                        </label>
-                      ))}
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={handleCreate} disabled={createPlan.isPending} className="gradient-secondary text-secondary-foreground flex-1">
-                          {createPlan.isPending ? 'Creating...' : 'Create Plan'}
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => setCreating(false)} className="border-border/50 text-muted-foreground">Cancel</Button>
-                      </div>
-                    </motion.div>
-                  )}
-                  {(favoriteClubs as any[])?.map(club => (
-                    <Link key={club.id} to={`/club/${club.id}`}>
-                      <div className="glass rounded-xl p-4 flex items-center gap-3 hover:border-primary/30 transition-all">
-                        <img src={club.image_url || '/placeholder.svg'} alt={club.name} className="w-14 h-14 rounded-lg object-cover" />
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-display font-semibold text-foreground truncate">{club.name}</h3>
-                          <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="w-3 h-3" />{club.area}</p>
-                        </div>
-                        <Heart className="w-4 h-4 text-secondary fill-secondary" />
-                      </div>
-                    </Link>
-                  ))}
-                </>
-              )}
-            </div>
-          )}
-
-          {tab === 'plans' && (
-            <div className="space-y-4">
-              {plansLoading ? (
-                Array.from({ length: 2 }).map((_, i) => <div key={i} className="glass rounded-xl h-32 animate-pulse" />)
-              ) : plans?.length === 0 ? (
-                <div className="text-center py-12">
-                  <PartyPopper className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-muted-foreground">No plans yet. Save some clubs first, then create a plan!</p>
-                </div>
-              ) : (
-                plans?.map(plan => (
-                  <PlanCard
-                    key={plan.id}
-                    plan={plan}
-                    onDelete={() => deletePlan.mutateAsync(plan.id)}
-                    onReorder={(ids) => updatePlanItems.mutateAsync({ planId: plan.id, clubIds: ids })}
-                  />
-                ))
-              )}
-            </div>
-          )}
         </motion.div>
       </main>
     </div>
   );
 };
 
-interface PlanCardProps {
-  plan: any;
-  onDelete: () => void;
-  onReorder: (ids: string[]) => void;
+interface SavedSpotCardProps {
+  club: Club;
+  onRemove: () => void;
+  removing: boolean;
 }
 
-const PlanCard = ({ plan, onDelete, onReorder }: PlanCardProps) => {
-  const items = (plan.night_plan_items || [])
-    .sort((a: any, b: any) => a.position - b.position);
-  const [orderedIds, setOrderedIds] = useState<string[]>(items.map((i: any) => i.club_id));
-
-  const handleReorder = (newOrder: string[]) => {
-    setOrderedIds(newOrder);
-    onReorder(newOrder);
-  };
+const SavedSpotCard = ({ club, onRemove, removing }: SavedSpotCardProps) => {
+  const [imageFailed, setImageFailed] = useState(!club.image_url);
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-xl p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="font-display font-bold text-foreground">{plan.title}</h3>
-        <Button size="icon" variant="ghost" onClick={onDelete} className="h-8 w-8 text-muted-foreground hover:text-destructive">
-          <Trash2 className="w-4 h-4" />
-        </Button>
+    <motion.article
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-slate-950/80 p-4 shadow-lg backdrop-blur-xl transition-all hover:border-cyan-500/40"
+    >
+      <Link to={`/club/${club.id}`} className="flex min-w-0 flex-1 items-center gap-4">
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/15 bg-slate-900">
+          {!imageFailed && club.image_url ? (
+            <img
+              src={club.image_url}
+              alt={club.name}
+              className="h-full w-full object-cover"
+              loading="lazy"
+              onError={() => setImageFailed(true)}
+            />
+          ) : (
+            <MapPin aria-hidden="true" className="h-7 w-7 text-cyan-400/70" />
+          )}
+        </div>
+        <div className="min-w-0">
+          <h2 className="truncate text-base font-bold text-white">{club.name}</h2>
+          <p className="mt-1 flex items-center gap-1 truncate text-xs text-slate-400">
+            <MapPin className="h-3.5 w-3.5 shrink-0 text-cyan-400" />
+            {club.area || club.address || 'Location unavailable'}
+          </p>
+        </div>
+      </Link>
+
+      <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+        <button
+          type="button"
+          aria-label={`Remove ${club.name} from saved spots`}
+          onClick={onRemove}
+          disabled={removing}
+          className="cursor-pointer p-2 text-[#D946EF] drop-shadow-[0_0_8px_rgba(217,70,239,0.6)] transition-transform hover:scale-110 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Heart className="h-5 w-5 fill-current" />
+        </button>
+        <Link
+          to={`/club/${club.id}`}
+          className="flex items-center gap-1 rounded-full border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition-colors hover:border-cyan-400/40 hover:bg-cyan-500/10"
+        >
+          <span className="hidden sm:inline">View Spot</span>
+          <span className="sm:hidden">View</span>
+          <ArrowUpRight className="h-3.5 w-3.5" />
+        </Link>
       </div>
-
-      <Reorder.Group axis="y" values={orderedIds} onReorder={handleReorder} className="space-y-2">
-        {orderedIds.map((clubId, idx) => {
-          const item = items.find((i: any) => i.club_id === clubId);
-          const club = item?.clubs;
-          if (!club) return null;
-          return (
-            <Reorder.Item key={clubId} value={clubId}>
-              <div className="flex items-center gap-3 p-2 rounded-lg bg-muted/30 cursor-grab active:cursor-grabbing">
-                <GripVertical className="w-4 h-4 text-muted-foreground/50 shrink-0" />
-                <span className="text-xs font-bold text-primary w-5">{idx + 1}</span>
-                <img src={club.image_url || '/placeholder.svg'} alt={club.name} className="w-10 h-10 rounded-lg object-cover" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-foreground truncate">{club.name}</p>
-                  <p className="text-xs text-muted-foreground">{club.area}</p>
-                </div>
-              </div>
-            </Reorder.Item>
-          );
-        })}
-      </Reorder.Group>
-
-      <p className="text-xs text-muted-foreground text-center">Drag to reorder your night</p>
-    </motion.div>
+    </motion.article>
   );
 };
 

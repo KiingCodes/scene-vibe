@@ -2,7 +2,6 @@ import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   User,
-  Crown,
   Flame,
   Star,
   MessageCircle,
@@ -36,8 +35,23 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+import Animated3DEmoji, {
+  type Animated3DEmojiName,
+} from "@/components/ui/Animated3DEmoji";
 
 const VERIFIED_LEVEL = 8; // VIP level = auto-verified
+const BADGE_EMOJIS: Record<string, Animated3DEmojiName> = {
+  first_vibe: "fire",
+  vibe_master: "lightning",
+  reviewer: "microphone",
+  dj_rater: "headphones",
+  explorer: "map",
+  spot_suggester: "lightbulb",
+  regular: "crown",
+  social: "butterfly",
+  night_owl: "owl",
+  top_10: "trophy",
+};
 
 const useProfileStats = () => {
   const { user } = useAuth();
@@ -218,25 +232,29 @@ const ProfilePage = () => {
       label: "Vibes",
       value: stats?.vibes || 0,
       icon: Flame,
-      color: "text-primary",
+      color: "text-cyan-300",
+      tile: "border-cyan-400/30 bg-cyan-500/10 shadow-[0_0_16px_rgba(6,182,212,0.12)]",
     },
     {
       label: "Reviews",
       value: stats?.reviews || 0,
       icon: Star,
-      color: "text-secondary",
+      color: "text-fuchsia-300",
+      tile: "border-fuchsia-400/30 bg-fuchsia-500/10 shadow-[0_0_16px_rgba(217,70,239,0.12)]",
     },
     {
       label: "Messages",
       value: stats?.messages || 0,
       icon: MessageCircle,
-      color: "text-accent",
+      color: "text-purple-300",
+      tile: "border-purple-400/30 bg-purple-500/10 shadow-[0_0_16px_rgba(168,85,247,0.12)]",
     },
     {
       label: "Saved",
       value: stats?.favorites || 0,
       icon: Heart,
-      color: "text-destructive",
+      color: "text-red-300",
+      tile: "border-red-400/30 bg-red-500/10 shadow-[0_0_16px_rgba(239,68,68,0.12)]",
     },
   ];
 
@@ -248,7 +266,7 @@ const ProfilePage = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass relative rounded-2xl p-6 mb-6 text-center"
+          className="glass relative mb-6 rounded-2xl border border-white/10 bg-slate-900/70 p-6 text-center backdrop-blur-2xl"
         >
           <Link
             to="/settings"
@@ -261,7 +279,7 @@ const ProfilePage = () => {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
-            className={`relative w-24 h-24 mx-auto mb-4 ${isVerified ? "ring-2 ring-primary ring-offset-2 ring-offset-background rounded-full" : ""}`}
+            className="relative mx-auto mb-4 h-24 w-24 rounded-full ring-2 ring-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.3)]"
           >
             <Avatar className="w-24 h-24">
               <AvatarImage
@@ -287,12 +305,12 @@ const ProfilePage = () => {
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadingAvatar}
               aria-label="Change profile photo"
-              className="absolute bottom-0 right-0 w-8 h-8 rounded-full gradient-primary flex items-center justify-center border-2 border-background shadow-lg hover:scale-110 transition-transform"
+              className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white/10 bg-slate-950/90 shadow-[0_0_12px_rgba(6,182,212,0.25)] backdrop-blur-xl transition-transform hover:scale-110"
             >
               {uploadingAvatar ? (
-                <Loader2 className="w-4 h-4 text-primary-foreground animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin text-cyan-300" />
               ) : (
-                <Camera className="w-4 h-4 text-primary-foreground" />
+                <Camera className="h-4 w-4 text-cyan-300" />
               )}
             </button>
           </motion.div>
@@ -325,16 +343,22 @@ const ProfilePage = () => {
               </div>
             ) : (
               <>
-                <h1 className="font-display font-bold text-2xl text-foreground">
+                <h1 className="font-display text-2xl font-bold text-white">
                   {username}
                 </h1>
-                {isVerified && <CheckCircle className="w-5 h-5 text-primary" />}
+                {isVerified && (
+                  <CheckCircle
+                    aria-label="Verified"
+                    className="h-5 w-5 text-cyan-300"
+                  />
+                )}
                 <button
                   onClick={() => {
                     setNewUsername(username);
                     setEditingUsername(true);
                   }}
-                  className="text-muted-foreground hover:text-foreground"
+                  aria-label="Edit username"
+                  className="text-slate-400 transition-colors hover:text-cyan-300"
                 >
                   <Edit3 className="w-4 h-4" />
                 </button>
@@ -343,35 +367,35 @@ const ProfilePage = () => {
           </div>
           <p className="text-muted-foreground text-sm">{user.email}</p>
           {isVerified && (
-            <span className="inline-flex items-center gap-1 text-xs text-primary mt-1">
-              <Shield className="w-3 h-3" /> Verified Profile
+            <span className="mt-1 inline-flex items-center gap-1 text-xs text-cyan-300">
+              <Shield className="h-3 w-3" /> Verified Profile
             </span>
           )}
 
           {/* Followers / Following */}
           <div className="flex items-center justify-center gap-6 mt-3">
             <div className="text-center">
-              <p className="text-lg font-bold text-foreground">
+              <p className="text-lg font-bold text-white">
                 {followCounts?.followers ?? 0}
               </p>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              <p className="text-[10px] uppercase tracking-wider text-slate-400">
                 Followers
               </p>
             </div>
-            <div className="w-px h-8 bg-border/40" />
+            <div className="h-8 w-px bg-white/10" />
             <div className="text-center">
-              <p className="text-lg font-bold text-foreground">
+              <p className="text-lg font-bold text-white">
                 {followCounts?.following ?? 0}
               </p>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              <p className="text-[10px] uppercase tracking-wider text-slate-400">
                 Following
               </p>
             </div>
           </div>
 
           <div className="flex items-center justify-center gap-2 mt-3">
-            <Crown className="w-5 h-5 text-yellow-400" />
-            <span className="font-semibold text-foreground">
+            <Animated3DEmoji name="crown" label="VIP crown" />
+            <span className="font-semibold text-white">
               Lv.{levelInfo.level} — {levelInfo.title}
             </span>
           </div>
@@ -383,12 +407,12 @@ const ProfilePage = () => {
                 {levelInfo.next === Infinity ? "MAX" : `${levelInfo.next} pts`}
               </span>
             </div>
-            <div className="h-2.5 bg-muted/30 rounded-full overflow-hidden">
+            <div className="h-2.5 overflow-hidden rounded-full bg-slate-950/80">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${progressPct}%` }}
                 transition={{ duration: 1.2, ease: "easeOut" }}
-                className="h-full gradient-primary rounded-full"
+                className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 shadow-[0_0_12px_rgba(6,182,212,0.6)]"
               />
             </div>
           </div>
@@ -412,11 +436,15 @@ const ProfilePage = () => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 + i * 0.05 }}
-              className="glass rounded-xl p-4 text-center"
+              className="rounded-2xl border border-white/10 bg-slate-900/70 p-4 text-center backdrop-blur-xl transition-all hover:border-cyan-500/30"
             >
-              <s.icon className={`w-5 h-5 ${s.color} mx-auto mb-1`} />
-              <p className="text-2xl font-bold text-foreground">{s.value}</p>
-              <p className="text-xs text-muted-foreground">{s.label}</p>
+              <span
+                className={`mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-xl border ${s.tile}`}
+              >
+                <s.icon className={`h-5 w-5 ${s.color}`} />
+              </span>
+              <p className="text-2xl font-bold text-white">{s.value}</p>
+              <p className="text-xs text-slate-400">{s.label}</p>
             </motion.div>
           ))}
         </motion.div>
@@ -426,9 +454,9 @@ const ProfilePage = () => {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className="glass rounded-xl p-5 mb-6"
+          className="glass mb-6 rounded-2xl border border-white/10 bg-slate-900/70 p-5 backdrop-blur-2xl"
         >
-          <h2 className="font-display font-semibold text-foreground mb-3 flex items-center gap-2">
+          <h2 className="font-display mb-3 flex items-center gap-2 font-semibold text-white">
             <Trophy className="w-5 h-5 text-yellow-400" /> Badges (
             {badges?.length || 0}/{BADGE_DEFINITIONS.length})
           </h2>
@@ -439,16 +467,19 @@ const ProfilePage = () => {
                 <motion.div
                   key={badge.type}
                   whileHover={{ scale: 1.03 }}
-                  className={`flex items-center gap-2 rounded-lg p-2.5 text-sm transition-all ${earned ? "bg-primary/10 border border-primary/30" : "bg-muted/10 border border-border/10 opacity-40"}`}
+                  className={`flex items-center gap-2 rounded-xl border p-2.5 text-sm transition-all ${earned ? (badge.type === "regular" ? "border-fuchsia-400/40 bg-fuchsia-500/10 shadow-[0_0_15px_rgba(217,70,239,0.16)]" : "border-cyan-500/40 bg-cyan-500/10 shadow-[0_0_15px_rgba(6,182,212,0.16)]") : "border-white/5 bg-white/[0.03] opacity-40 grayscale"}`}
                 >
-                  <span className="text-xl">{badge.emoji}</span>
+                  <Animated3DEmoji
+                    name={BADGE_EMOJIS[badge.type]}
+                    label={badge.name}
+                  />
                   <div className="min-w-0">
                     <p
-                      className={`font-semibold text-xs truncate ${earned ? "text-foreground" : "text-muted-foreground"}`}
+                      className={`truncate text-xs font-semibold ${earned ? "text-white" : "text-slate-400"}`}
                     >
                       {badge.name}
                     </p>
-                    <p className="text-[10px] text-muted-foreground truncate">
+                    <p className="truncate text-[10px] text-slate-400">
                       {badge.description}
                     </p>
                   </div>
@@ -463,10 +494,10 @@ const ProfilePage = () => {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="glass rounded-xl p-5 mb-6"
+          className="glass mb-6 rounded-2xl border border-white/10 bg-slate-900/70 p-5 backdrop-blur-2xl"
         >
-          <h2 className="font-display font-semibold text-foreground mb-3 flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-primary" /> Recent Activity
+          <h2 className="font-display mb-3 flex items-center gap-2 font-semibold text-white">
+            <Calendar className="h-5 w-5 text-cyan-300" /> Recent Activity
           </h2>
           {recentActivity && recentActivity.length > 0 ? (
             <div className="space-y-2">
@@ -474,18 +505,18 @@ const ProfilePage = () => {
                 <Link
                   key={i}
                   to={`/club/${a.club_id}`}
-                  className="flex items-center gap-3 bg-muted/20 hover:bg-muted/40 rounded-lg px-3 py-2 transition-all"
+                  className="flex items-center gap-3 rounded-xl border border-white/5 bg-slate-950/60 px-3 py-2 transition-all hover:border-cyan-500/30 hover:bg-slate-950/80"
                 >
-                  <Flame className="w-4 h-4 text-primary shrink-0" />
+                  <MapPin className="h-4 w-4 shrink-0 text-cyan-300 drop-shadow-[0_0_8px_rgba(6,182,212,0.5)]" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
+                    <p className="truncate text-sm font-medium text-white">
                       Vibed {a.club?.name || "Unknown"}
                     </p>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <p className="flex items-center gap-1 text-xs text-slate-400">
                       <MapPin className="w-3 h-3" /> {a.club?.area || ""}
                     </p>
                   </div>
-                  <span className="text-xs text-muted-foreground shrink-0">
+                  <span className="shrink-0 text-xs text-slate-400">
                     {formatDistanceToNow(new Date(a.created_at), {
                       addSuffix: true,
                     })}
@@ -503,7 +534,7 @@ const ProfilePage = () => {
               <Button
                 variant="outline"
                 size="sm"
-                className="border-border/50 text-muted-foreground"
+                className="rounded-xl border border-white/10 bg-slate-900/80 text-slate-300 transition-colors hover:border-cyan-500/40 hover:bg-slate-900"
               >
                 View Full History
               </Button>
@@ -522,7 +553,7 @@ const ProfilePage = () => {
             <Button
               variant="outline"
               size="sm"
-              className="gap-2 border-border/50 text-muted-foreground"
+              className="gap-2 rounded-xl border border-white/10 bg-slate-900/80 text-slate-300 transition-colors hover:border-cyan-500/40 hover:bg-slate-900"
             >
               <Trophy className="w-4 h-4" /> Leaderboard
             </Button>

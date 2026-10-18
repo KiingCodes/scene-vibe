@@ -189,24 +189,30 @@ const StatCard = ({
   tone = "primary",
   loading,
 }: StatCardProps) => (
-  <div className="glass rounded-2xl p-4 border border-border/40 relative overflow-hidden">
-    <div
-      className={`absolute -top-8 -right-8 w-24 h-24 rounded-full blur-2xl opacity-30 bg-${tone}`}
-    />
+  <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-slate-900/70 p-5 backdrop-blur-2xl transition-all hover:border-cyan-500/30">
+    <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-cyan-500/15 opacity-60 blur-2xl transition-opacity group-hover:opacity-90" />
     <div className="flex items-center justify-between mb-2">
-      <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+      <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
         {label}
       </span>
-      <Icon className={`w-4 h-4 text-${tone}`} />
+      <div className={`flex h-9 w-9 items-center justify-center rounded-xl border ${
+        tone === "destructive"
+          ? "border-fuchsia-400/30 bg-fuchsia-500/10 text-fuchsia-300 shadow-[0_0_18px_rgba(217,70,239,0.16)]"
+          : tone === "secondary"
+            ? "border-cyan-400/30 bg-cyan-500/10 text-cyan-300 shadow-[0_0_18px_rgba(6,182,212,0.16)]"
+            : "border-cyan-400/30 bg-cyan-500/10 text-cyan-300 shadow-[0_0_18px_rgba(6,182,212,0.16)]"
+      }`}>
+        <Icon className="h-4 w-4" />
+      </div>
     </div>
     {loading ? (
-      <Skeleton className="h-7 w-16" />
+      <Skeleton className="h-9 w-20 bg-white/10" />
     ) : (
-      <div className="font-display font-bold text-2xl text-foreground">
+      <div className="text-3xl font-extrabold text-white">
         {typeof value === "number" ? value.toLocaleString() : value}
       </div>
     )}
-    {sub && <p className="text-[10px] text-muted-foreground mt-1">{sub}</p>}
+    {sub && <p className="mt-1 text-[10px] text-slate-400">{sub}</p>}
   </div>
 );
 
@@ -341,34 +347,34 @@ const OverviewTab = () => {
             variant="outline"
             onClick={runSync}
             disabled={sync.isPending}
-            className="ml-auto h-7 gap-1.5 text-[10px]"
+            className="group ml-auto h-8 gap-1.5 border-cyan-400/30 bg-cyan-500/10 text-[10px] text-cyan-200 transition-all hover:border-cyan-300/50 hover:bg-cyan-500/15 hover:shadow-[0_0_15px_rgba(6,182,212,0.3)]"
           >
             <RefreshCw
-              className={`w-3 h-3 ${sync.isPending ? "animate-spin" : ""}`}
+              className={`w-3 h-3 transition-transform group-hover:rotate-180 ${sync.isPending ? "animate-spin" : ""}`}
             />{" "}
             Sync venues now
           </Button>
         </h2>
-        <div className="glass rounded-2xl divide-y divide-border/30 max-h-96 overflow-y-auto">
+        <div className="max-h-96 space-y-2 overflow-y-auto rounded-2xl border border-white/10 bg-slate-950/50 p-2 backdrop-blur-2xl">
           {!feed?.length ? (
-            <div className="p-6 text-center text-xs text-muted-foreground">
+            <div className="rounded-xl border border-white/5 bg-slate-950/60 p-6 text-center text-xs text-slate-400">
               No recent activity
             </div>
           ) : (
             feed.map((e: ActivityEvent, i) => (
-              <div key={i} className="px-3 py-2 flex items-center gap-3 group">
-                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+              <div key={i} className="group flex items-center gap-3 rounded-xl border border-white/5 bg-slate-950/60 px-3 py-2 transition-all hover:border-white/20">
+                <div className="h-2 w-2 shrink-0 rounded-full bg-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.8)] animate-pulse" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-foreground truncate">
+                  <p className="truncate text-xs font-medium text-slate-100">
                     {e.label}
                   </p>
                   {e.sub && (
-                    <p className="text-[10px] text-muted-foreground truncate">
+                    <p className="truncate text-[10px] text-slate-400">
                       {e.sub}
                     </p>
                   )}
                 </div>
-                <span className="text-[10px] text-muted-foreground shrink-0">
+                <span className="shrink-0 text-[10px] text-slate-500">
                   {formatDistanceToNow(new Date(e.at), { addSuffix: true })}
                 </span>
                 {ACTIVITY_TABLE_MAP[e.kind ?? ""] && (
@@ -378,7 +384,7 @@ const OverviewTab = () => {
                     onClick={() =>
                       removeItem(e.kind ?? "", e.id ?? "", e.label)
                     }
-                    className="h-6 w-6 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                    className="h-8 w-8 rounded-lg p-2 text-red-400/70 transition-all hover:bg-red-500/10 hover:text-red-400"
                   >
                     <Trash2 className="w-3 h-3" />
                   </Button>
@@ -412,16 +418,20 @@ const ChatModerationPanel = () => {
       <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-bold mb-3 flex items-center gap-2">
         <MessageSquare className="w-3.5 h-3.5" /> Latest Chat Messages
       </h2>
-      <div className="glass rounded-2xl divide-y divide-border/30 max-h-80 overflow-y-auto">
+      <div className="max-h-80 space-y-2 overflow-y-auto rounded-2xl border border-cyan-500/15 bg-slate-950/70 p-2 shadow-[0_0_24px_rgba(6,182,212,0.06)] backdrop-blur-2xl">
         {isLoading ? (
           <Skeleton className="h-24" />
         ) : !msgs?.length ? (
-          <div className="p-6 text-center text-xs text-muted-foreground">
-            No messages
+          <div className="rounded-xl border border-white/5 bg-slate-950/60 p-8 text-center">
+            <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/10 text-cyan-300">
+              <MessageSquare className="h-5 w-5" />
+            </div>
+            <p className="text-xs font-medium text-slate-300">No messages yet</p>
+            <p className="mt-1 text-[10px] text-slate-500">New chat activity will appear here</p>
           </div>
         ) : (
           msgs.map((m: MessageRow) => (
-            <div key={m.id} className="px-3 py-2 flex items-center gap-3">
+            <div key={m.id} className="flex items-center gap-3 rounded-xl border border-white/5 bg-slate-950/60 px-3 py-2 transition-all hover:border-white/20">
               <Badge variant="outline" className="text-[9px] shrink-0">
                 {m.club_id ? "CLUB" : "GLOBAL"}
               </Badge>
@@ -445,7 +455,7 @@ const ChatModerationPanel = () => {
                 size="icon"
                 variant="ghost"
                 onClick={() => remove(m.id)}
-                className="h-6 w-6 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                className="h-8 w-8 rounded-lg p-2 text-red-400/70 transition-all hover:bg-red-500/10 hover:text-red-400"
               >
                 <Trash2 className="w-3 h-3" />
               </Button>
@@ -468,19 +478,21 @@ const ActionCard = ({
   count?: number;
   tone: string;
 }) => (
-  <div className="glass rounded-2xl p-4 border border-border/40 flex items-center gap-3">
-    <div
-      className={`w-10 h-10 rounded-xl bg-${tone}/15 text-${tone} flex items-center justify-center`}
-    >
+  <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/70 p-5 backdrop-blur-2xl transition-all hover:border-cyan-500/30">
+    <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${
+      tone === "destructive"
+        ? "border-fuchsia-400/30 bg-fuchsia-500/10 text-fuchsia-300"
+        : "border-cyan-400/30 bg-cyan-500/10 text-cyan-300"
+    }`}>
       <Icon className="w-5 h-5" />
     </div>
     <div className="flex-1">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="font-display font-bold text-lg text-foreground">{count}</p>
+      <p className="text-xs text-slate-400">{label}</p>
+      <p className="text-2xl font-extrabold text-white">{count}</p>
     </div>
     {count > 0 && (
-      <Badge className="bg-destructive text-destructive-foreground text-[10px]">
-        action
+      <Badge className="animate-pulse border border-rose-400/30 bg-rose-500/15 text-[10px] font-bold text-rose-300">
+        {count} pending
       </Badge>
     )}
   </div>
@@ -1341,12 +1353,12 @@ const AdminPage = () => {
               <Shield className="w-6 h-6 text-primary" />
             </div>
             <div className="flex-1">
-              <h1 className="font-display font-bold text-2xl text-foreground">
+              <h1 className="bg-gradient-to-r from-white via-cyan-200 to-cyan-400 bg-clip-text text-2xl font-black text-transparent">
                 SCENE Command Center
               </h1>
-              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />{" "}
-                Operational · live data
+              <p className="flex items-center gap-1.5 text-xs text-slate-400">
+                <span className="text-emerald-300 drop-shadow-[0_0_8px_rgba(52,211,153,0.9)] animate-pulse">●</span>
+                <span>Operational · Live Data</span>
               </p>
             </div>
           </div>
@@ -1356,7 +1368,7 @@ const AdminPage = () => {
             <Button
               asChild
               size="sm"
-              className="rounded-full bg-primary text-primary-foreground"
+              className="rounded-full border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 shadow-[0_0_18px_rgba(6,182,212,0.12)] hover:bg-cyan-500/15"
             >
               <Link to="/admin/super">
                 <Crown className="w-3.5 h-3.5 mr-1.5" /> Super Admin
@@ -1366,7 +1378,7 @@ const AdminPage = () => {
               asChild
               size="sm"
               variant="outline"
-              className="rounded-full"
+              className="rounded-full border-white/10 bg-slate-900/60 text-slate-300 backdrop-blur-xl transition-all hover:border-cyan-500/30 hover:bg-cyan-500/5 hover:text-cyan-200"
             >
               <Link to="/admin/sponsorships">
                 <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Sponsorships
@@ -1376,7 +1388,7 @@ const AdminPage = () => {
               asChild
               size="sm"
               variant="outline"
-              className="rounded-full"
+              className="rounded-full border-white/10 bg-slate-900/60 text-slate-300 backdrop-blur-xl transition-all hover:border-cyan-500/30 hover:bg-cyan-500/5 hover:text-cyan-200"
             >
               <Link to="/business/billing">
                 <Building2 className="w-3.5 h-3.5 mr-1.5" /> Venue Billing
@@ -1385,52 +1397,52 @@ const AdminPage = () => {
           </div>
 
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="w-full overflow-x-auto flex justify-start gap-1 h-auto bg-card/40 p-1 rounded-full">
+            <TabsList className="scrollbar-hide flex h-auto w-full justify-start gap-1 overflow-x-auto rounded-2xl border border-white/10 bg-slate-950/60 p-1.5 backdrop-blur-xl">
               <TabsTrigger
                 value="overview"
-                className="rounded-full text-xs gap-1.5"
+                className="gap-1.5 rounded-xl text-xs text-slate-400 transition-all data-[state=active]:bg-cyan-500/10 data-[state=active]:text-cyan-200 data-[state=active]:shadow-[inset_0_-2px_0_0_rgba(34,211,238,0.9),0_0_18px_rgba(6,182,212,0.08)] hover:text-slate-100"
               >
                 <Activity className="w-3.5 h-3.5" /> Overview
               </TabsTrigger>
               <TabsTrigger
                 value="users"
-                className="rounded-full text-xs gap-1.5"
+                className="gap-1.5 rounded-xl text-xs text-slate-400 transition-all data-[state=active]:bg-cyan-500/10 data-[state=active]:text-cyan-200 data-[state=active]:shadow-[inset_0_-2px_0_0_rgba(34,211,238,0.9),0_0_18px_rgba(6,182,212,0.08)] hover:text-slate-100"
               >
                 <Users className="w-3.5 h-3.5" /> Users
               </TabsTrigger>
               <TabsTrigger
                 value="checkins"
-                className="rounded-full text-xs gap-1.5"
+                className="gap-1.5 rounded-xl text-xs text-slate-400 transition-all data-[state=active]:bg-cyan-500/10 data-[state=active]:text-cyan-200 data-[state=active]:shadow-[inset_0_-2px_0_0_rgba(34,211,238,0.9),0_0_18px_rgba(6,182,212,0.08)] hover:text-slate-100"
               >
                 <UserCheck className="w-3.5 h-3.5" /> Check-ins
               </TabsTrigger>
               <TabsTrigger
                 value="moderation"
-                className="rounded-full text-xs gap-1.5"
+                className="gap-1.5 rounded-xl text-xs text-slate-400 transition-all data-[state=active]:bg-cyan-500/10 data-[state=active]:text-cyan-200 data-[state=active]:shadow-[inset_0_-2px_0_0_rgba(34,211,238,0.9),0_0_18px_rgba(6,182,212,0.08)] hover:text-slate-100"
               >
                 <Shield className="w-3.5 h-3.5" /> Moderation
               </TabsTrigger>
               <TabsTrigger
                 value="claims"
-                className="rounded-full text-xs gap-1.5"
+                className="gap-1.5 rounded-xl text-xs text-slate-400 transition-all data-[state=active]:bg-cyan-500/10 data-[state=active]:text-cyan-200 data-[state=active]:shadow-[inset_0_-2px_0_0_rgba(34,211,238,0.9),0_0_18px_rgba(6,182,212,0.08)] hover:text-slate-100"
               >
                 <Building2 className="w-3.5 h-3.5" /> Venue Claims
               </TabsTrigger>
               <TabsTrigger
                 value="analytics"
-                className="rounded-full text-xs gap-1.5"
+                className="gap-1.5 rounded-xl text-xs text-slate-400 transition-all data-[state=active]:bg-cyan-500/10 data-[state=active]:text-cyan-200 data-[state=active]:shadow-[inset_0_-2px_0_0_rgba(34,211,238,0.9),0_0_18px_rgba(6,182,212,0.08)] hover:text-slate-100"
               >
                 <BarChart3 className="w-3.5 h-3.5" /> Analytics
               </TabsTrigger>
               <TabsTrigger
                 value="audit"
-                className="rounded-full text-xs gap-1.5"
+                className="gap-1.5 rounded-xl text-xs text-slate-400 transition-all data-[state=active]:bg-cyan-500/10 data-[state=active]:text-cyan-200 data-[state=active]:shadow-[inset_0_-2px_0_0_rgba(34,211,238,0.9),0_0_18px_rgba(6,182,212,0.08)] hover:text-slate-100"
               >
                 <History className="w-3.5 h-3.5" /> Audit
               </TabsTrigger>
               <TabsTrigger
                 value="system"
-                className="rounded-full text-xs gap-1.5"
+                className="gap-1.5 rounded-xl text-xs text-slate-400 transition-all data-[state=active]:bg-cyan-500/10 data-[state=active]:text-cyan-200 data-[state=active]:shadow-[inset_0_-2px_0_0_rgba(34,211,238,0.9),0_0_18px_rgba(6,182,212,0.08)] hover:text-slate-100"
               >
                 <Server className="w-3.5 h-3.5" /> System
               </TabsTrigger>

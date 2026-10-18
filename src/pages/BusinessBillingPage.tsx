@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Crown, CheckCircle2, Sparkles, Zap } from "lucide-react";
+import { ArrowLeft, Crown, Check, Sparkles, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -60,8 +61,11 @@ export default function BusinessBillingPage() {
   return (
     <div className="min-h-screen bg-zinc-950 pb-28 text-zinc-100">
       <div className="mx-auto max-w-5xl px-4 pt-6">
+        <Link to="/admin" className="mb-4 inline-flex items-center gap-2 rounded-xl border border-white/10 bg-slate-900/60 px-3 py-2 text-sm font-medium text-slate-300 backdrop-blur-xl transition-all hover:border-cyan-400/30 hover:bg-cyan-500/10 hover:text-cyan-200">
+          <ArrowLeft className="h-4 w-4" /> Back
+        </Link>
         <div
-          className={`${glass} flex flex-wrap items-center justify-between gap-3 p-5`}
+          className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-slate-900/80 p-5 shadow-[0_0_30px_rgba(6,182,212,0.06)] backdrop-blur-2xl"
         >
           <div>
             <div className="text-xs uppercase tracking-widest text-zinc-500">
@@ -86,10 +90,10 @@ export default function BusinessBillingPage() {
             variant="outline"
             className={
               sub?.status === "active"
-                ? "border-[#10B981]/40 text-[#10B981]"
+                ? "border-[#10B981]/40 bg-emerald-500/10 text-emerald-300"
                 : sub?.status === "suspended"
-                  ? "border-[#EC4899]/40 text-[#EC4899]"
-                  : "border-[#F59E0B]/40 text-[#F59E0B]"
+                  ? "border-[#EC4899]/40 bg-pink-500/10 text-pink-300"
+                  : "border-amber-400/30 bg-amber-500/10 text-amber-300"
             }
           >
             {sub?.status ?? "pending"}
@@ -105,7 +109,13 @@ export default function BusinessBillingPage() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.06 }}
-                className={`${glass} relative flex flex-col p-5 ${p.popular ? "border-[#8B5CF6]/60 shadow-[0_0_40px_-12px_#8B5CF6]" : ""}`}
+                className={`relative flex flex-col rounded-2xl p-6 backdrop-blur-2xl ${
+                  p.popular
+                    ? "border-2 border-purple-500/50 bg-slate-950/90 shadow-[0_0_30px_rgba(168,85,247,0.25)]"
+                    : p.id === "basic"
+                      ? "border border-white/10 bg-slate-900/60"
+                      : "border border-white/10 bg-slate-900/80"
+                }`}
               >
                 {p.popular && (
                   <span className="absolute -top-3 left-5 rounded-full bg-[#8B5CF6] px-3 py-0.5 text-[11px] font-semibold text-white">
@@ -128,7 +138,9 @@ export default function BusinessBillingPage() {
                 <ul className="mt-4 flex-1 space-y-2 text-sm">
                   {p.features.map((f) => (
                     <li key={f} className="flex gap-2 text-zinc-300">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#06B6D4]" />
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-500/10 text-cyan-400">
+                        <Check className="h-3 w-3" />
+                      </span>
                       {f}
                     </li>
                   ))}
@@ -136,7 +148,13 @@ export default function BusinessBillingPage() {
                 <Button
                   disabled={isCurrent}
                   onClick={() => setSelected(p)}
-                  className={`mt-5 w-full ${p.popular ? "bg-[#8B5CF6] hover:bg-[#8B5CF6]/90" : "bg-white/10 hover:bg-white/20"} text-white`}
+                  className={`mt-5 w-full ${
+                    isCurrent
+                      ? "border border-white/10 bg-white/5 text-slate-400 opacity-70"
+                      : p.popular
+                        ? "rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 py-3 font-bold text-white shadow-[0_0_20px_rgba(147,51,234,0.4)] hover:opacity-90"
+                        : "border border-cyan-400/20 bg-white/10 text-white hover:bg-white/20"
+                  }`}
                 >
                   {isCurrent ? "Current Plan" : p.cta}
                 </Button>
@@ -172,7 +190,7 @@ export default function BusinessBillingPage() {
             <Button
               onClick={confirm}
               disabled={upsert.isPending}
-              className="bg-[#10B981] text-black hover:bg-[#10B981]/90"
+              className="bg-gradient-to-r from-purple-600 to-indigo-600 font-bold text-white shadow-[0_0_20px_rgba(147,51,234,0.3)] hover:opacity-90"
             >
               Continue to checkout
             </Button>

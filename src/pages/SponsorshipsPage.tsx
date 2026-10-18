@@ -1,17 +1,18 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, DollarSign, BarChart3, Ticket, Plus } from "lucide-react";
+import { ArrowLeft, Sparkles, DollarSign, BarChart3, Ticket, Plus, type LucideIcon } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import type { SponsorAssetType } from "@/components/business/types";
-import { useCampaigns, useCreateCampaign, useRedemptions } from "@/hooks/useBusinessAdmin";
+import { useCampaigns, useCreateCampaign, useRedemptions, type Campaign } from "@/hooks/useBusinessAdmin";
 
 const glass = "rounded-2xl border border-white/10 bg-zinc-950/80 backdrop-blur-2xl";
 const money = (c: number) => `R${(c / 100).toLocaleString("en-ZA", { maximumFractionDigits: 0 })}`;
@@ -27,6 +28,13 @@ const ASSET_TYPES: SponsorAssetType[] = [
   "Sponsored Push Alert",
 ];
 
+type RedemptionRow = {
+  id: string;
+  label: string;
+  venue_name?: string | null;
+  created_at: string;
+};
+
 export default function SponsorshipsPage() {
   const { data: campaigns = [], isLoading } = useCampaigns();
   const { data: redemptions = [] } = useRedemptions();
@@ -38,6 +46,7 @@ export default function SponsorshipsPage() {
   });
 
   const spent = campaigns.reduce((s, c) => s + c.spent_cents, 0);
+  const budget = campaigns.reduce((s, c) => s + c.budget_cents, 0);
 
   const create = async () => {
     if (!form.brand || !form.title) return toast.error("Brand and campaign title are required");
@@ -51,38 +60,54 @@ export default function SponsorshipsPage() {
         end_date: form.end || null,
         venues: form.venues ? form.venues.split(",").map((v) => v.trim()) : ["All venues"],
         status: "scheduled",
-      } as any);
+      } satisfies Partial<Campaign>);
       setOpen(false);
       toast.success("Campaign created");
-    } catch (e: any) {
-      toast.error(e.message ?? "Could not create campaign");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Could not create campaign");
     }
   };
 
-  const Stat = ({ icon: Icon, label, value, tone }: any) => (
-    <div className={`${glass} p-4`}>
-      <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-zinc-400">
-        <Icon className="h-4 w-4" style={{ color: tone }} />{label}
+  const Stat = ({ icon: Icon, label, value, tone }: {
+    icon: LucideIcon;
+    label: string;
+    value: string | number;
+    tone: string;
+  }) => (
+    <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 backdrop-blur-2xl">
+      <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-slate-400">
+        <span className="flex h-8 w-8 items-center justify-center rounded-xl border" style={{ color: tone, borderColor: `${tone}55`, backgroundColor: `${tone}18`, boxShadow: `0 0 18px ${tone}20` }}>
+          <Icon className="h-4 w-4" />
+        </span>
+        {label}
       </div>
-      <div className="mt-2 text-2xl font-bold" style={{ color: tone }}>{value}</div>
+      <div className="mt-2 text-2xl font-extrabold text-white">{value}</div>
     </div>
   );
 
   return (
     <div className="min-h-screen bg-zinc-950 pb-28 text-zinc-100">
       <div className="mx-auto max-w-6xl px-4 pt-6">
-        <div className="flex items-center justify-between gap-3">
-          <h1 className="flex items-center gap-2 text-2xl font-bold">
-            <Sparkles className="h-6 w-6 text-[#EC4899]" /> Brand Sponsorships
+        <Link to="/admin" className="mb-4 inline-flex items-center gap-2 rounded-xl border border-white/10 bg-slate-900/60 px-3 py-2 text-sm font-medium text-slate-300 backdrop-blur-xl transition-all hover:border-cyan-400/30 hover:bg-cyan-500/10 hover:text-cyan-200">
+          <ArrowLeft className="h-4 w-4" /> Back
+        </Link>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
+            Brand <span className="bg-gradient-to-r from-fuchsia-300 to-pink-500 bg-clip-text text-transparent">Sponsorships</span>
           </h1>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-[#EC4899] text-white hover:bg-[#EC4899]/90">
+              <Button className="bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-[0_0_20px_rgba(217,70,239,0.3)] transition-opacity hover:opacity-90">
                 <Plus className="mr-1.5 h-4 w-4" /> New Campaign
               </Button>
             </DialogTrigger>
             <DialogContent className="max-h-[85vh] overflow-y-auto border-white/10 bg-zinc-950/95 text-zinc-100 backdrop-blur-2xl">
-              <DialogHeader><DialogTitle>Campaign Builder</DialogTitle></DialogHeader>
+              <DialogHeader>
+                <DialogTitle>Campaign Builder</DialogTitle>
+                <DialogDescription className="text-zinc-400">
+                  Set up a sponsored activation and choose its budget, dates, and venues.
+                </DialogDescription>
+              </DialogHeader>
               <div className="space-y-3">
                 <div><Label>Brand name</Label><Input className="border-white/10 bg-white/5" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} /></div>
                 <div><Label>Campaign title</Label><Input className="border-white/10 bg-white/5" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
@@ -109,17 +134,17 @@ export default function SponsorshipsPage() {
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <Stat icon={Sparkles} label="Active campaigns" value={campaigns.filter((c) => c.status === "active").length} tone="#EC4899" />
-          <Stat icon={DollarSign} label="Spent / budget" value={money(spent)} tone="#10B981" />
+          <Stat icon={Sparkles} label="Active campaigns" value={campaigns.filter((c) => c.status === "active").length} tone="#D946EF" />
+          <Stat icon={DollarSign} label="Spent / budget" value={`${money(spent)} / ${money(budget)}`} tone="#10B981" />
           <Stat icon={BarChart3} label="Impressions" value={campaigns.reduce((s, c) => s + c.impressions, 0).toLocaleString()} tone="#06B6D4" />
-          <Stat icon={Ticket} label="Redemptions" value={campaigns.reduce((s, c) => s + c.redemptions, 0).toLocaleString()} tone="#F59E0B" />
+          <Stat icon={Ticket} label="Redemptions" value={campaigns.reduce((s, c) => s + c.redemptions, 0).toLocaleString()} tone="#F97316" />
         </div>
 
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           <div className="space-y-3">
             {isLoading && <div className={`${glass} p-6 text-center text-sm text-zinc-500`}>Loading campaigns…</div>}
             {!isLoading && campaigns.length === 0 && (
-              <div className={`${glass} p-8 text-center text-sm text-zinc-500`}>
+              <div className="rounded-2xl border border-white/5 bg-slate-950/60 p-8 text-center text-sm text-zinc-400">
                 No campaigns yet. Use “New Campaign” to launch your first brand activation.
               </div>
             )}
@@ -143,14 +168,14 @@ export default function SponsorshipsPage() {
             ))}
           </div>
 
-          <div className={`${glass} h-fit divide-y divide-white/5`}>
-            <div className="flex items-center gap-2 p-4 text-xs uppercase tracking-widest text-zinc-500">
+          <div className="h-fit divide-y divide-white/5 rounded-2xl border border-white/10 bg-slate-950/60 backdrop-blur-2xl">
+            <div className="flex items-center gap-2 p-4 text-xs uppercase tracking-widest text-zinc-400">
               <span className="h-2 w-2 animate-pulse rounded-full bg-[#10B981]" /> Live voucher redemptions
             </div>
             {redemptions.length === 0 && (
-              <div className="p-6 text-center text-sm text-zinc-500">No redemptions recorded yet.</div>
+              <div className="m-2 rounded-2xl border border-white/5 bg-slate-950/60 p-8 text-center text-sm text-zinc-400">No redemptions recorded yet.</div>
             )}
-            {redemptions.map((r: any) => (
+            {redemptions.map((r: RedemptionRow) => (
               <div key={r.id} className="flex items-center justify-between gap-3 p-4 text-sm">
                 <span className="text-zinc-300">{r.label}{r.venue_name ? ` at ${r.venue_name}` : ""}</span>
                 <span className="shrink-0 text-xs text-zinc-500">{ago(r.created_at)}</span>

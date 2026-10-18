@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { APP_VERSION } from '@/lib/version';
@@ -12,10 +13,58 @@ export type Notification = {
   title: string;
   body: string | null;
   link: string | null;
-  meta: any;
+  meta: Json;
   read: boolean;
   created_at: string;
   app_version?: string | null;
+  groupedIds?: string[];
+};
+
+const deduplicateNotifications = (notifications: Notification[]) => {
+  const groups = new Map<string, Notification[]>();
+  const getVersion = (notification: Notification) => {
+    const meta = notification.meta;
+    const metaVersion =
+      meta && typeof meta === 'object' && !Array.isArray(meta) ? meta.version : undefined;
+    return (
+      notification.app_version ??
+      (typeof metaVersion === 'string' ? metaVersion : undefined) ??
+      notification.title.match(/\bv?(\d+\.\d+\.\d+)\b/i)?.[1]
+    );
+  };
+
+  for (const notification of notifications) {
+    if (notification.type !== 'version_update') continue;
+    const version = getVersion(notification);
+    const identity = version || notification.title.trim().toLowerCase();
+    const key = `${notification.type}:${identity}`;
+    groups.set(key, [...(groups.get(key) ?? []), notification]);
+  }
+
+  const emitted = new Set<string>();
+  const result: Notification[] = [];
+
+  for (const notification of notifications) {
+    if (notification.type !== 'version_update') {
+      result.push(notification);
+      continue;
+    }
+
+    const version = getVersion(notification);
+    const identity = version || notification.title.trim().toLowerCase();
+    const key = `${notification.type}:${identity}`;
+    if (emitted.has(key)) continue;
+    emitted.add(key);
+
+    const duplicates = groups.get(key) ?? [notification];
+    result.push({
+      ...notification,
+      read: duplicates.every((duplicate) => duplicate.read),
+      groupedIds: duplicates.map((duplicate) => duplicate.id),
+    });
+  }
+
+  return result;
 };
 
 export const useNotifications = () => {
@@ -33,7 +82,7 @@ export const useNotifications = () => {
         .order('created_at', { ascending: false })
         .limit(50);
       if (error) throw error;
-      return (data || []) as Notification[];
+      return deduplicateNotifications((data || []) as Notification[]);
     },
     enabled: !!user,
   });
@@ -73,8 +122,12 @@ export const useMarkNotificationRead = () => {
   const { user } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('notifications').update({ read: true }).eq('id', id);
+    mutationFn: async (ids: string | string[]) => {
+      const notificationIds = Array.isArray(ids) ? ids : [ids];
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .in('id', notificationIds);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['notifications', user?.id] }),
@@ -102,8 +155,12 @@ export const useDeleteNotification = () => {
   const { user } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('notifications').delete().eq('id', id);
+    mutationFn: async (ids: string | string[]) => {
+      const notificationIds = Array.isArray(ids) ? ids : [ids];
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .in('id', notificationIds);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['notifications', user?.id] }),
@@ -113,7 +170,7 @@ export const useDeleteNotification = () => {
 /** Manually push a notification (used for client-driven events like version upgrade). */
 export const pushLocalNotification = async (
   userId: string,
-  n: { type: string; title: string; body?: string; link?: string; meta?: any }
+  n: { type: string; title: string; body?: string; link?: string; meta?: Json }
 ) => {
   await supabase.from('notifications').insert({
     user_id: userId,
