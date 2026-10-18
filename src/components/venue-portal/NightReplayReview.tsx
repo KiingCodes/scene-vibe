@@ -2,7 +2,7 @@ import { Check, Clock3, X } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { usePendingNightReplays, useReviewNightReplay } from "@/hooks/useVideos";
+import { usePendingNightReplays, useReviewNightReplay } from "@/hooks/useNightReplays";
 
 const NightReplayReview = ({ clubId }: { clubId: string }) => {
   const { data: submissions, isLoading, isError } = usePendingNightReplays(clubId);

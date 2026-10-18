@@ -771,42 +771,70 @@ export type Database = {
       }
       night_replays: {
         Row: {
+          caption: string | null
           created_at: string
           data_json: Json | null
+          expires_at: string
           id: string
           peak_hour: number | null
           replay_date: string
+          status: string
           top_club_id: string | null
           top_club_name: string | null
           total_messages: number
           total_vibes: number
+          user_id: string | null
+          venue_id: string | null
+          video_url: string | null
+          views_count: number
         }
         Insert: {
+          caption?: string | null
           created_at?: string
           data_json?: Json | null
-          id?: string
-          peak_hour?: number | null
-          replay_date: string
-          top_club_id?: string | null
-          top_club_name?: string | null
-          total_messages?: number
-          total_vibes?: number
-        }
-        Update: {
-          created_at?: string
-          data_json?: Json | null
+          expires_at?: string
           id?: string
           peak_hour?: number | null
           replay_date?: string
+          status?: string
           top_club_id?: string | null
           top_club_name?: string | null
           total_messages?: number
           total_vibes?: number
+          user_id?: string | null
+          venue_id?: string | null
+          video_url?: string | null
+          views_count?: number
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          data_json?: Json | null
+          expires_at?: string
+          id?: string
+          peak_hour?: number | null
+          replay_date?: string
+          status?: string
+          top_club_id?: string | null
+          top_club_name?: string | null
+          total_messages?: number
+          total_vibes?: number
+          user_id?: string | null
+          venue_id?: string | null
+          video_url?: string | null
+          views_count?: number
         }
         Relationships: [
           {
             foreignKeyName: "night_replays_top_club_id_fkey"
             columns: ["top_club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "night_replays_venue_id_fkey"
+            columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "clubs"
             referencedColumns: ["id"]
@@ -1764,7 +1792,6 @@ export type Database = {
           id: string
           is_premium: boolean
           like_count: number
-          replay_status: string
           user_id: string
           video_url: string
           view_count: number
@@ -1776,7 +1803,6 @@ export type Database = {
           id?: string
           is_premium?: boolean
           like_count?: number
-          replay_status?: string
           user_id: string
           video_url: string
           view_count?: number
@@ -1788,7 +1814,6 @@ export type Database = {
           id?: string
           is_premium?: boolean
           like_count?: number
-          replay_status?: string
           user_id?: string
           video_url?: string
           view_count?: number
@@ -1866,10 +1891,10 @@ export type Database = {
         Args: { p_share_token: string }
         Returns: {
           created_at: string
-          current_lat: number | null
-          current_lng: number | null
-          destination_name: string | null
-          ended_at: string | null
+          current_lat: number
+          current_lng: number
+          destination_name: string
+          ended_at: string
           eta_minutes: number
           id: string
           last_ping_at: string
@@ -1879,10 +1904,6 @@ export type Database = {
           status: string
           updated_at: string
         }[]
-      }
-      review_night_replay_submission: {
-        Args: { _status: string; _video_id: string }
-        Returns: undefined
       }
       has_role: {
         Args: {
