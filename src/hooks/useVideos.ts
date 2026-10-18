@@ -11,7 +11,6 @@ export const useVideos = (clubId?: string) => {
       let q = supabase
         .from('videos')
         .select('*')
-        .eq('replay_status', 'approved')
         .order('created_at', { ascending: false })
         .limit(50);
       if (clubId) q = q.eq('club_id', clubId);
@@ -28,77 +27,6 @@ export const useVideos = (clubId?: string) => {
   });
 };
 
-export const useSubmitNightReplay = () => {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ file, clubId, caption }: { file: File; clubId: string; caption?: string }) => {
-      if (!user) throw new Error('Sign in to submit a highlight');
-      const ext = file.name.split('.').pop()?.toLowerCase();
-      if (ext !== 'mp4' && ext !== 'mov') throw new Error('Choose an MP4 or MOV video');
-
-      const path = `${user.id}/replay-${crypto.randomUUID()}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from('videos')
-        .upload(path, file, { contentType: file.type });
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage.from('videos').getPublicUrl(path);
-      const { error } = await supabase.from('videos').insert({
-        user_id: user.id,
-        club_id: clubId,
-        video_url: publicUrl,
-        caption: caption?.trim() || null,
-        is_premium: false,
-        replay_status: 'pending',
-      });
-
-      if (error) {
-        const { error: cleanupError } = await supabase.storage.from('videos').remove([path]);
-        if (cleanupError) throw new Error(`Could not submit highlight: ${error.message}. Uploaded file cleanup failed: ${cleanupError.message}`);
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['videos'] });
-      queryClient.invalidateQueries({ queryKey: ['pending-night-replays'] });
-    },
-  });
-};
-
-export const usePendingNightReplays = (clubId: string) => useQuery({
-  queryKey: ['pending-night-replays', clubId],
-  enabled: !!clubId,
-  queryFn: async () => {
-    const { data, error } = await supabase
-      .from('videos')
-      .select('*')
-      .eq('club_id', clubId)
-      .eq('replay_status', 'pending')
-      .order('created_at', { ascending: true });
-    if (error) throw error;
-    return data || [];
-  },
-});
-
-export const useReviewNightReplay = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ videoId, status }: { videoId: string; status: 'approved' | 'rejected'; clubId: string }) => {
-      const { error } = await supabase.rpc('review_night_replay_submission', {
-        _video_id: videoId,
-        _status: status,
-      });
-      if (error) throw error;
-    },
-    onSuccess: (_, { clubId }) => {
-      queryClient.invalidateQueries({ queryKey: ['pending-night-replays', clubId] });
-      queryClient.invalidateQueries({ queryKey: ['videos'] });
-    },
-  });
-};
-
 export const useUploadVideo = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -106,7 +34,6 @@ export const useUploadVideo = () => {
   return useMutation({
     mutationFn: async ({ file, clubId, caption }: { file: File; clubId?: string; caption?: string }) => {
       if (!user) throw new Error('Must be signed in');
-      if (!clubId) throw new Error('Choose a venue before uploading a replay highlight');
       const ext = file.name.split('.').pop() || 'mp4';
       const path = `${user.id}/${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage
@@ -120,7 +47,6 @@ export const useUploadVideo = () => {
         video_url: publicUrl,
         caption: caption || null,
         is_premium: false,
-        replay_status: 'pending',
       });
       if (error) {
         const { error: cleanupError } = await supabase.storage.from('videos').remove([path]);
