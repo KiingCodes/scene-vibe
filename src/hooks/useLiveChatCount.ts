@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 
 /**
  * Live community-chat participant count: unique users who posted in the last
- * 15 minutes. Powers the pulsing counter on the bottom "Chat" tab.
+ * 15 minutes. Powers the pulsing counter on the bottom "SCENE Pulse" tab.
  */
 export const useLiveChatCount = () => {
   const qc = useQueryClient();

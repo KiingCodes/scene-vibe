@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Check, MapPin, Upload, ShieldCheck, Building2, Sparkles, X, Loader2, LocateFixed, PartyPopper } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, MapPin, Upload, ShieldCheck, Building2, X, Loader2, LocateFixed, PartyPopper } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -37,7 +37,7 @@ const NeonField = ({
       placeholder={placeholder}
       type={type}
       aria-invalid={!!error}
-      className={`h-11 rounded-xl bg-black/50 border-white/10 text-foreground placeholder:text-muted-foreground/60 focus-visible:ring-primary focus-visible:ring-offset-0 focus-visible:border-primary/60 focus-visible:shadow-[0_0_20px_hsl(var(--primary)/0.25)] transition-all ${error ? 'border-destructive/60' : ''}`}
+      className={`h-11 rounded-xl border-white/10 bg-slate-950/70 text-slate-100 placeholder:text-slate-500 focus-visible:border-cyan-300/50 focus-visible:ring-cyan-300/30 focus-visible:ring-offset-0 focus-visible:shadow-[0_0_18px_rgba(34,211,238,0.12)] transition-all ${error ? 'border-destructive/60' : ''}`}
     />
     {error && <p role="alert" className="text-[11px] text-rose-400">{error}</p>}
   </div>
@@ -261,33 +261,85 @@ const VenueOnboardingPage = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="relative isolate min-h-[100svh] overflow-hidden bg-[#070b14] text-white">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_8%_15%,rgba(34,211,238,0.15),transparent_34%),radial-gradient(ellipse_at_92%_18%,rgba(99,102,241,0.18),transparent_38%),radial-gradient(ellipse_at_50%_100%,rgba(15,118,110,0.10),transparent_42%),linear-gradient(150deg,#0b1220_0%,#070b14_50%,#090a17_100%)]"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 -z-10 opacity-[0.12] [background-image:linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] [background-size:48px_48px] [mask-image:linear-gradient(to_bottom,black,transparent_85%)]"
+      />
       <Navbar />
-      <main className="container mx-auto px-4 pt-20 pb-8 max-w-3xl">
-        <Link to="/" className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground text-sm mb-4 transition-colors">
+      <main className="mx-auto flex min-h-[calc(100svh-3.5rem)] w-full max-w-7xl flex-col px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-20 sm:px-6 sm:pt-24 lg:px-8 lg:pb-12">
+        <Link to="/" className="mb-5 inline-flex min-h-10 items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 text-sm text-slate-300 transition-colors hover:border-cyan-300/30 hover:text-white">
           <ArrowLeft className="w-4 h-4" /> Back
         </Link>
 
-        <div className="relative rounded-3xl bg-gradient-to-br from-slate-900/90 via-slate-950/95 to-black border border-white/10 overflow-hidden shadow-2xl">
-          <span className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-primary/20 blur-3xl pointer-events-none" />
-          <span className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-secondary/15 blur-3xl pointer-events-none" />
+        <div className="grid flex-1 items-start gap-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-stretch lg:gap-10">
+          <section className="hidden flex-col justify-center pt-5 lg:sticky lg:top-24 lg:flex">
+            <div className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/[0.07] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-cyan-200">
+              <Building2 className="h-3.5 w-3.5" />
+              SCENE for venues
+            </div>
+            <h1 className="max-w-xl font-display text-4xl font-bold leading-tight text-white xl:text-5xl">
+              Bring your venue
+              <span className="mt-1 block bg-gradient-to-r from-cyan-300 to-violet-300 bg-clip-text text-transparent">
+                into the spotlight.
+              </span>
+            </h1>
+            <p className="mt-5 max-w-md text-base leading-7 text-slate-400">
+              Claim your listing to keep your details accurate and help
+              nightlife-goers discover what makes your space special.
+            </p>
+
+            <div className="mt-9 space-y-3">
+              {[
+                { icon: Check, title: 'A listing you control', detail: 'Keep your venue information up to date.' },
+                { icon: MapPin, title: 'Accurate venue location', detail: 'Set a precise pin for local discovery.' },
+                { icon: ShieldCheck, title: 'Human-reviewed claims', detail: 'Our team reviews ownership details securely.' },
+              ].map(({ icon: Icon, title, detail }) => (
+                <div key={title} className="flex items-start gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.035] p-4 backdrop-blur-xl">
+                  <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-cyan-300/15 bg-cyan-300/[0.07] text-cyan-200">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <span>
+                    <span className="block text-sm font-semibold text-slate-100">{title}</span>
+                    <span className="mt-1 block text-xs leading-5 text-slate-400">{detail}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 flex items-center gap-2 text-xs text-slate-500">
+              <ShieldCheck className="h-4 w-4 text-emerald-300" />
+              Free to claim · Review usually completed within 48 hours
+            </div>
+          </section>
+
+          <div className="relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-950/75 shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-2xl sm:rounded-3xl lg:min-h-[calc(100svh-12rem)]">
+          <span className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-cyan-400/[0.09] blur-3xl" />
+          <span className="pointer-events-none absolute -bottom-28 -left-24 h-72 w-72 rounded-full bg-violet-500/[0.09] blur-3xl" />
 
           {/* Progress */}
-          <div className="relative px-6 pt-6 pb-4 border-b border-white/5">
-            <div className="flex items-center justify-between mb-3">
+          <div className="relative border-b border-white/[0.07] px-4 pb-5 pt-5 sm:px-7 sm:pb-6 sm:pt-7">
+            <div className="mb-5 flex items-start justify-between gap-3">
               <div>
-                <p className="text-[11px] uppercase tracking-widest text-primary font-bold">Venue Manager Onboarding</p>
-                <h1 className="font-display text-2xl font-bold text-white mt-0.5">Claim your business on SCENE</h1>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-300 sm:text-[11px]">Venue manager onboarding</p>
+                <h2 className="mt-1 font-display text-xl font-bold text-white sm:text-2xl">Claim your venue</h2>
+                <p className="mt-1.5 max-w-sm text-xs leading-5 text-slate-400 sm:text-sm">
+                  Share a few details so we can verify your connection.
+                </p>
               </div>
-              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30">
-                {saving ? <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-primary" />}
-                <span className="text-[10px] font-bold uppercase tracking-widest text-primary">{saving ? 'Saving…' : 'Free · 48h review'}</span>
+              <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1.5 sm:px-3">
+                {saving && <Loader2 className="h-3.5 w-3.5 animate-spin text-cyan-300" />}
+                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-300 sm:text-[10px]">{saving ? 'Saving…' : 'Free · 48h review'}</span>
               </div>
             </div>
 
             <p className="sr-only" role="status" aria-live="polite">{announce}</p>
             <div
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 sm:gap-3"
               role="progressbar"
               aria-label="Onboarding progress"
               aria-valuemin={1}
@@ -299,23 +351,23 @@ const VenueOnboardingPage = () => {
                 const isDone = step > s.id;
                 const isActive = step === s.id;
                 return (
-                  <div key={s.id} className="flex-1 flex items-center gap-2 min-w-0">
+                  <div key={s.id} className="flex min-w-0 flex-1 items-center gap-2">
                     <motion.div
                       animate={{
                         scale: isActive ? 1.05 : 1,
-                        boxShadow: isActive ? '0 0 22px hsl(var(--primary) / 0.55)' : '0 0 0px hsl(var(--primary) / 0)',
+                        boxShadow: isActive ? '0 0 22px rgba(34,211,238,0.25)' : '0 0 0px rgba(34,211,238,0)',
                       }}
                       className={`w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-[11px] font-bold border ${
                         isDone
-                          ? 'bg-primary text-primary-foreground border-primary'
+                          ? 'bg-cyan-300 text-slate-950 border-cyan-300'
                           : isActive
-                          ? 'bg-primary/20 text-primary border-primary'
-                          : 'bg-white/5 text-muted-foreground border-white/10'
+                          ? 'bg-cyan-300/10 text-cyan-200 border-cyan-300/50'
+                          : 'bg-white/[0.04] text-slate-500 border-white/10'
                       }`}
                     >
                       {isDone ? <Check className="w-3.5 h-3.5" /> : s.id}
                     </motion.div>
-                    <span className={`text-[11px] font-semibold uppercase tracking-wider truncate ${isActive ? 'text-primary' : isDone ? 'text-foreground' : 'text-muted-foreground'}`}>
+                    <span className={`truncate text-[10px] font-semibold uppercase tracking-wider sm:text-[11px] ${isActive ? 'text-cyan-200' : isDone ? 'text-slate-200' : 'text-slate-500'}`}>
                       {s.label}
                     </span>
                     {i < STEPS.length - 1 && (
@@ -323,7 +375,7 @@ const VenueOnboardingPage = () => {
                         <motion.span
                           initial={false}
                           animate={{ scaleX: step > s.id ? 1 : 0 }}
-                          className="absolute inset-0 origin-left bg-gradient-to-r from-primary to-secondary"
+                          className="absolute inset-0 origin-left bg-gradient-to-r from-cyan-300 to-violet-400"
                         />
                       </div>
                     )}
@@ -334,11 +386,11 @@ const VenueOnboardingPage = () => {
           </div>
 
           {/* Step content */}
-          <div className="relative p-6 min-h-[420px]">
+          <div className="relative min-h-[360px] flex-1 p-4 sm:min-h-[420px] sm:p-7">
             <AnimatePresence mode="wait">
               {step === 1 && (
                 <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
-                  <div className="flex items-center gap-2 text-primary">
+                  <div className="flex items-center gap-2 text-cyan-200">
                     <Building2 className="w-5 h-5" aria-hidden="true" />
                     <h2 ref={headingRef} tabIndex={-1} className="font-display text-lg font-bold text-white outline-none">Business &amp; owner details</h2>
                   </div>
@@ -361,7 +413,7 @@ const VenueOnboardingPage = () => {
                         id="role-position"
                         value={rolePosition}
                         onChange={(e) => setRolePosition(e.target.value)}
-                        className={`w-full h-11 rounded-xl bg-black/50 border border-white/10 px-3 text-sm text-foreground focus:outline-none focus:border-primary/60 ${err('rolePosition') ? 'border-destructive/60' : ''}`}
+                        className={`h-11 w-full rounded-xl border border-white/10 bg-slate-950/70 px-3 text-sm text-slate-100 focus:outline-none focus:border-cyan-300/50 ${err('rolePosition') ? 'border-destructive/60' : ''}`}
                       >
                         <option value="">Select your role…</option>
                         {ROLE_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
@@ -383,8 +435,8 @@ const VenueOnboardingPage = () => {
                             aria-pressed={active}
                             className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
                               active
-                                ? 'bg-primary/20 border-primary text-primary shadow-[0_0_16px_hsl(var(--primary)/0.35)]'
-                                : 'bg-white/[0.03] border-white/10 text-muted-foreground hover:border-primary/40 hover:text-foreground'
+                                ? 'border-cyan-300/60 bg-cyan-300/10 text-cyan-100 shadow-[0_0_16px_rgba(34,211,238,0.12)]'
+                                : 'border-white/10 bg-white/[0.03] text-slate-400 hover:border-cyan-300/30 hover:text-slate-100'
                             }`}
                           >
                             {active && <Check className="w-3 h-3 inline mr-1" />}
@@ -400,7 +452,7 @@ const VenueOnboardingPage = () => {
 
               {step === 2 && (
                 <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
-                  <div className="flex items-center gap-2 text-primary">
+                  <div className="flex items-center gap-2 text-cyan-200">
                     <MapPin className="w-5 h-5" aria-hidden="true" />
                     <h2 ref={headingRef} tabIndex={-1} className="font-display text-lg font-bold text-white outline-none">Location &amp; proof of ownership</h2>
                   </div>
@@ -412,7 +464,7 @@ const VenueOnboardingPage = () => {
                       onClick={detectLocation}
                       disabled={locating}
                       aria-label={coords ? 'Re-pin geofence to my current location' : 'Use my current location to pin the geofence'}
-                      className="rounded-full bg-primary/15 border border-primary/40 text-primary hover:bg-primary/25 h-9 px-4 gap-2"
+                      className="h-10 gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/[0.08] px-4 text-cyan-100 hover:bg-cyan-300/[0.14]"
                     >
                       {locating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LocateFixed className="w-3.5 h-3.5" />}
                       <span className="text-xs font-bold uppercase tracking-widest">
@@ -433,7 +485,7 @@ const VenueOnboardingPage = () => {
                         <p className="text-sm font-semibold text-foreground">Real-Time Tracking Radius</p>
                         <p className="text-[11px] text-muted-foreground">Geofence for accurate check-ins</p>
                       </div>
-                      <div className="px-3 py-1 rounded-full bg-primary/15 border border-primary/40 text-primary text-sm font-bold font-mono">
+                      <div className="rounded-full border border-cyan-300/25 bg-cyan-300/[0.08] px-3 py-1 font-mono text-sm font-bold text-cyan-100">
                         {radius[0]}m
                       </div>
                     </div>
@@ -445,7 +497,7 @@ const VenueOnboardingPage = () => {
 
                   <label className="block cursor-pointer">
                     <div className={`relative rounded-2xl border-2 border-dashed p-8 text-center transition-all ${
-                      file ? 'border-primary/60 bg-primary/5' : 'border-white/15 bg-white/[0.02] hover:border-primary/40 hover:bg-primary/[0.03]'
+                      file ? 'border-cyan-300/50 bg-cyan-300/[0.06]' : 'border-white/15 bg-white/[0.02] hover:border-cyan-300/35 hover:bg-cyan-300/[0.03]'
                     }`}>
                       <input
                         type="file"
@@ -456,7 +508,7 @@ const VenueOnboardingPage = () => {
                       />
                       {uploading
                         ? <LogoSkeleton label="Uploading securely…" size={40} className="border-0 bg-transparent py-2" />
-                        : <Upload className="w-8 h-8 mx-auto mb-2 text-primary" strokeWidth={1.5} aria-hidden="true" />}
+                        : <Upload className="mx-auto mb-2 h-8 w-8 text-cyan-200" strokeWidth={1.5} aria-hidden="true" />}
                       {uploading ? (
                         null
                       ) : file ? (
@@ -501,27 +553,28 @@ const VenueOnboardingPage = () => {
           </div>
 
           {/* Footer nav */}
-          <div className="relative flex items-center justify-between gap-3 px-6 py-4 border-t border-white/5 bg-black/30">
+          <div className="relative flex items-center justify-between gap-2 border-t border-white/[0.07] bg-black/20 px-4 py-4 sm:gap-3 sm:px-7">
             <Button
               variant="outline"
               onClick={() => setStep((s) => Math.max(1, s - 1))}
               disabled={step === 1}
-              className="rounded-full border-white/15 bg-white/[0.03] text-muted-foreground hover:text-foreground disabled:opacity-40"
+              className="h-10 rounded-full border-white/15 bg-white/[0.03] px-3 text-slate-300 hover:bg-white/[0.07] hover:text-white disabled:opacity-40 sm:px-5"
             >
               <ArrowLeft className="w-4 h-4 mr-1" /> Back
             </Button>
-            <div className="text-[11px] text-muted-foreground uppercase tracking-widest font-bold">
+            <div className="hidden whitespace-nowrap text-[10px] font-bold uppercase tracking-widest text-slate-500 sm:block sm:text-[11px]">
               Step {step} of {STEPS.length}
             </div>
             <Button
               onClick={handleNext}
               disabled={submitting || uploading}
-              className="rounded-full gradient-primary text-primary-foreground font-semibold px-6 shadow-[0_0_20px_hsl(var(--primary)/0.4)] disabled:opacity-40 disabled:shadow-none"
+              className="h-10 rounded-full bg-gradient-to-r from-cyan-300 to-teal-300 px-4 font-semibold text-slate-950 shadow-[0_0_20px_rgba(34,211,238,0.18)] hover:from-cyan-200 hover:to-teal-200 disabled:opacity-40 disabled:shadow-none sm:px-6"
             >
               {submitting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : null}
               {step === STEPS.length ? (submitting ? 'Submitting…' : 'Submit Claim') : 'Continue'} <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
+        </div>
         </div>
       </main>
 

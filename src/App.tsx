@@ -15,6 +15,7 @@ import TermsGate from "./components/TermsGate";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
 import ChatPage from "./pages/ChatPage";
+import EventsPage from "./pages/EventsPage";
 import ClubDetailPage from "./pages/ClubDetailPage";
 import SuggestSpotPage from "./pages/SuggestSpotPage";
 import SavedPage from "./pages/SavedPage";
@@ -78,6 +79,7 @@ const AppContent = () => {
           }
         />
         <Route path="/chat" element={<ChatPage />} />
+        <Route path="/events" element={<EventsPage />} />
         <Route path="/crews" element={<CrewsPage />} />
         <Route path="/videos" element={<Navigate to="/night-replay" replace />} />
         <Route path="/night-replay" element={<NightReplayPage />} />
@@ -85,6 +87,7 @@ const AppContent = () => {
         <Route path="/venue-onboarding" element={<VenueOnboardingPage />} />
         <Route path="/venue-portal" element={<VenuePortalPage />} />
         <Route path="/club/:id" element={<ClubDetailPage />} />
+        <Route path="/venue/:id" element={<ClubDetailPage />} />
         <Route path="/suggest" element={<SuggestSpotPage />} />
         <Route path="/saved" element={<SavedPage />} />
         <Route path="/insights" element={<InsightsPage />} />

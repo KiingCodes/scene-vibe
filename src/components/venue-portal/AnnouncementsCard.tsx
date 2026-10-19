@@ -38,9 +38,12 @@ export const AnnouncementsCard = ({ venue }: { venue: Club }) => {
   return (
     <GlassCard glow="pink" className="lg:col-span-2">
       <SectionTitle icon={<Megaphone className="h-4 w-4" />} title="Live Announcements & Specials" subtitle="Shown on your venue page until they expire" />
+      {post.isPending && (
+        <LogoSkeleton label="Publishing announcement…" size={24} className="mb-3 border-0 bg-transparent py-1" />
+      )}
       <div className="mb-3 flex flex-wrap gap-2">
         {PRESETS.map((p) => (
-          <button key={p} onClick={() => setText(p)} className={cn("rounded-full border px-3 py-1.5 text-xs font-medium transition-all", text === p ? "border-portal-pink/60 bg-portal-pink/15 text-portal-pink" : "border-white/10 bg-white/5 text-muted-foreground hover:text-foreground")}>
+          <button key={p} onClick={() => setText(p)} className={cn("rounded-full border px-3 py-1.5 text-xs font-medium transition-all", text === p ? "border-cyan-300/50 bg-cyan-300/10 text-cyan-100" : "border-white/10 bg-slate-950/50 text-slate-400 hover:border-white/20 hover:text-white")}>
             {p}
           </button>
         ))}
@@ -50,13 +53,13 @@ export const AnnouncementsCard = ({ venue }: { venue: Club }) => {
         <div className="flex items-center gap-1.5">
           <Clock className="h-3.5 w-3.5 text-muted-foreground" />
           {DURATIONS.map((h) => (
-            <button key={h} onClick={() => setHours(h)} aria-pressed={hours === h} className={cn("rounded-full border px-2.5 py-1 text-[11px] font-semibold", hours === h ? "border-portal-cyan/60 bg-portal-cyan/15 text-portal-cyan" : "border-white/10 bg-white/5 text-muted-foreground")}>
+            <button key={h} onClick={() => setHours(h)} aria-pressed={hours === h} className={cn("rounded-full border px-2.5 py-1 text-[11px] font-semibold", hours === h ? "border-cyan-400 bg-cyan-500/20 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.2)]" : "border-white/10 bg-slate-950/50 text-slate-400")}>
               {h}h
             </button>
           ))}
         </div>
-        <Button onClick={submit} disabled={!text.trim() || post.isPending} className="gradient-primary font-semibold text-primary-foreground">
-          <Megaphone className="mr-2 h-4 w-4" /> Post announcement
+        <Button onClick={submit} disabled={!text.trim() || post.isPending} className="bg-gradient-to-r from-cyan-500 via-purple-600 to-fuchsia-500 font-semibold text-white shadow-[0_0_25px_rgba(6,182,212,0.4)] transition-all hover:scale-[1.02] active:scale-[0.98]">
+          {post.isPending ? <LogoSkeleton label="" size={18} className="border-0 bg-transparent p-0" /> : <Megaphone className="mr-2 h-4 w-4" />} Post announcement
         </Button>
       </div>
 
@@ -67,7 +70,7 @@ export const AnnouncementsCard = ({ venue }: { venue: Club }) => {
           <p className="text-sm text-muted-foreground">No live announcements right now.</p>
         ) : (
           items.map((a) => (
-            <div key={a.id} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
+            <div key={a.id} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/50 px-3 py-2.5">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-foreground">{a.content}</p>
                 <p className="text-[11px] text-muted-foreground">{timeLeft(a.expires_at)}</p>

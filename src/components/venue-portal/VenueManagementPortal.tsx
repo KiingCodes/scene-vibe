@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Zap, Sparkles, TrendingUp, Megaphone, Video } from "lucide-react";
 import { PortalHeader } from "./PortalHeader";
@@ -32,11 +32,16 @@ interface VenueManagementPortalProps {
 export const VenueManagementPortal = ({ venueName, venue }: VenueManagementPortalProps) => {
   const [mode, setMode] = useState<PortalMode>("live");
   const [tab, setTab] = useState<TabId>("live");
+  const venueWaitMinutes = venue?.wait_time_minutes ?? 15;
   const [status, setStatus] = useState<VenueStatus>({
-    waitMinutes: 15,
+    waitMinutes: venueWaitMinutes,
     crowdTag: "Wall-to-Wall",
     inboundPullUps: 142,
   });
+
+  useEffect(() => {
+    setStatus((current) => ({ ...current, waitMinutes: venueWaitMinutes }));
+  }, [venueWaitMinutes]);
 
   const handleModeChange = (next: PortalMode) => {
     setMode(next);
@@ -47,7 +52,7 @@ export const VenueManagementPortal = ({ venueName, venue }: VenueManagementPorta
     <div className="mx-auto w-full max-w-6xl space-y-5">
       <PortalHeader venueName={venue?.name ?? venueName ?? "Your Venue"} mode={mode} onModeChange={handleModeChange} status={status} />
 
-      <div role="tablist" aria-label="Venue portal sections" className="flex gap-1 rounded-2xl border border-white/10 bg-zinc-950/70 p-1 backdrop-blur-xl overflow-x-auto">
+      <div role="tablist" aria-label="Venue portal sections" className="flex gap-1 overflow-x-auto rounded-2xl border border-white/10 bg-slate-950/75 p-1.5 shadow-xl backdrop-blur-2xl">
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -56,14 +61,14 @@ export const VenueManagementPortal = ({ venueName, venue }: VenueManagementPorta
             aria-controls={`portal-panel-${t.id}`}
             onClick={() => setTab(t.id)}
             className={cn(
-              "relative flex-1 whitespace-nowrap inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors",
-              tab === t.id ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+              "relative flex-1 whitespace-nowrap inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold transition-colors sm:text-sm",
+              tab === t.id ? "text-cyan-100" : "text-slate-400 hover:text-white",
             )}
           >
             {tab === t.id && (
               <motion.span
                 layoutId="portal-tab-pill"
-                className="absolute inset-0 -z-10 rounded-xl border border-white/10 bg-gradient-to-r from-portal-violet/25 via-portal-pink/20 to-portal-cyan/25"
+                className="absolute inset-0 -z-10 rounded-xl border border-cyan-300/20 bg-cyan-300/[0.08] shadow-[0_0_18px_rgba(6,182,212,0.1)]"
                 transition={{ type: "spring", stiffness: 400, damping: 32 }}
               />
             )}

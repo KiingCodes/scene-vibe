@@ -96,6 +96,7 @@ export type Database = {
           is_verified: boolean
           lat: number
           live_status: string | null
+          wait_time_minutes: number
           lng: number
           name: string
           opening_hours: string | null
@@ -125,6 +126,7 @@ export type Database = {
           is_verified?: boolean
           lat: number
           live_status?: string | null
+          wait_time_minutes?: number
           lng: number
           name: string
           opening_hours?: string | null
@@ -154,6 +156,7 @@ export type Database = {
           is_verified?: boolean
           lat?: number
           live_status?: string | null
+          wait_time_minutes?: number
           lng?: number
           name?: string
           opening_hours?: string | null

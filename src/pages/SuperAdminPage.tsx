@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  ShieldAlert, Building2, Sparkles, DollarSign, CheckCircle2, XCircle,
+  ArrowLeft, ShieldAlert, Building2, Sparkles, DollarSign, CheckCircle2, XCircle,
   Sliders, BarChart3, Zap, Ticket, Crown, Search, Ban,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -137,6 +137,12 @@ export default function SuperAdminPage() {
       <div className="mx-auto max-w-6xl px-4 pt-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
+            <Button asChild variant="ghost" size="sm" className="mb-2 -ml-2 h-9 text-zinc-400 hover:bg-white/5 hover:text-white">
+              <Link to="/admin">
+                <ArrowLeft className="mr-1.5 h-4 w-4" />
+                Back
+              </Link>
+            </Button>
             <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
               <ShieldAlert className="h-6 w-6 text-[#EC4899]" /> God-Mode Portal
             </h1>

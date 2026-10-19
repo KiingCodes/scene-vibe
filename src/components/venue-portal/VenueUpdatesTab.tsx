@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { CalendarPlus, Megaphone, Trash2, Ticket } from "lucide-react";
+import { CalendarDays, CalendarPlus, Clock3, Megaphone, Trash2, Ticket } from "lucide-react";
+import { format } from "date-fns";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,8 @@ import {
 import type { Club } from "@/hooks/useClubs";
 import { LogoSkeleton } from "@/components/BrandedSkeleton";
 import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const QUICK_UPDATES = [
   "Queue is moving fast — no wait right now 🚀",
@@ -31,7 +34,9 @@ export const VenueUpdatesTab = ({ venue }: { venue: Club }) => {
   const deleteEvent = useDeleteVenueEvent();
 
   const [title, setTitle] = useState("");
-  const [date, setDate] = useState("");
+  const [date, setDate] = useState<Date>();
+  const [eventTime, setEventTime] = useState("21:00");
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [price, setPrice] = useState("");
   const [desc, setDesc] = useState("");
 
@@ -47,16 +52,19 @@ export const VenueUpdatesTab = ({ venue }: { venue: Club }) => {
   };
 
   const submitEvent = async () => {
-    if (!title.trim() || !date) {
+    if (!title.trim() || !date || !eventTime) {
       toast.error("Add a title and a date");
       return;
     }
     try {
+      const eventDate = new Date(date);
+      const [hours, minutes] = eventTime.split(":").map(Number);
+      eventDate.setHours(hours, minutes, 0, 0);
       await createEvent.mutateAsync({
         clubId: venue.id,
         title: title.trim(),
         description: desc.trim() || undefined,
-        event_date: new Date(date).toISOString(),
+        event_date: eventDate.toISOString(),
         price_info: price.trim() || undefined,
         area: venue.area,
         address: venue.address,
@@ -64,7 +72,7 @@ export const VenueUpdatesTab = ({ venue }: { venue: Club }) => {
         lng: venue.lng,
         country: venue.country,
       });
-      setTitle(""); setDate(""); setPrice(""); setDesc("");
+      setTitle(""); setDate(undefined); setEventTime("21:00"); setPrice(""); setDesc("");
       toast.success("Event published to the public feed");
     } catch {
       toast.error("Could not publish that event");
@@ -87,8 +95,8 @@ export const VenueUpdatesTab = ({ venue }: { venue: Club }) => {
               className={cn(
                 "rounded-full border px-3 py-1.5 text-xs font-medium transition-all",
                 update === q
-                  ? "border-portal-cyan/60 bg-portal-cyan/15 text-portal-cyan"
-                  : "border-white/10 bg-white/5 text-muted-foreground hover:text-foreground",
+                  ? "border-cyan-300/50 bg-cyan-300/10 text-cyan-100"
+                  : "border-white/10 bg-slate-950/50 text-slate-400 hover:border-white/20 hover:text-white",
               )}
             >
               {q}
@@ -99,12 +107,15 @@ export const VenueUpdatesTab = ({ venue }: { venue: Club }) => {
           value={update}
           onChange={(e) => setUpdate(e.target.value.slice(0, 300))}
           placeholder="What's happening at the door right now?"
-          className="bg-white/5 border-white/10 min-h-[96px]"
+          className="min-h-[96px] border-white/10 bg-slate-950/70 text-slate-100 placeholder:text-slate-500"
         />
-        <div className="mt-3 flex items-center justify-between">
+        {post.isPending && (
+          <LogoSkeleton label="Publishing update…" size={24} className="mt-3 border-0 bg-transparent py-1" />
+        )}
+        <div className="mt-3 flex items-center justify-between gap-3">
           <span className="text-[11px] text-muted-foreground">{update.length}/300</span>
-          <Button onClick={submitUpdate} disabled={!update.trim() || post.isPending} className="gradient-primary text-primary-foreground font-semibold">
-            <Megaphone className="h-4 w-4 mr-2" /> Publish update
+          <Button onClick={submitUpdate} disabled={!update.trim() || post.isPending} className="bg-gradient-to-r from-cyan-500 via-purple-600 to-fuchsia-500 font-semibold text-white shadow-[0_0_25px_rgba(6,182,212,0.3)] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:scale-100">
+            {post.isPending ? <LogoSkeleton label="" size={18} className="border-0 bg-transparent p-0" /> : <Megaphone className="mr-2 h-4 w-4" />} Publish update
           </Button>
         </div>
       </GlassCard>
@@ -114,24 +125,75 @@ export const VenueUpdatesTab = ({ venue }: { venue: Club }) => {
         <div className="space-y-3">
           <div>
             <Label htmlFor="ev-title" className="text-xs uppercase tracking-widest text-muted-foreground">Title</Label>
-            <Input id="ev-title" value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1.5 bg-white/5 border-white/10" placeholder="Amapiano All Nighter" />
+            <Input id="ev-title" value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1.5 border-white/10 bg-slate-950/70 text-slate-100 placeholder:text-slate-500" placeholder="Amapiano All Nighter" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="ev-date" className="text-xs uppercase tracking-widest text-muted-foreground">Date & time</Label>
-              <Input id="ev-date" type="datetime-local" value={date} onChange={(e) => setDate(e.target.value)} className="mt-1.5 bg-white/5 border-white/10" />
+              <div className="mt-1.5 grid grid-cols-[minmax(0,1fr)_minmax(7rem,0.7fr)] gap-2">
+                <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="ev-date"
+                      type="button"
+                      variant="outline"
+                      className="h-11 min-w-0 justify-start gap-2 overflow-hidden border-white/10 bg-slate-950/70 px-3 text-left font-normal text-slate-200 hover:border-cyan-300/30 hover:bg-slate-900"
+                    >
+                      <CalendarDays className="h-4 w-4 shrink-0 text-cyan-300" />
+                      <span className="truncate">{date ? format(date, "EEE, MMM d, yyyy") : "Choose date"}</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    align="start"
+                    className="w-auto border border-white/10 bg-slate-950/95 p-2 text-slate-100 shadow-2xl backdrop-blur-2xl"
+                  >
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={(selectedDate) => {
+                        setDate(selectedDate);
+                        if (selectedDate) setDatePickerOpen(false);
+                      }}
+                      className="text-slate-100"
+                      classNames={{
+                        caption_label: "text-sm font-semibold text-slate-100",
+                        head_cell: "w-9 rounded-md text-[0.8rem] font-normal text-slate-500",
+                        nav_button: "h-8 w-8 border-white/10 bg-slate-900 p-0 text-slate-300 hover:bg-slate-800 hover:text-white",
+                        day: "h-9 w-9 rounded-lg p-0 font-normal text-slate-300 hover:bg-cyan-500/15 hover:text-cyan-100",
+                        day_selected: "bg-cyan-500 font-bold text-slate-950 hover:bg-cyan-400 hover:text-slate-950 focus:bg-cyan-500 focus:text-slate-950",
+                        day_today: "bg-white/10 text-cyan-200",
+                        day_outside: "text-slate-600 opacity-50",
+                        day_disabled: "text-slate-700 opacity-40",
+                      }}
+                    />
+                  </PopoverContent>
+                </Popover>
+                <div className="relative">
+                  <Clock3 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-cyan-300" />
+                  <Input
+                    aria-label="Event time"
+                    type="time"
+                    value={eventTime}
+                    onChange={(e) => setEventTime(e.target.value)}
+                    className="h-11 border-white/10 bg-slate-950/70 pl-9 text-slate-100 [color-scheme:dark]"
+                  />
+                </div>
+              </div>
             </div>
             <div>
-              <Label htmlFor="ev-price" className="text-xs uppercase tracking-widest text-muted-foreground">Entry</Label>
-              <Input id="ev-price" value={price} onChange={(e) => setPrice(e.target.value)} className="mt-1.5 bg-white/5 border-white/10" placeholder="R150" />
+              <Label htmlFor="ev-price" className="text-xs uppercase tracking-widest text-muted-foreground">Entry fee (ZAR)</Label>
+              <Input id="ev-price" value={price} onChange={(e) => setPrice(e.target.value)} className="mt-1.5 border-white/10 bg-slate-950/70 text-slate-100 placeholder:text-slate-500" placeholder="R150" />
             </div>
           </div>
           <div>
             <Label htmlFor="ev-desc" className="text-xs uppercase tracking-widest text-muted-foreground">Details</Label>
-            <Textarea id="ev-desc" value={desc} onChange={(e) => setDesc(e.target.value)} className="mt-1.5 bg-white/5 border-white/10" placeholder="Line-up, dress code, specials…" />
+            <Textarea id="ev-desc" value={desc} onChange={(e) => setDesc(e.target.value)} className="mt-1.5 border-white/10 bg-slate-950/70 text-slate-100 placeholder:text-slate-500" placeholder="Line-up, dress code, specials…" />
           </div>
-          <Button onClick={submitEvent} disabled={createEvent.isPending} className="w-full bg-gradient-to-r from-portal-violet via-portal-pink to-portal-cyan text-white font-bold">
-            <CalendarPlus className="h-4 w-4 mr-2" /> Publish event
+          {createEvent.isPending && (
+            <LogoSkeleton label="Publishing event…" size={24} className="border-0 bg-transparent py-1" />
+          )}
+          <Button onClick={submitEvent} disabled={createEvent.isPending} className="w-full bg-gradient-to-r from-cyan-500 via-purple-600 to-fuchsia-500 font-bold text-white shadow-[0_0_25px_rgba(6,182,212,0.3)] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:scale-100">
+            {createEvent.isPending ? <LogoSkeleton label="" size={18} className="border-0 bg-transparent p-0" /> : <CalendarPlus className="mr-2 h-4 w-4" />} Publish event
           </Button>
         </div>
       </GlassCard>
@@ -145,7 +207,7 @@ export const VenueUpdatesTab = ({ venue }: { venue: Club }) => {
         ) : (
           <ul className="space-y-2">
             {events.map((e) => (
-              <li key={e.id} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
+              <li key={e.id} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/50 px-3 py-2.5">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-foreground">{e.title}</p>
                   <p className="text-xs text-muted-foreground">

@@ -8,16 +8,16 @@ interface GlassCardProps {
 }
 
 const glowMap: Record<string, string> = {
-  violet: "shadow-[0_0_40px_-12px_hsl(var(--portal-violet)/0.55)]",
-  cyan: "shadow-[0_0_40px_-12px_hsl(var(--portal-cyan)/0.55)]",
-  pink: "shadow-[0_0_40px_-12px_hsl(var(--portal-pink)/0.55)]",
+  violet: "ring-1 ring-portal-violet/10",
+  cyan: "ring-1 ring-portal-cyan/10",
+  pink: "ring-1 ring-portal-pink/10",
   none: "",
 };
 
 export const GlassCard = ({ children, className, glow = "none" }: GlassCardProps) => (
   <div
     className={cn(
-      "rounded-2xl border border-white/10 bg-zinc-950/70 backdrop-blur-xl p-4 sm:p-5",
+      "rounded-3xl border border-white/10 bg-slate-900/80 p-4 shadow-2xl backdrop-blur-2xl sm:p-6",
       glowMap[glow],
       className,
     )}

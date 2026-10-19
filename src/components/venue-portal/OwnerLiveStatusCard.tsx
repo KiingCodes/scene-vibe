@@ -1,21 +1,22 @@
 import { Radio, Users } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
+import { LogoSkeleton } from "@/components/BrandedSkeleton";
 import { GlassCard, SectionTitle } from "./GlassCard";
 import { CROWD_LEVELS, useUpdateVenue } from "@/hooks/useVenueOwner";
 import type { Club } from "@/hooks/useClubs";
 import { cn } from "@/lib/utils";
 
-const TONE: Record<string, string> = {
-  SPACIOUS: "border-sky-400/60 bg-sky-500/15 text-sky-300",
-  BUSY: "border-cyan-400/60 bg-cyan-500/15 text-cyan-300",
-  PACKED: "border-orange-400/60 bg-orange-500/15 text-orange-300",
-  "FULL LINE": "border-rose-400/60 bg-rose-500/15 text-rose-300",
-};
-
 export const OwnerLiveStatusCard = ({ venue }: { venue: Club }) => {
   const update = useUpdateVenue();
+  const [waitMinutes, setWaitMinutes] = useState(venue.wait_time_minutes);
+
+  useEffect(() => {
+    setWaitMinutes(venue.wait_time_minutes);
+  }, [venue.id, venue.wait_time_minutes]);
 
   const save = (patch: Parameters<typeof update.mutate>[0]["patch"], msg: string) =>
     update.mutate(
@@ -32,6 +33,25 @@ export const OwnerLiveStatusCard = ({ venue }: { venue: Club }) => {
       />
 
       <div className="space-y-5">
+        {update.isPending && (
+          <LogoSkeleton label="Publishing live status…" size={24} className="border-0 bg-transparent py-1" />
+        )}
+        <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <Label className="text-xs uppercase tracking-widest text-slate-400">Door wait time</Label>
+            <span className="text-sm font-bold text-cyan-200">{waitMinutes === 0 ? "No wait" : `${waitMinutes} min`}</span>
+          </div>
+          <Slider
+            value={[waitMinutes]}
+            min={0}
+            max={90}
+            step={5}
+            aria-label="Door wait time in minutes"
+            disabled={update.isPending}
+            onValueChange={([value]) => setWaitMinutes(value)}
+            onValueCommit={([value]) => save({ wait_time_minutes: value }, `Door wait set to ${value} minutes`)}
+          />
+        </div>
         <div>
           <Label className="text-xs uppercase tracking-widest text-muted-foreground">Capacity right now</Label>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -45,7 +65,9 @@ export const OwnerLiveStatusCard = ({ venue }: { venue: Club }) => {
                   onClick={() => save({ live_status: active ? null : level }, active ? "Status cleared" : `Status set to ${level}`)}
                   className={cn(
                     "rounded-full border px-4 py-2 text-xs font-bold tracking-wide transition-all disabled:opacity-60",
-                    active ? TONE[level] : "border-white/10 bg-white/5 text-muted-foreground hover:text-foreground",
+                    active
+                      ? "border-cyan-400 bg-cyan-500/20 text-cyan-300 shadow-[0_0_20px_rgba(6,182,212,0.4)]"
+                      : "border-white/10 bg-slate-950/50 text-slate-400 hover:border-white/20 hover:text-white",
                   )}
                 >
                   {level}
@@ -55,9 +77,9 @@ export const OwnerLiveStatusCard = ({ venue }: { venue: Club }) => {
           </div>
         </div>
 
-        <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+        <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3">
           <div className="flex items-center gap-2">
-            <Radio className={cn("h-4 w-4", venue.is_live ? "text-emerald-400" : "text-muted-foreground")} />
+            <Radio className={cn("h-4 w-4", venue.is_live ? "text-emerald-400" : "text-slate-500")} />
             <Label htmlFor="venue-live" className="text-sm font-semibold">
               We're LIVE tonight
             </Label>

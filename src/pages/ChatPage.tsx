@@ -6,6 +6,9 @@ const ChatPage = () => {
   const [keyboardInset, setKeyboardInset] = useState(0);
 
   useEffect(() => {
+    const previousTitle = document.title;
+    document.title = "SCENE Pulse | SCENE";
+
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
@@ -13,6 +16,7 @@ const ChatPage = () => {
     if (!viewport) {
       return () => {
         document.body.style.overflow = previousOverflow;
+        document.title = previousTitle;
       };
     }
 
@@ -29,6 +33,7 @@ const ChatPage = () => {
       viewport.removeEventListener("resize", updateKeyboardInset);
       viewport.removeEventListener("scroll", updateKeyboardInset);
       document.body.style.overflow = previousOverflow;
+      document.title = previousTitle;
     };
   }, []);
 

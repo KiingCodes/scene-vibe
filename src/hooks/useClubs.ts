@@ -55,6 +55,7 @@ export const useClubs = () => {
         verified_at: null,
         is_verified: false,
         live_status: null,
+        wait_time_minutes: 0,
         is_live: false,
         cover_charge: null,
         gallery: [],

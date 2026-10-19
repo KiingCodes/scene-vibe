@@ -10,9 +10,11 @@ import { cn } from "@/lib/utils";
 import { LogoSkeleton } from "@/components/BrandedSkeleton";
 
 const Shell = ({ children }: { children: React.ReactNode }) => (
-  <div className="min-h-screen">
+  <div className="relative isolate min-h-screen overflow-hidden bg-[#070b14] text-white">
+    <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_8%_12%,rgba(6,182,212,0.13),transparent_34%),radial-gradient(ellipse_at_92%_25%,rgba(139,92,246,0.14),transparent_36%),linear-gradient(155deg,#0b1220_0%,#070b14_55%,#090712_100%)]" />
+    <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 opacity-[0.1] [background-image:linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] [background-size:48px_48px] [mask-image:linear-gradient(to_bottom,black,transparent_85%)]" />
     <Navbar />
-    <main className="px-3 sm:px-6 pt-28 pb-16">{children}</main>
+    <main className="relative px-3 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-20 sm:px-6 sm:pt-24 lg:pb-16">{children}</main>
   </div>
 );
 

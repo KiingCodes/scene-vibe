@@ -1,6 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, MapPin, Clock, Music, Flame, TrendingUp, Navigation, Globe, Instagram, Car, MessageCircle, Users, Sparkles } from 'lucide-react';
+import PublicVenueUpdates from '@/components/venue-portal/PublicVenueUpdates';
 import PullingUpButton from '@/components/PullingUpButton';
 import Navbar from '@/components/Navbar';
 import ClubReviews from '@/components/ClubReviews';
@@ -173,6 +174,7 @@ const ClubDetailPage = () => {
         )}
 
         <VenueAnnouncementBanner clubId={club.id} />
+        <PublicVenueUpdates clubId={club.id} />
 
         {!isVerifiedVenue(club) && (
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/50 bg-white/[0.03] px-4 py-3">
@@ -287,7 +289,7 @@ const ClubDetailPage = () => {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">Join Community Chat</p>
+                    <p className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">Join SCENE Pulse</p>
                     <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-[9px] font-bold uppercase tracking-wider text-emerald-300">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                       Live

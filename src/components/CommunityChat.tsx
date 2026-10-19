@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
 import {
   Send,
   Trash2,
@@ -15,7 +16,8 @@ import {
   CheckCheck,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { LogoSkeleton } from "@/components/BrandedSkeleton";
+import { LogoSkeleton as SceneLoadingSkeleton } from "@/components/BrandedSkeleton";
+import logoWatermark from "@/assets/scene-logo.jpg";
 import { useIsAdmin } from "@/hooks/useAdmin";
 import {
   useCommunityMessages,
@@ -37,6 +39,7 @@ import { useTypewriter } from "@/hooks/useTypewriter";
 import { useDeviceId } from "@/hooks/useDeviceId";
 import { useVenueOwnerIds } from "@/hooks/useVenueOwner";
 import { OfficialAccountTag } from "@/components/VerifiedBadge";
+import { getLevelFromPoints } from "@/hooks/useGamification";
 
 const QUICK_EMOJIS = [
   "🔥",
@@ -71,12 +74,20 @@ const CHANNEL_IDS: Record<string, string> = {
   "#Johannesburg / #CapeTown": "cities",
   "#Live-Clubs": "live-clubs",
 };
-const VIBE_PROMPTS = [
-  "Where's the pull up tonight? 🔥",
-  "Who has the best line-up? 🎧",
-  "Share a quick photo/vibe check 📸",
-];
 const REACTIONS = CHAT_REACTIONS;
+
+const SceneLevelBadge = ({ points }: { points?: number }) => {
+  if (points == null) return null;
+
+  const { level, title } = getLevelFromPoints(points);
+  const label = title === "Regular" ? "SCENE Regular" : `Lv.${level} ${title}`;
+
+  return (
+    <span className="inline-flex items-center rounded-full border border-cyan-400/30 bg-cyan-500/10 px-1.5 py-0.5 text-[9px] font-bold text-cyan-200">
+      {label}
+    </span>
+  );
+};
 
 const CommunityChat = () => {
   const { data: ownerIds } = useVenueOwnerIds();
@@ -94,6 +105,32 @@ const CommunityChat = () => {
     isFetchingNextPage,
   } = useCommunityMessages(channelId);
   const messageIds = useMemo(() => messages.map((m) => m.id), [messages]);
+  const messageUserIds = useMemo(
+    () => [...new Set(messages.map((message) => message.user_id))].sort(),
+    [messages],
+  );
+  const {
+    data: userPoints = [],
+    error: userPointsError,
+  } = useQuery({
+    queryKey: ["community-chat-user-points", messageUserIds],
+    enabled: messageUserIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_points")
+        .select("user_id, points")
+        .in("user_id", messageUserIds);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  useEffect(() => {
+    if (userPointsError) toast.error("Could not load chat level badges");
+  }, [userPointsError]);
+  const pointsByUser = useMemo(
+    () => new Map(userPoints.map(({ user_id, points }) => [user_id, points])),
+    [userPoints],
+  );
   const { summary: reactions, key: reactionsKey } = useMessageReactions(messageIds);
   const toggleReaction = useToggleMessageReaction(reactionsKey);
   const sendMessage = useSendCommunityMessage();
@@ -377,33 +414,29 @@ const CommunityChat = () => {
   };
 
   return (
-    <div className="glass flex h-full min-h-0 flex-1 flex-col overflow-hidden border border-border/50 shadow-2xl sm:rounded-2xl">
+    <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-950/90 shadow-2xl shadow-cyan-950/20 backdrop-blur-2xl">
       {/* Header */}
-      <div className="sticky top-0 z-20 shrink-0 border-b border-primary/15 bg-background/95 px-4 pb-3 pt-4 backdrop-blur-md shadow-[inset_0_-1px_0_hsl(174_100%_50%_/_0.12),0_10px_35px_hsl(280_100%_60%_/_0.08)]">
+      <div className="sticky top-0 z-20 shrink-0 border-b border-white/10 bg-slate-950/90 px-4 pb-3 pt-4 shadow-[0_10px_35px_rgba(6,182,212,0.06)] backdrop-blur-2xl">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-display font-bold text-lg text-foreground flex items-center gap-2">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-75 animate-ping" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
+            <h3 className="flex items-center gap-2 font-display text-lg font-bold text-white">
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_#10B981] animate-pulse" />
+              SCENE Pulse
+              <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-300">
+                Live
               </span>
-              Community <span className="text-primary neon-text">Chat</span>
             </h3>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              The city is online · messages auto-clear after 24h
+            <p className="mt-0.5 text-[11px] text-slate-400">
+              Live city signals · Messages auto-clear after 24h
             </p>
           </div>
           <div className="flex flex-col items-end gap-0.5">
-            <span className="text-[11px] font-semibold text-emerald-400 flex items-center gap-1">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
-              </span>
-              {onlineCount} online
+            <span className="text-[11px] font-semibold text-emerald-400">
+              {onlineCount} in room
             </span>
             {messages && (
-              <span className="text-[10px] text-muted-foreground">
-                {messages.length} msgs
+              <span className="text-[10px] text-slate-500">
+                {messages.length} messages
               </span>
             )}
           </div>
@@ -416,8 +449,8 @@ const CommunityChat = () => {
               onClick={() => setActiveChannel(channel)}
               className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-all ${
                 activeChannel === channel
-                  ? "border-primary/70 bg-primary/15 text-primary shadow-[0_0_16px_hsl(174_100%_50%_/_0.2)]"
-                  : "border-white/10 bg-white/[0.04] text-muted-foreground hover:border-secondary/50 hover:text-foreground"
+                  ? "border border-cyan-400 bg-cyan-500/20 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.25)]"
+                  : "border-white/10 bg-slate-900/60 text-slate-300 hover:border-white/20"
               }`}
             >
               {channel}
@@ -427,14 +460,14 @@ const CommunityChat = () => {
       </div>
 
       {/* Search bar */}
-      <div className="z-10 shrink-0 border-b border-border/30 bg-background/95 px-4 py-2 backdrop-blur-md">
+      <div className="z-10 shrink-0 border-b border-white/5 bg-slate-950/70 px-4 py-2 backdrop-blur-xl">
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Search className="absolute left-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={searchPlaceholder || "Search..."}
-            className="pl-8 h-8 text-xs bg-muted/40 border-border/40"
+            className="h-10 rounded-xl border border-white/10 bg-slate-950/80 py-2 pl-10 pr-4 text-xs text-slate-100 placeholder:text-slate-500 focus-visible:ring-cyan-400/40"
           />
         </div>
       </div>
@@ -443,8 +476,19 @@ const CommunityChat = () => {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="relative flex min-h-0 flex-1 flex-col space-y-3 overflow-y-auto overscroll-contain px-4 py-2 pb-5 bg-background/40"
+        className="relative flex min-h-0 flex-1 flex-col space-y-3 overflow-y-auto overscroll-contain bg-slate-950/45 px-4 py-3 pb-5"
       >
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-0 flex select-none items-center justify-center overflow-hidden"
+        >
+          <div className="absolute h-48 w-48 rounded-full bg-cyan-400/10 blur-3xl md:h-64 md:w-64" />
+          <img
+            src={logoWatermark}
+            alt=""
+            className="relative h-64 w-64 object-contain opacity-10 md:h-80 md:w-80"
+          />
+        </div>
         <AnimatePresence>
           {reactionParticles.map((particle) => (
             <motion.span
@@ -459,7 +503,7 @@ const CommunityChat = () => {
           ))}
         </AnimatePresence>
         {isFetchingNextPage && (
-          <LogoSkeleton label="Loading older messages…" size={24} className="border-0 bg-transparent py-2" />
+          <SceneLoadingSkeleton label="Loading older messages…" size={24} className="relative z-10 border-0 bg-transparent py-2" />
         )}
         {hasNextPage && !isFetchingNextPage && (
           <button
@@ -467,46 +511,19 @@ const CommunityChat = () => {
               prevScrollHeight.current = scrollRef.current?.scrollHeight ?? 0;
               fetchNextPage();
             }}
-            className="text-[11px] text-primary mx-auto hover:underline flex items-center gap-1"
+            className="relative z-10 mx-auto flex items-center gap-1 text-[11px] text-primary hover:underline"
           >
             <ArrowUp className="w-3 h-3" /> Load older
           </button>
         )}
         {isLoading && (
-          <LogoSkeleton label="Loading the scene…" size={36} className="border-0 bg-transparent py-4" />
+          <SceneLoadingSkeleton label="Loading the scene…" size={36} className="relative z-10 border-0 bg-transparent py-4" />
         )}
-        {filteredMessages?.length === 0 &&
-          !isLoading &&
-          (search ? (
-            <div className="my-auto w-full py-12 text-center text-muted-foreground text-sm">
-              No messages match your search.
-            </div>
-          ) : (
-            <div className="relative my-auto w-full max-w-md self-center overflow-hidden rounded-2xl border border-secondary/25 bg-[radial-gradient(circle_at_85%_10%,hsl(330_100%_60%_/_0.22),transparent_38%),linear-gradient(135deg,hsl(240_10%_10%_/_0.96),hsl(280_25%_14%_/_0.8))] px-5 py-8 text-center shadow-[0_0_35px_hsl(330_100%_60%_/_0.1)]">
-              <div className="absolute -right-8 -top-10 h-28 w-28 rounded-full border border-primary/20" />
-              <div className="absolute -bottom-16 -left-8 h-32 w-32 rounded-full border border-secondary/20" />
-              <p className="text-3xl">✦</p>
-              <p className="mt-2 font-display text-xl font-bold text-foreground">
-                Join the Vibe
-              </p>
-              <p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-muted-foreground">
-                Be the first signal in {activeChannel}. Drop a question, a tip,
-                or a little proof of life from the dance floor.
-              </p>
-              <div className="mt-5 flex flex-wrap justify-center gap-2">
-                {VIBE_PROMPTS.map((prompt) => (
-                  <button
-                    key={prompt}
-                    type="button"
-                    onClick={() => setText(prompt)}
-                    className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-2 text-[11px] text-foreground transition hover:border-primary/60 hover:bg-primary/10"
-                  >
-                    {prompt}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
+        {filteredMessages?.length === 0 && !isLoading && search && (
+          <div className="relative z-10 my-auto w-full py-12 text-center text-muted-foreground text-sm">
+            No messages match your search.
+          </div>
+        )}
         <AnimatePresence initial={false}>
           {filteredMessages?.map((msg) => {
             const isOwn = msg.user_id === user?.id;
@@ -530,13 +547,13 @@ const CommunityChat = () => {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.18 }}
-                className={`flex ${isOwn ? "justify-end" : "justify-start"} group`}
+                className={`relative z-10 flex ${isOwn ? "justify-end" : "justify-start"} group`}
               >
                 <div
                   className={`max-w-[88%] flex items-end gap-2 ${isOwn ? "flex-row-reverse" : ""}`}
                 >
                   <div
-                    className="mb-5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold"
+                    className="relative mb-6 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold"
                     style={{
                       color: color.name,
                       borderColor: color.border,
@@ -544,6 +561,9 @@ const CommunityChat = () => {
                     }}
                   >
                     {initials}
+                    <span className="absolute -bottom-4 left-1/2 z-10 -translate-x-1/2">
+                      <SceneLevelBadge points={pointsByUser.get(msg.user_id)} />
+                    </span>
                   </div>
                   <div className="min-w-0">
                     <div
@@ -574,13 +594,11 @@ const CommunityChat = () => {
                       )}
                     </div>
                     <div
-                      className={`relative px-3.5 py-2 text-sm border backdrop-blur-sm ${isOwn ? "rounded-2xl rounded-br-md" : "rounded-2xl rounded-bl-md"}`}
-                      style={{
-                        background: color.bubble,
-                        borderColor: color.border,
-                        boxShadow: color.glow,
-                        color: "hsl(0 0% 98%)",
-                      }}
+                      className={`relative border p-3.5 text-sm backdrop-blur-xl ${
+                        isOwn
+                          ? "rounded-2xl rounded-tr-none border-cyan-400/30 bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.2)]"
+                          : "rounded-2xl rounded-tl-none border-white/10 bg-slate-900/90 text-slate-100"
+                      }`}
                     >
                       {msgType === "image" && mediaUrl ? (
                         <div className="space-y-1.5">
@@ -608,14 +626,14 @@ const CommunityChat = () => {
                         </div>
                       ) : msgType === "audio" && mediaUrl ? (
                         <div className="flex min-w-[210px] items-center gap-2">
-                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-primary">
+                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-500/15 text-cyan-300">
                             <Mic className="w-4 h-4" />
                           </span>
                           <div className="flex flex-1 items-center gap-0.5 opacity-70">
                             {Array.from({ length: 18 }).map((_, index) => (
                               <span
                                 key={index}
-                                className="w-1 rounded-full bg-primary"
+                                className="w-1 rounded-full bg-cyan-400"
                                 style={{
                                   height: `${8 + ((index * 7) % 16)}px`,
                                 }}
@@ -687,7 +705,7 @@ const CommunityChat = () => {
 
       {/* Composer */}
       {user ? (
-        <div className="sticky bottom-0 z-20 shrink-0 border-t border-border/40 bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md">
+        <div className="sticky bottom-0 z-20 shrink-0 border-t border-white/10 bg-slate-950/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl">
           {/* Preview */}
           {previewFile && previewUrl && (
             <div className="px-3 pt-3">
@@ -746,12 +764,12 @@ const CommunityChat = () => {
 
           <form
             onSubmit={handleSend}
-            className="m-3 flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] p-1.5 pl-3 shadow-[inset_0_1px_0_hsl(0_0%_100%_/_0.06),0_0_24px_hsl(174_100%_50%_/_0.06)] backdrop-blur-xl"
+            className="m-3 flex items-center gap-2 rounded-full border border-white/10 bg-slate-900/90 p-2 shadow-2xl backdrop-blur-2xl"
           >
             <button
               type="button"
               onClick={() => setShowEmojis((s) => !s)}
-              className="text-muted-foreground hover:text-foreground shrink-0"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-slate-950/80 text-slate-400 transition-all hover:border-cyan-400/50 hover:text-cyan-200 hover:shadow-[0_0_12px_rgba(6,182,212,0.2)]"
               title="Emojis"
             >
               <Smile className="w-5 h-5" />
@@ -767,7 +785,7 @@ const CommunityChat = () => {
               type="button"
               onClick={() => fileRef.current?.click()}
               disabled={uploadProgress != null}
-              className="text-muted-foreground hover:text-foreground shrink-0"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-slate-950/80 text-slate-400 transition-all hover:border-cyan-400/50 hover:text-cyan-200 hover:shadow-[0_0_12px_rgba(6,182,212,0.2)] disabled:opacity-40"
               title="Attach image or audio"
             >
               <ImageIcon className="w-5 h-5" />
@@ -776,7 +794,7 @@ const CommunityChat = () => {
               <button
                 type="button"
                 onClick={stopRecording}
-                className="text-destructive shrink-0 animate-pulse"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-rose-400/40 bg-rose-500/10 text-rose-300 animate-pulse"
                 title="Stop recording"
               >
                 <Square className="w-5 h-5 fill-current" />
@@ -786,7 +804,7 @@ const CommunityChat = () => {
                 type="button"
                 onClick={startRecording}
                 disabled={uploadProgress != null}
-                className="text-muted-foreground hover:text-primary shrink-0"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-slate-950/80 text-slate-400 transition-all hover:border-cyan-400/50 hover:text-cyan-200 hover:shadow-[0_0_12px_rgba(6,182,212,0.2)] disabled:opacity-40"
                 title="Record voice note"
               >
                 <Mic className="w-5 h-5" />
@@ -802,7 +820,7 @@ const CommunityChat = () => {
               }
               maxLength={500}
               disabled={recording}
-              className="h-10 flex-1 border-0 bg-transparent text-sm shadow-none focus-visible:ring-0"
+              className="h-10 min-w-0 flex-1 border-0 bg-transparent text-sm text-white shadow-none placeholder:text-slate-500 focus-visible:ring-0"
             />
             <Button
               type="submit"
@@ -812,7 +830,7 @@ const CommunityChat = () => {
                 sendMessage.isPending ||
                 uploadProgress != null
               }
-              className="h-10 w-10 shrink-0 rounded-full bg-primary text-primary-foreground shadow-[0_0_18px_hsl(174_100%_50%_/_0.55)] transition hover:scale-105 hover:bg-primary"
+              className="h-10 w-10 shrink-0 rounded-full bg-gradient-to-tr from-cyan-500 to-emerald-400 text-slate-950 shadow-[0_0_15px_rgba(6,182,212,0.5)] transition-all hover:scale-105"
             >
               {uploadProgress != null ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -823,10 +841,10 @@ const CommunityChat = () => {
           </form>
         </div>
       ) : (
-        <div className="sticky bottom-0 z-20 shrink-0 border-t border-border/40 bg-background/95 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center backdrop-blur-md">
+        <div className="sticky bottom-0 z-20 shrink-0 border-t border-white/10 bg-slate-950/85 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center backdrop-blur-2xl">
           <Link
             to="/auth"
-            className="text-primary text-sm font-semibold hover:underline"
+            className="text-sm font-semibold text-cyan-300 hover:underline"
           >
             Sign in to join the chat
           </Link>

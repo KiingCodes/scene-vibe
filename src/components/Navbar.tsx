@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
-import { MessageCircle, Home, User, Heart, Shield, BarChart3, Trophy, Users, Moon, Sparkles, ChevronDown, Check, MoreHorizontal, Bell, Building2, Crown, ShieldCheck } from 'lucide-react';
+import { MessageCircle, Home, User, Heart, Shield, BarChart3, Trophy, Users, Moon, Sparkles, ChevronDown, Check, MoreHorizontal, Bell, Building2, Crown, ShieldCheck, CalendarDays } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
 import { useMyVenues } from '@/hooks/useVenueOwner';
@@ -23,7 +23,7 @@ import "@fontsource/poppins/800.css";
 // Primary bottom-dock destinations (thumb-friendly, mobile-first).
 const PRIMARY_ITEMS = [
   { path: '/',            icon: Home,          label: 'Home' },
-  { path: '/chat',        icon: MessageCircle, label: 'Chat' },
+  { path: '/chat',        icon: MessageCircle, label: 'SCENE Pulse' },
   { path: '/safety',      icon: ShieldCheck,   label: 'Walk Me Home' },
 ];
 
@@ -31,6 +31,7 @@ const PRIMARY_ITEMS = [
 const MORE_ITEMS = [
   { path: '/crews',        icon: Users,     label: 'Crews' },
   { path: '/night-replay', icon: Moon,      label: 'Night Replay' },
+  { path: '/events',       icon: CalendarDays, label: 'Events' },
   { path: '/saved',        icon: Heart,     label: 'Saved' },
   { path: '/insights',     icon: BarChart3, label: 'Insights' },
   { path: '/leaderboard',  icon: Trophy,    label: 'Leaderboard' },
@@ -107,7 +108,7 @@ const Navbar = () => {
         className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center px-3 sm:px-4 gap-2 bg-[#0a0a0f]/85 backdrop-blur-xl border-b border-white/5"
       >
         <CountrySwitcher align="start" />
-        <Link to="/" aria-label="SCENE home" className="ml-1 flex h-10 w-24 shrink-0 items-center justify-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-28">
+        <Link to="/" aria-label="SCENE home" className="ml-1 flex h-8 w-20 shrink-0 items-center justify-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-24">
           <img src={navbarLogo} alt="SCENE" className="block h-auto w-full object-contain" />
         </Link>
         <div className="ml-auto flex items-center gap-1">
@@ -158,6 +159,8 @@ const Navbar = () => {
                     active ? 'text-[#00e6d6]' : 'text-white/60 hover:text-white/90'
                   }`}
                   aria-current={active ? 'page' : undefined}
+                  aria-label={label}
+                  title={label}
                 >
                   {active && (
                     <motion.span

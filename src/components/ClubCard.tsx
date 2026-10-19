@@ -15,6 +15,8 @@ import logoFallback from '@/assets/scene-logo.jpg';
 import { VerifiedVenueBadge } from '@/components/VerifiedBadge';
 import { isVerifiedVenue } from '@/hooks/useVenueOwner';
 
+import { usePublicVenueAnnouncements } from "@/hooks/usePublicVenueAnnouncements";
+
 interface ClubCardProps {
   club: Club;
   vibeCount?: number;
@@ -23,6 +25,9 @@ interface ClubCardProps {
 }
 
 const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardProps) => {
+  const { data: announcements = [] } = usePublicVenueAnnouncements(false);
+  const activeAnnouncement = announcements.find((announcement) => announcement.club_id === club.id);
+  const waitMinutes = club.wait_time_minutes;
   const { user } = useAuth();
   const { data: hasVibed } = useHasVibed(club.id);
   const vibeMutation = useVibe();
@@ -197,6 +202,20 @@ const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardPr
                 </div>
               </div>
             </div>
+            {(waitMinutes > 0 || activeAnnouncement) && (
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                {waitMinutes > 0 && (
+                  <span className="rounded-full border border-cyan-300/20 bg-cyan-300/[0.07] px-2 py-1 text-[10px] font-semibold text-cyan-100">
+                    Door wait · {waitMinutes} min
+                  </span>
+                )}
+                {activeAnnouncement && (
+                  <p className="w-full rounded-xl border border-fuchsia-300/15 bg-fuchsia-300/[0.05] px-2.5 py-2 text-xs leading-5 text-fuchsia-100">
+                    {activeAnnouncement.content}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
               <MapPin className="w-3 h-3 text-primary/70" />

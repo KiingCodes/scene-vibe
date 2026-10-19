@@ -61,8 +61,8 @@ export const LiveCommandTab = ({ status, onStatusChange }: LiveCommandTabProps) 
                   className={cn(
                     "rounded-full border px-3 py-1.5 text-xs font-semibold transition-all",
                     status.crowdTag === tag
-                      ? "border-portal-pink/60 bg-portal-pink/15 text-portal-pink shadow-[0_0_18px_-4px_hsl(var(--portal-pink)/0.8)]"
-                      : "border-white/10 bg-white/5 text-muted-foreground hover:text-foreground",
+                      ? "border-cyan-400 bg-cyan-500/20 text-cyan-300 shadow-[0_0_20px_rgba(6,182,212,0.4)]"
+                      : "border-white/10 bg-slate-950/50 text-slate-400 hover:border-white/20 hover:text-white",
                   )}
                 >
                   {tag}
@@ -149,7 +149,7 @@ export const LiveCommandTab = ({ status, onStatusChange }: LiveCommandTabProps) 
           </div>
 
           <Button
-            className="w-full h-12 text-sm font-bold bg-gradient-to-r from-portal-violet via-portal-pink to-portal-cyan text-white hover:opacity-90"
+            className="h-12 w-full bg-gradient-to-r from-cyan-500 via-purple-600 to-fuchsia-500 text-sm font-bold text-white shadow-[0_0_25px_rgba(6,182,212,0.4)] transition-all hover:scale-[1.02] active:scale-[0.98]"
             onClick={() =>
               toast.success("Flash promo launched", {
                 description: `“${promo.headline}” · ${promo.radiusKm}km radius · live for ${promo.durationMinutes} min`,
