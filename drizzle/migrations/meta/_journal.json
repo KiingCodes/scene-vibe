@@ -15,6 +15,13 @@
       "when": 1792326090623,
       "tag": "0001_night_replay_video_submissions",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792416895608,
+      "tag": "0002_venue_pulse_broadcasts_and_door_wait",
+      "breakpoints": true
     }
   ]
 }
