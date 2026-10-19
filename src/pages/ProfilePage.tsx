@@ -39,6 +39,7 @@ import Animated3DEmoji, {
   type Animated3DEmojiName,
 } from "@/components/ui/Animated3DEmoji";
 import { LogoSkeleton } from "@/components/BrandedSkeleton";
+import sceneLogo from "@/assets/scene-logo.jpg";
 
 const VERIFIED_LEVEL = 8; // VIP level = auto-verified
 const BADGE_EMOJIS: Record<string, Animated3DEmojiName> = {
@@ -210,20 +211,26 @@ const ProfilePage = () => {
     return (
       <div className="min-h-screen gradient-dark">
         <Navbar />
-        <div className="pt-24 container mx-auto px-4 text-center">
-          <User className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h1 className="font-display font-bold text-2xl text-foreground mb-2">
-            Join the Scene
-          </h1>
-          <p className="text-muted-foreground mb-6">
-            Sign in to track your nightlife journey.
-          </p>
-          <Link to="/auth">
-            <Button className="gradient-primary text-primary-foreground">
-              Sign In
-            </Button>
-          </Link>
-        </div>
+        <main className="relative isolate mx-auto flex min-h-screen max-w-2xl items-center justify-center overflow-hidden px-4 pb-16 pt-24 text-center">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 flex select-none items-center justify-center overflow-hidden">
+            <div className="absolute h-64 w-64 rounded-full bg-[radial-gradient(circle,rgba(6,182,212,0.12),rgba(217,70,239,0.06)_48%,transparent_72%)] blur-3xl md:h-96 md:w-96" />
+            <img src={sceneLogo} alt="" className="h-72 w-72 object-contain opacity-[0.06] md:h-96 md:w-96" />
+          </div>
+          <section className="relative z-10 w-full max-w-md rounded-3xl border border-white/10 bg-slate-900/80 p-8 shadow-[0_0_30px_rgba(0,0,0,0.6)] backdrop-blur-2xl">
+            <Animated3DEmoji name="crown" label="Join SCENE" className="mx-auto mb-5 h-16 w-16 rounded-2xl border-cyan-300/20 bg-cyan-400/10" />
+            <h1 className="mb-2 font-display text-2xl font-bold text-foreground">
+              Join the Scene
+            </h1>
+            <p className="mb-6 text-muted-foreground">
+              Sign in to track your nightlife journey.
+            </p>
+            <Link to="/auth">
+              <Button className="rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-fuchsia-500 px-8 py-3.5 font-bold text-slate-950 shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all hover:scale-[1.02] hover:brightness-110 active:scale-[0.98]">
+                Sign In
+              </Button>
+            </Link>
+          </section>
+        </main>
       </div>
     );
   }

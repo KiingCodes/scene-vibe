@@ -110,7 +110,7 @@ const AuthPage = () => {
               <img
                 src={logo}
                 alt="Scene Logo"
-                className="w-20 h-20 object-contain"
+                className="h-28 w-28 object-contain sm:h-32 sm:w-32"
               />
             </div>
 

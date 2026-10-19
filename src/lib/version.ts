@@ -1,17 +1,19 @@
-// SCENE App Version — bump on every major update.
-// Format: MAJOR.MINOR.PATCH
+import packageJson from "../../package.json";
+
+// package.json is the canonical app version; the release label is derived from it.
 //
 // 🚀 VERSION BUMP WORKFLOW (follow on every significant update):
-//   1. Update APP_VERSION below:
+//   1. Update the version in package.json and synchronize package-lock.json:
 //      - MAJOR (x.0.0): breaking redesigns, removed features, schema overhauls
 //      - MINOR (1.x.0): new features, new pages, meaningful UX additions
 //      - PATCH (1.4.x): bug fixes, copy tweaks, small visual polish
-//   2. Prepend a NEW entry to the top of VERSION_HISTORY with:
+//   2. Prepend a new entry to VERSION_HISTORY with:
 //        { version, date: "YYYY-MM-DD", highlights: ["...", "..."] }
 //   3. Keep highlights short, user-facing, and benefit-led (no jargon).
 //   4. The footer "What's New" modal auto-reads from this file — no other edits needed.
-export const APP_VERSION = "1.13.0";
-export const APP_RELEASED_AT = "2026-09-01T00:00:00Z";
+export const APP_VERSION = packageJson.version;
+export const APP_VERSION_LABEL = `v${APP_VERSION} (Pre-Launch)`;
+export const APP_RELEASED_AT = "2026-10-19T00:00:00Z";
 
 export type VersionEntry = {
   version: string;
@@ -23,9 +25,18 @@ export type VersionEntry = {
 // Only the latest version is kept — older entries are intentionally pruned.
 export const VERSION_HISTORY: VersionEntry[] = [
   {
+    version: APP_VERSION,
+    date: "2026-10-19",
+    releasedAt: APP_RELEASED_AT,
+    highlights: [
+      "SCENE is preparing for launch with the 1.0.0 beta release",
+      "Venue announcements now publish as verified updates in SCENE Pulse",
+    ],
+  },
+  {
     version: "1.13.0",
     date: "2026-09-01",
-    releasedAt: APP_RELEASED_AT,
+    releasedAt: "2026-09-01T00:00:00Z",
     highlights: [
       "Walk Me Home is here — live location tracking from the More menu until you get home safe",
       "Share a live track link so a friend can watch your route in real time",
@@ -37,7 +48,7 @@ export const VERSION_HISTORY: VersionEntry[] = [
   {
     version: "1.12.0",
     date: "2026-07-07",
-    releasedAt: APP_RELEASED_AT,
+    releasedAt: "2026-07-07T00:00:00Z",
     highlights: [
       "Venue Manager Onboarding is now live — find it in the More menu under 'Claim Your Venue'",
       "Wizard now saves drafts to the cloud and resumes exactly where you left off",
@@ -50,7 +61,7 @@ export const VERSION_HISTORY: VersionEntry[] = [
   {
     version: "1.11.0",
     date: "2026-07-06",
-    releasedAt: APP_RELEASED_AT,
+    releasedAt: "2026-07-06T00:00:00Z",
     highlights: [
       "Premium club detail page — sleeker hero, elegant action bar & neon capacity badge",
       "Crowd status now reads Chill · Filling Up · Peak Capacity with illuminated meter",
@@ -62,7 +73,7 @@ export const VERSION_HISTORY: VersionEntry[] = [
   {
     version: "1.10.0",
     date: "2026-07-05",
-    releasedAt: APP_RELEASED_AT,
+    releasedAt: "2026-07-05T00:00:00Z",
     highlights: [
       "Daily auto-sync — every club & experience refreshes real cover images, hours & websites overnight",
       "Notification tray now shows the real SCENE logo, not a generic icon",
@@ -75,7 +86,7 @@ export const VERSION_HISTORY: VersionEntry[] = [
   {
     version: "1.9.0",
     date: "2026-07-04",
-    releasedAt: APP_RELEASED_AT,
+    releasedAt: "2026-07-04T00:00:00Z",
     highlights: [
       "Background push notifications — get pinged 3x a night, even with the app closed",
       "Fixed the blank notification icon — SCENE logo now shows in your tray properly",
@@ -88,7 +99,7 @@ export const VERSION_HISTORY: VersionEntry[] = [
   {
     version: "1.8.0",
     date: "2026-07-03",
-    releasedAt: APP_RELEASED_AT,
+    releasedAt: "2026-07-03T00:00:00Z",
     highlights: [
       "Bottom tab dock — one-thumb navigation, no more crowded top bar",
       "Live activity log — every vibe, favorite and check-in shows up in Notifications",
@@ -102,7 +113,7 @@ export const VERSION_HISTORY: VersionEntry[] = [
   {
     version: "1.7.0",
     date: "2026-05-09",
-    releasedAt: APP_RELEASED_AT,
+    releasedAt: "2026-05-09T00:00:00Z",
     highlights: [
       "Loading skeletons across the app — smoother feel everywhere",
       "Open / Closed status now shown on every experience",
@@ -115,7 +126,7 @@ export const VERSION_HISTORY: VersionEntry[] = [
   {
     version: "1.6.0",
     date: "2026-05-02",
-    releasedAt: APP_RELEASED_AT,
+    releasedAt: "2026-05-02T00:00:00Z",
     highlights: [
       "Realtime streaming chat — new messages appear instantly",
       "Infinite scroll back through chat history",

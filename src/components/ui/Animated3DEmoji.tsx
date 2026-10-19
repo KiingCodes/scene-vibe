@@ -17,6 +17,8 @@ export type Animated3DEmojiName =
   | 'car'
   | 'heart'
   | 'chat'
+  | 'party'
+  | 'calendar'
   | 'video'
   | 'thumbsUp'
   | 'users'
@@ -34,6 +36,7 @@ type Animated3DEmojiProps = {
 
 const Animated3DEmoji = ({ name, label, className = '', featured = false }: Animated3DEmojiProps) => {
   const [assetFailed, setAssetFailed] = useState(false);
+  const nativeEmoji = name === 'party' ? '🎉' : name === 'calendar' ? '📅' : null;
 
   return (
     <span
@@ -49,7 +52,16 @@ const Animated3DEmoji = ({ name, label, className = '', featured = false }: Anim
           featured ? 'from-orange-300/15' : ''
         }`}
       />
-      {assetFailed ? (
+      {nativeEmoji ? (
+        <motion.span
+          aria-hidden="true"
+          className="relative z-10 select-none text-3xl drop-shadow-[0_0_10px_rgba(34,211,238,0.45)]"
+          animate={{ y: [0, -1, 0], rotate: [0, -1.5, 1.5, 0], scale: [1, 1.03, 1] }}
+          transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          {nativeEmoji}
+        </motion.span>
+      ) : assetFailed ? (
         <span
           aria-hidden="true"
           className="relative z-10 h-5 w-5 rounded-full bg-gradient-to-br from-white/20 to-transparent shadow-inner"

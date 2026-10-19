@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Bell, Check, Radar, Sparkles, Trash2, Zap } from 'lucide-react';
+import { Bell, Check, Radar, Trash2, Zap } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,8 @@ import {
 } from '@/hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
 import { LogoSkeleton } from '@/components/BrandedSkeleton';
+import sceneLogo from '@/assets/scene-logo.jpg';
+import { APP_VERSION, APP_VERSION_LABEL } from '@/lib/version';
 
 const SOCIAL_TYPES = [
   'follow', 'unfollow', 'crew_invite', 'crew_join', 'crew_vote',
@@ -106,7 +108,7 @@ const NotificationsPage = () => {
 
         {!user ? (
           <div className="rounded-2xl border border-white/10 bg-slate-950/80 p-10 text-center shadow-lg backdrop-blur-xl">
-            <Sparkles className="mx-auto mb-2 h-8 w-8 text-cyan-400" />
+            <img src={sceneLogo} alt="SCENE" className="mx-auto mb-3 h-20 w-20 rounded-2xl object-cover shadow-[0_0_24px_rgba(6,182,212,0.3)]" />
             <p className="font-semibold text-white">Sign in to see your activity feed</p>
             <p className="mt-1 text-sm text-slate-400">Every action you take gets logged here.</p>
             <Link to="/auth">
@@ -216,7 +218,7 @@ const NotificationsPage = () => {
                           )}
                           {notification.app_version && (
                             <span className="mt-2 inline-block rounded bg-cyan-500/10 px-1.5 py-0.5 font-mono text-[9px] text-cyan-300">
-                              v{notification.app_version}
+                              {notification.app_version === APP_VERSION ? APP_VERSION_LABEL : `v${notification.app_version}`}
                             </span>
                           )}
                         </div>

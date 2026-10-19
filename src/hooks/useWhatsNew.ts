@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { toast } from 'sonner';
-import { APP_VERSION, VERSION_HISTORY } from '@/lib/version';
+import { APP_VERSION, APP_VERSION_LABEL, VERSION_HISTORY } from '@/lib/version';
 import { useAuth } from './useAuth';
 import { pushLocalNotification } from './useNotifications';
 
@@ -15,7 +15,7 @@ export const useWhatsNew = () => {
 
     const latest = VERSION_HISTORY[0];
     const t = setTimeout(() => {
-      toast(`✨ SCENE v${APP_VERSION} is here`, {
+      toast(`✨ SCENE ${APP_VERSION_LABEL} is here`, {
         description: latest?.highlights.slice(0, 3).join(' · '),
         duration: 8000,
       });
@@ -24,7 +24,7 @@ export const useWhatsNew = () => {
       if (user && latest) {
         pushLocalNotification(user.id, {
           type: 'version_update',
-          title: `SCENE v${APP_VERSION} is live`,
+          title: `SCENE ${APP_VERSION_LABEL} is live`,
           body: latest.highlights.slice(0, 2).join(' · '),
           link: '/',
           meta: { version: APP_VERSION },

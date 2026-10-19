@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { APP_VERSION, VERSION_HISTORY } from "@/lib/version";
+import { APP_VERSION, APP_VERSION_LABEL, VERSION_HISTORY } from "@/lib/version";
 
 const SEEN_VERSION_KEY = "scene_last_seen_version";
 
@@ -54,7 +54,7 @@ const WhatsNewDialog = ({ trigger }: Props) => {
             className="relative text-[10px] text-muted-foreground/70 mt-2 font-mono hover:text-primary transition-colors underline-offset-4 hover:underline inline-flex items-center gap-2"
             aria-label="View what's new"
           >
-            <span>SCENE v{APP_VERSION}</span>
+            <span>SCENE {APP_VERSION_LABEL}</span>
             {hasNew && (
               <span className="relative flex h-2 w-2" aria-label="New update available">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
@@ -88,7 +88,7 @@ const WhatsNewDialog = ({ trigger }: Props) => {
                     variant={idx === 0 ? "default" : "secondary"}
                     className="font-mono text-[10px]"
                   >
-                    v{entry.version}
+                    {entry.version === APP_VERSION ? APP_VERSION_LABEL : `v${entry.version}`}
                   </Badge>
                   <span className="text-xs text-muted-foreground">{entry.date}</span>
                   {idx === 0 && (
@@ -120,7 +120,7 @@ const WhatsNewDialog = ({ trigger }: Props) => {
             </span>
           </span>
           <span>
-            Current: <span className="text-primary">v{APP_VERSION}</span>
+            Current: <span className="text-primary">{APP_VERSION_LABEL}</span>
           </span>
         </div>
       </DialogContent>

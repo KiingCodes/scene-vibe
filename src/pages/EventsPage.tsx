@@ -5,6 +5,8 @@ import { ArrowUpRight, CalendarDays, MapPin, Ticket } from "lucide-react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { LogoSkeleton } from "@/components/BrandedSkeleton";
+import Animated3DEmoji from "@/components/ui/Animated3DEmoji";
+import sceneLogo from "@/assets/scene-logo.jpg";
 import { useCountry } from "@/contexts/CountryContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useClubs } from "@/hooks/useClubs";
@@ -63,10 +65,16 @@ const EventsPage = () => {
             We couldn’t load events right now. Please try again shortly.
           </div>
         ) : events.length === 0 ? (
-          <div className="rounded-3xl border border-white/10 bg-slate-900/70 p-8 text-center shadow-2xl backdrop-blur-2xl">
-            <CalendarDays className="mx-auto h-8 w-8 text-cyan-300" />
-            <p className="mt-3 font-semibold text-white">No upcoming events yet</p>
-            <p className="mt-1 text-sm text-slate-400">Check back soon for the next night out.</p>
+          <div className="relative isolate flex min-h-64 items-center justify-center overflow-hidden rounded-3xl">
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 flex select-none items-center justify-center overflow-hidden">
+              <div className="absolute h-64 w-64 rounded-full bg-[radial-gradient(circle,rgba(6,182,212,0.12),rgba(217,70,239,0.06)_48%,transparent_72%)] blur-3xl md:h-96 md:w-96" />
+              <img src={sceneLogo} alt="" className="h-72 w-72 object-contain opacity-[0.06] md:h-96 md:w-96" />
+            </div>
+            <section className="relative z-10 mx-4 w-full max-w-md rounded-3xl border border-white/10 bg-slate-900/80 p-8 text-center shadow-[0_0_30px_rgba(0,0,0,0.6)] backdrop-blur-2xl">
+              <Animated3DEmoji name="party" label="Upcoming nightlife" className="mx-auto mb-4 h-14 w-14 rounded-2xl border-cyan-300/20 bg-cyan-400/10" />
+              <p className="font-semibold text-white">No upcoming events yet</p>
+              <p className="mt-1 text-sm text-slate-400">Check back soon for the next night out.</p>
+            </section>
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

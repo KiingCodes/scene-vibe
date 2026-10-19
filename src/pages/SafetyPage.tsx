@@ -22,6 +22,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import sceneLogo from '@/assets/scene-logo.jpg';
+import Animated3DEmoji from '@/components/ui/Animated3DEmoji';
 import DestinationPicker, { type Destination } from '@/components/safety/DestinationPicker';
 import { LogoSkeleton } from '@/components/BrandedSkeleton';
 import {
@@ -171,19 +173,27 @@ const SafetyPage = () => {
     return (
       <div className="min-h-screen w-full overflow-x-hidden bg-[#070b0a] text-white">
         <Navbar />
-        <main className="w-full max-w-md mx-auto px-4 pt-28 pb-16 text-center">
-          <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-2xl border border-emerald-400/20 bg-emerald-400/10 text-emerald-300">
-            <Shield className="h-8 w-8" />
+        <main className="relative isolate mx-auto flex min-h-screen w-full max-w-lg items-center justify-center overflow-hidden px-4 pb-16 pt-24 text-center">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 flex select-none items-center justify-center overflow-hidden">
+            <div className="absolute h-64 w-64 rounded-full bg-[radial-gradient(circle,rgba(6,182,212,0.12),rgba(217,70,239,0.06)_48%,transparent_72%)] blur-3xl md:h-96 md:w-96" />
+            <img src={sceneLogo} alt="" className="h-72 w-72 object-contain opacity-[0.06] md:h-96 md:w-96" />
           </div>
-          <h1 className="text-2xl font-black tracking-tight">Walk Me Home</h1>
-          <p className="mt-2 text-sm leading-6 text-white/55">
-            Sign in to start a private live safety walk.
-          </p>
-          <Link to="/auth" className="mt-6 block w-full">
-            <Button className="h-12 w-full rounded-xl bg-emerald-400 font-bold text-emerald-950 hover:bg-emerald-300">
-              Sign in to continue
-            </Button>
-          </Link>
+          <section className="relative z-10 w-full rounded-3xl border border-white/10 bg-slate-900/80 p-8 shadow-[0_0_30px_rgba(0,0,0,0.6)] backdrop-blur-2xl">
+            <img
+              src={sceneLogo}
+              alt="SCENE"
+              className="mx-auto mb-5 h-20 w-20 rounded-2xl border border-cyan-300/30 object-cover shadow-[0_0_28px_rgba(6,182,212,0.28)]"
+            />
+            <h1 className="text-2xl font-black tracking-tight">Walk Me Home</h1>
+            <p className="mt-2 text-sm leading-6 text-white/65">
+              Sign in to start a private live safety walk.
+            </p>
+            <Link to="/auth" className="mt-6 block w-full">
+              <Button className="h-12 w-full rounded-2xl bg-cyan-500 py-3.5 px-8 font-bold text-slate-950 shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all hover:scale-[1.02] hover:bg-cyan-400 active:scale-[0.98]">
+                Sign in to continue
+              </Button>
+            </Link>
+          </section>
         </main>
       </div>
     );

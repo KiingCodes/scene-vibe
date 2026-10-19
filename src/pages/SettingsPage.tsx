@@ -36,7 +36,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { APP_VERSION } from "@/lib/version";
+import { APP_VERSION_LABEL } from "@/lib/version";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import {
@@ -644,10 +644,10 @@ const SettingsPage = () => {
             <SettingRow
               icon={Monitor}
               title="App Version"
-              description="You are running the latest SCENE release"
+              description="Pre-launch beta build"
             >
               <span className="text-xs font-semibold text-muted-foreground">
-                v{APP_VERSION}
+                {APP_VERSION_LABEL}
               </span>
             </SettingRow>
             <SettingRow
