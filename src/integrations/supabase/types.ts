@@ -96,7 +96,6 @@ export type Database = {
           is_verified: boolean
           lat: number
           live_status: string | null
-          wait_time_minutes: number
           lng: number
           name: string
           opening_hours: string | null
@@ -105,6 +104,7 @@ export type Database = {
           status: string
           status_updated_at: string | null
           verified_at: string | null
+          wait_time_minutes: number
           website: string | null
         }
         Insert: {
@@ -126,7 +126,6 @@ export type Database = {
           is_verified?: boolean
           lat: number
           live_status?: string | null
-          wait_time_minutes?: number
           lng: number
           name: string
           opening_hours?: string | null
@@ -135,6 +134,7 @@ export type Database = {
           status?: string
           status_updated_at?: string | null
           verified_at?: string | null
+          wait_time_minutes?: number
           website?: string | null
         }
         Update: {
@@ -156,7 +156,6 @@ export type Database = {
           is_verified?: boolean
           lat?: number
           live_status?: string | null
-          wait_time_minutes?: number
           lng?: number
           name?: string
           opening_hours?: string | null
@@ -165,6 +164,7 @@ export type Database = {
           status?: string
           status_updated_at?: string | null
           verified_at?: string | null
+          wait_time_minutes?: number
           website?: string | null
         }
         Relationships: [
@@ -241,51 +241,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "crews"
             referencedColumns: ["id"]
-          },
-        ]
-      }
-      crew_messages: {
-        Row: {
-          content: string
-          created_at: string
-          crew_id: string
-          id: string
-          message_type: string
-          metadata: Json
-          user_id: string
-        }
-        Insert: {
-          content?: string
-          created_at?: string
-          crew_id: string
-          id?: string
-          message_type?: string
-          metadata?: Json
-          user_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          crew_id?: string
-          id?: string
-          message_type?: string
-          metadata?: Json
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "crew_messages_crew_id_fkey"
-            columns: ["crew_id"]
-            isOneToOne: false
-            referencedRelation: "crews"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "crew_messages_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -700,6 +655,7 @@ export type Database = {
       }
       messages: {
         Row: {
+          announcement_id: string | null
           channel_id: string
           club_id: string | null
           content: string
@@ -709,11 +665,16 @@ export type Database = {
           id: string
           is_hidden: boolean
           is_pinned: boolean
+          is_verified_venue: boolean
           media_url: string | null
           message_type: string
+          sender_name: string | null
+          sender_type: string
           user_id: string
+          venue_id: string | null
         }
         Insert: {
+          announcement_id?: string | null
           channel_id?: string
           club_id?: string | null
           content: string
@@ -723,11 +684,16 @@ export type Database = {
           id?: string
           is_hidden?: boolean
           is_pinned?: boolean
+          is_verified_venue?: boolean
           media_url?: string | null
           message_type?: string
+          sender_name?: string | null
+          sender_type?: string
           user_id: string
+          venue_id?: string | null
         }
         Update: {
+          announcement_id?: string | null
           channel_id?: string
           club_id?: string | null
           content?: string
@@ -737,14 +703,32 @@ export type Database = {
           id?: string
           is_hidden?: boolean
           is_pinned?: boolean
+          is_verified_venue?: boolean
           media_url?: string | null
           message_type?: string
+          sender_name?: string | null
+          sender_type?: string
           user_id?: string
+          venue_id?: string | null
         }
         Relationships: [
           {
+            foreignKeyName: "messages_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: true
+            referencedRelation: "venue_announcements"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "messages_club_id_fkey"
             columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_venue_id_fkey"
+            columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "clubs"
             referencedColumns: ["id"]
@@ -1505,6 +1489,7 @@ export type Database = {
       }
       venue_announcements: {
         Row: {
+          channel_id: string
           club_id: string
           content: string
           created_at: string
@@ -1514,6 +1499,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          channel_id?: string
           club_id: string
           content: string
           created_at?: string
@@ -1523,6 +1509,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          channel_id?: string
           club_id?: string
           content?: string
           created_at?: string

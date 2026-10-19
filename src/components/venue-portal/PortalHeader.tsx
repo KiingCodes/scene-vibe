@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { ShieldCheck, Clock, Flame, Users } from "lucide-react";
 import { PortalMode, VenueStatus } from "./types";
+import { doorWaitLabel } from '@/lib/venueCommand';
 import { cn } from "@/lib/utils";
 
 interface PortalHeaderProps {
@@ -101,7 +102,7 @@ export const PortalHeader = ({ venueName, mode, onModeChange, status }: PortalHe
     </div>
 
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-      <Pill icon={<Clock className="h-3.5 w-3.5" />} label="Door wait" value={`${status.waitMinutes}-${status.waitMinutes + 5} min`} tone="cyan" />
+      <Pill icon={<Clock className="h-3.5 w-3.5" />} label="Door wait" value={doorWaitLabel(status.waitMinutes)} tone="cyan" />
       <Pill icon={<Flame className="h-3.5 w-3.5" />} label="Live vibe index" value={`🔥 ${status.crowdTag}`} tone="pink" pulse />
       <Pill icon={<Users className="h-3.5 w-3.5" />} label="Inbound pull-ups" value={`${status.inboundPullUps} partygoers`} tone="violet" />
     </div>

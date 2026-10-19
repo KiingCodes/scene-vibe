@@ -9,6 +9,8 @@ import type { Club } from "@/hooks/useClubs";
 import { cn } from "@/lib/utils";
 import { LogoSkeleton } from "@/components/BrandedSkeleton";
 
+import { BroadcastChannelSelect } from './BroadcastChannelSelect';
+
 const PRESETS = ["Free entry before 11 PM", "DJ set starting now", "2-for-1 cocktails until midnight", "No queue right now"];
 const DURATIONS = [1, 3, 6, 12];
 
@@ -20,6 +22,7 @@ const timeLeft = (iso: string) => {
 export const AnnouncementsCard = ({ venue }: { venue: Club }) => {
   const [text, setText] = useState("");
   const [hours, setHours] = useState(3);
+  const [channelId, setChannelId] = useState('live-clubs');
   const { data: items, isLoading } = useVenueAnnouncements(venue.id);
   const post = usePostAnnouncement();
   const del = useDeleteAnnouncement();
@@ -27,7 +30,7 @@ export const AnnouncementsCard = ({ venue }: { venue: Club }) => {
   const submit = () => {
     if (!text.trim()) return;
     post.mutate(
-      { clubId: venue.id, content: text.trim(), hours },
+      { clubId: venue.id, content: text.trim(), hours, channelId },
       {
         onSuccess: () => { setText(""); toast.success("Announcement is live"); },
         onError: (e: Error) => toast.error(e.message),
@@ -48,6 +51,7 @@ export const AnnouncementsCard = ({ venue }: { venue: Club }) => {
           </button>
         ))}
       </div>
+      <BroadcastChannelSelect value={channelId} onChange={setChannelId} disabled={post.isPending} />
       <Textarea value={text} onChange={(e) => setText(e.target.value.slice(0, 200))} placeholder="What's the special tonight?" className="min-h-[80px] border-white/10 bg-white/5" />
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-1.5">

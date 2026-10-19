@@ -103,11 +103,16 @@ export const usePostVenueUpdate = () => {
   const { user } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ clubId, content, country }: { clubId: string; content: string; country: string }) => {
+    mutationFn: async ({ clubId, content, country, channelId = 'live-clubs' }: { clubId: string; content: string; country: string; channelId?: string }) => {
+      if (!user) throw new Error('Sign in to publish a venue update');
       const { error } = await supabase.from('messages').insert({
-        club_id: clubId,
-        user_id: user!.id,
+        club_id: null,
+        venue_id: clubId,
+        user_id: user.id,
         content,
+        sender_type: 'venue',
+        channel_id: channelId,
+        created_at: new Date().toISOString(),
         message_type: 'text',
         country,
       });
@@ -210,6 +215,7 @@ export type VenueEditableFields = Partial<
   Pick<
     Club,
     | 'live_status'
+    | 'wait_time_minutes'
     | 'is_live'
     | 'opening_hours'
     | 'genre'
@@ -233,7 +239,7 @@ export const useUpdateVenue = () => {
   return useMutation({
     mutationFn: async ({ clubId, patch }: { clubId: string; patch: VenueEditableFields }) => {
       const payload: Record<string, unknown> = { ...patch };
-      if ('live_status' in patch || 'is_live' in patch) payload.status_updated_at = new Date().toISOString();
+      if ('live_status' in patch || 'is_live' in patch || 'wait_time_minutes' in patch) payload.status_updated_at = new Date().toISOString();
       const { data, error } = await supabase
         .from('clubs')
         .update(payload)
@@ -292,16 +298,23 @@ export const usePostAnnouncement = () => {
   const { user } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ clubId, content, hours }: { clubId: string; content: string; hours: number }) => {
+    mutationFn: async ({ clubId, content, hours, channelId = 'live-clubs' }: { clubId: string; content: string; hours: number; channelId?: string }) => {
+      if (!user) throw new Error('Sign in to publish an announcement');
       const { error } = await supabase.from('venue_announcements').insert({
         club_id: clubId,
-        user_id: user!.id,
+        user_id: user.id,
         content,
+        channel_id: channelId,
+        created_at: new Date().toISOString(),
         expires_at: new Date(Date.now() + hours * 3600_000).toISOString(),
       });
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['venue-announcements'] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['venue-announcements'] });
+      void qc.invalidateQueries({ queryKey: ['public-venue-announcements'] });
+      void qc.invalidateQueries({ queryKey: ['community-messages'] });
+    },
   });
 };
 
@@ -312,6 +325,10 @@ export const useDeleteAnnouncement = () => {
       const { error } = await supabase.from('venue_announcements').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['venue-announcements'] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['venue-announcements'] });
+      void qc.invalidateQueries({ queryKey: ['public-venue-announcements'] });
+      void qc.invalidateQueries({ queryKey: ['community-messages'] });
+    },
   });
 };

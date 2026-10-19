@@ -58,22 +58,14 @@ const QUICK_EMOJIS = [
   "🌃",
   "✨",
 ];
+import { BROADCAST_CHANNELS } from '@/lib/venueCommand';
+
 const MAX_IMAGE_MB = 5;
 const MAX_AUDIO_MB = 8;
 const MAX_VIDEO_MB = 20;
-const CHANNELS = [
-  "#Global-Vibes",
-  "#Amapiano & Deep House",
-  "#Johannesburg / #CapeTown",
-  "#Live-Clubs",
-];
+const CHANNELS = ['#Global-Vibes', '#Amapiano & Deep House', '#Johannesburg / #CapeTown', '#Live-Clubs', '#Johannesburg', '#CapeTown'];
 /** Stable ids stored on each message for its channel. */
-const CHANNEL_IDS: Record<string, string> = {
-  "#Global-Vibes": "global",
-  "#Amapiano & Deep House": "amapiano",
-  "#Johannesburg / #CapeTown": "cities",
-  "#Live-Clubs": "live-clubs",
-};
+const CHANNEL_IDS: Record<string, string> = Object.fromEntries(BROADCAST_CHANNELS.map(({ id, label }) => [label, id]));
 const REACTIONS = CHAT_REACTIONS;
 
 const SceneLevelBadge = ({ points }: { points?: number }) => {
@@ -528,7 +520,8 @@ const CommunityChat = () => {
           {filteredMessages?.map((msg) => {
             const isOwn = msg.user_id === user?.id;
             const profile = msg.profile;
-            const username = profile?.username || "Anon";
+            const isVenue = msg.sender_type === 'venue' && msg.is_verified_venue;
+            const username = isVenue ? msg.sender_name || 'Venue' : profile?.username || 'Anon';
             const initials = username.slice(0, 2).toUpperCase();
             const color = getUserColor(msg.user_id);
             const mediaUrl = msg.media_url;
@@ -573,11 +566,13 @@ const CommunityChat = () => {
                         className="text-[11px] font-semibold"
                         style={{ color: color.name }}
                       >
-                        {isOwn ? "You" : username}
+                        {isOwn && !isVenue ? "You" : username}
                       </span>
-                      {ownerIds?.has(msg.user_id) && <OfficialAccountTag />}
+                      {(isVenue || ownerIds?.has(msg.user_id)) && <OfficialAccountTag />}
                       <span className="rounded-full bg-white/[0.07] px-1.5 py-0.5 text-[9px] text-muted-foreground">
-                        {ownerIds?.has(msg.user_id)
+                        {isVenue
+                          ? 'Venue announcement'
+                          : ownerIds?.has(msg.user_id)
                           ? "Venue VIP"
                           : isAdmin && isOwn
                             ? "Admin"

@@ -1,3 +1,6 @@
+- [ ] Connect verified venue broadcasts and active-channel realtime chat.
+- [ ] Persist door wait minutes with a safe fallback and fix announcement dependencies.
+- [ ] Test broadcasts, permissions and live delivery end to end.
 - [x] Configure protected Night Replay storage and secure schema.
 - [x] Connect highlight uploads, active feed, and venue reviews.
 - [x] Test upload rules, signed-in upload/playback, persisted approval and 72-hour lifetime, and public feed access.
