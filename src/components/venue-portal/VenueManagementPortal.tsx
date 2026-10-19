@@ -12,6 +12,7 @@ import { VenueProfileEditor } from "./VenueProfileEditor";
 import NightReplayReview from "./NightReplayReview";
 import { PortalMode, VenueStatus } from "./types";
 import type { Club } from "@/hooks/useClubs";
+import { normalizeDoorWait } from '@/lib/venueCommand';
 import { cn } from "@/lib/utils";
 
 type TabId = "live" | "updates" | "content" | "replays" | "analytics";
@@ -32,7 +33,7 @@ interface VenueManagementPortalProps {
 export const VenueManagementPortal = ({ venueName, venue }: VenueManagementPortalProps) => {
   const [mode, setMode] = useState<PortalMode>("live");
   const [tab, setTab] = useState<TabId>("live");
-  const venueWaitMinutes = venue?.wait_time_minutes ?? 15;
+  const venueWaitMinutes = normalizeDoorWait(venue?.wait_time_minutes);
   const [status, setStatus] = useState<VenueStatus>({
     waitMinutes: venueWaitMinutes,
     crowdTag: "Wall-to-Wall",

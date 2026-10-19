@@ -8,14 +8,15 @@ import { LogoSkeleton } from "@/components/BrandedSkeleton";
 import { GlassCard, SectionTitle } from "./GlassCard";
 import { CROWD_LEVELS, useUpdateVenue } from "@/hooks/useVenueOwner";
 import type { Club } from "@/hooks/useClubs";
+import { normalizeDoorWait, doorWaitLabel } from '@/lib/venueCommand';
 import { cn } from "@/lib/utils";
 
 export const OwnerLiveStatusCard = ({ venue }: { venue: Club }) => {
   const update = useUpdateVenue();
-  const [waitMinutes, setWaitMinutes] = useState(venue.wait_time_minutes);
+  const [waitMinutes, setWaitMinutes] = useState(normalizeDoorWait(venue.wait_time_minutes));
 
   useEffect(() => {
-    setWaitMinutes(venue.wait_time_minutes);
+    setWaitMinutes(normalizeDoorWait(venue.wait_time_minutes));
   }, [venue.id, venue.wait_time_minutes]);
 
   const save = (patch: Parameters<typeof update.mutate>[0]["patch"], msg: string) =>
@@ -39,7 +40,7 @@ export const OwnerLiveStatusCard = ({ venue }: { venue: Club }) => {
         <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <Label className="text-xs uppercase tracking-widest text-slate-400">Door wait time</Label>
-            <span className="text-sm font-bold text-cyan-200">{waitMinutes === 0 ? "No wait" : `${waitMinutes} min`}</span>
+            <span className="text-sm font-bold text-cyan-200">{doorWaitLabel(waitMinutes)}</span>
           </div>
           <Slider
             value={[waitMinutes]}
@@ -48,8 +49,8 @@ export const OwnerLiveStatusCard = ({ venue }: { venue: Club }) => {
             step={5}
             aria-label="Door wait time in minutes"
             disabled={update.isPending}
-            onValueChange={([value]) => setWaitMinutes(value)}
-            onValueCommit={([value]) => save({ wait_time_minutes: value }, `Door wait set to ${value} minutes`)}
+            onValueChange={([value]) => setWaitMinutes(normalizeDoorWait(value))}
+            onValueCommit={([value]) => save({ wait_time_minutes: normalizeDoorWait(value) }, `Door wait set to ${normalizeDoorWait(value)} minutes`)}
           />
         </div>
         <div>

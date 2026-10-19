@@ -19,6 +19,8 @@ import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
+import { BroadcastChannelSelect } from './BroadcastChannelSelect';
+
 const QUICK_UPDATES = [
   "Queue is moving fast — no wait right now 🚀",
   "2-for-1 cocktails for the next hour 🍸",
@@ -28,6 +30,7 @@ const QUICK_UPDATES = [
 
 export const VenueUpdatesTab = ({ venue }: { venue: Club }) => {
   const [update, setUpdate] = useState("");
+  const [channelId, setChannelId] = useState('live-clubs');
   const post = usePostVenueUpdate();
   const { data: events, isLoading } = useVenueEvents(venue.id);
   const createEvent = useCreateVenueEvent();
@@ -43,7 +46,7 @@ export const VenueUpdatesTab = ({ venue }: { venue: Club }) => {
   const submitUpdate = async () => {
     if (!update.trim()) return;
     try {
-      await post.mutateAsync({ clubId: venue.id, content: update.trim(), country: venue.country });
+      await post.mutateAsync({ clubId: venue.id, content: update.trim(), country: venue.country, channelId });
       setUpdate("");
       toast.success("Live update posted to the public feed");
     } catch {
@@ -103,6 +106,7 @@ export const VenueUpdatesTab = ({ venue }: { venue: Club }) => {
             </button>
           ))}
         </div>
+        <BroadcastChannelSelect value={channelId} onChange={setChannelId} disabled={post.isPending} />
         <Textarea
           value={update}
           onChange={(e) => setUpdate(e.target.value.slice(0, 300))}

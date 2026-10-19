@@ -17,6 +17,10 @@ export type CommunityMessage = {
   created_at: string;
   is_hidden: boolean;
   channel_id: string;
+  sender_name: string | null;
+  sender_type: string;
+  is_verified_venue: boolean;
+  venue_id: string | null;
   profile: ProfileLite | null;
 };
 
@@ -29,7 +33,7 @@ export type CommunityMessage = {
 export const useCommunityMessages = (channelId?: string) => {
   const qc = useQueryClient();
   const { country } = useCountry();
-  const KEY = ['community-messages', country, channelId ?? 'all'];
+  const KEY = useMemo(() => ['community-messages', country, channelId ?? 'all'], [country, channelId]);
 
   const query = useInfiniteQuery({
     queryKey: KEY,
@@ -84,7 +88,7 @@ export const useCommunityMessages = (channelId?: string) => {
       .channel(`community-messages-stream-${country}-${channelId ?? 'all'}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
+        { event: 'INSERT', schema: 'public', table: 'messages', ...(channelId ? { filter: `channel_id=eq.${channelId}` } : {}) },
         async (payload) => {
           const row: any = payload.new;
           if (row.club_id !== null || row.is_hidden) return;
@@ -136,8 +140,7 @@ export const useCommunityMessages = (channelId?: string) => {
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [qc, country, channelId]);
+  }, [qc, country, channelId, KEY]);
 
   return {
     messages,

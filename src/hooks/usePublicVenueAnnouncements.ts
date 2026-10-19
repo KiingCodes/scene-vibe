@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCountry } from "@/contexts/CountryContext";
@@ -22,7 +22,7 @@ export type PublicVenueAnnouncement = {
 export const usePublicVenueAnnouncements = (realtime = true) => {
   const { country } = useCountry();
   const queryClient = useQueryClient();
-  const queryKey = ["public-venue-announcements", country];
+  const queryKey = useMemo(() => ["public-venue-announcements", country], [country]);
 
   useEffect(() => {
     if (!realtime) return;
@@ -40,7 +40,7 @@ export const usePublicVenueAnnouncements = (realtime = true) => {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [country, queryClient, realtime]);
+  }, [country, queryClient, realtime, queryKey]);
 
   return useQuery({
     queryKey,

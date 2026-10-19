@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { GlassCard, SectionTitle } from "./GlassCard";
 import { CrowdTag, FlashPromo, VenueStatus } from "./types";
+import { doorWaitLabel } from '@/lib/venueCommand';
 import { cn } from "@/lib/utils";
 
 const CROWD_TAGS: CrowdTag[] = ["Chilled", "Warming Up", "Vibing", "Packed", "Wall-to-Wall"];
@@ -38,7 +39,7 @@ export const LiveCommandTab = ({ status, onStatusChange }: LiveCommandTabProps) 
           <div>
             <div className="flex items-center justify-between mb-2">
               <Label className="text-xs uppercase tracking-widest text-muted-foreground">Door wait time</Label>
-              <span className="text-sm font-bold text-portal-cyan">{status.waitMinutes}-{status.waitMinutes + 5} min</span>
+              <span className="text-sm font-bold text-portal-cyan">{doorWaitLabel(status.waitMinutes)}</span>
             </div>
             <Slider
               value={[status.waitMinutes]}
