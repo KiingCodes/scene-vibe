@@ -29,6 +29,13 @@
       "when": 1792416988371,
       "tag": "0003_tighten_venue_broadcast_authorization",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792417122110,
+      "tag": "0004_restore_missing_crew_messages_schema",
+      "breakpoints": true
     }
   ]
 }
