@@ -62,7 +62,7 @@ export const AnnouncementsCard = ({ venue }: { venue: Club }) => {
             </button>
           ))}
         </div>
-        <Button onClick={submit} disabled={!text.trim() || post.isPending} className="bg-gradient-to-r from-cyan-500 via-purple-600 to-fuchsia-500 font-semibold text-white shadow-[0_0_25px_rgba(6,182,212,0.4)] transition-all hover:scale-[1.02] active:scale-[0.98]">
+        <Button onClick={submit} disabled={!text.trim() || post.isPending} className="bg-cyan-500 font-semibold text-slate-950 shadow-[0_0_25px_rgba(6,182,212,0.4)] transition-all hover:bg-cyan-400 hover:scale-[1.02] active:scale-[0.98]">
           {post.isPending ? <LogoSkeleton label="" size={18} className="border-0 bg-transparent p-0" /> : <Megaphone className="mr-2 h-4 w-4" />} Post announcement
         </Button>
       </div>
