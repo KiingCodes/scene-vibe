@@ -250,41 +250,8 @@ const Index = () => {
           )}
         </AnimatePresence>
 
-        {/* Loading skeletons — themed for every category section */}
         {isLoading && (
-          <div className="space-y-10">
-            <LogoSkeleton label="Loading the scene…" />
-            {[
-              "Most Visited This Weekend",
-              "Top Rated in Johannesburg",
-              "Newly Added",
-            ].map((title) => (
-              <section key={title}>
-                <div className="h-5 w-48 bg-muted/40 rounded animate-pulse mb-4" />
-                <motion.div
-                  variants={container}
-                  initial="hidden"
-                  animate="show"
-                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-                >
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <motion.div
-                      key={i}
-                      variants={{
-                        hidden: { opacity: 0, y: 20 },
-                        show: { opacity: 1, y: 0 },
-                      }}
-                      className="glass rounded-xl h-60 overflow-hidden border border-border/30 relative shimmer-overlay"
-                    >
-                      <div className="absolute inset-0 flex items-center justify-center opacity-[0.06]">
-                        <Sparkles className="w-16 h-16 text-primary" />
-                      </div>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              </section>
-            ))}
-          </div>
+          <LogoSkeleton label="Loading the scene…" />
         )}
 
         {/* All Clubs Grid (when searching/filtering) */}

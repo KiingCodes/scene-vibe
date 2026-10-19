@@ -13,6 +13,7 @@ import {
   useDeleteVenueEvent,
 } from "@/hooks/useVenueOwner";
 import type { Club } from "@/hooks/useClubs";
+import { LogoSkeleton } from "@/components/BrandedSkeleton";
 import { cn } from "@/lib/utils";
 
 const QUICK_UPDATES = [
@@ -138,7 +139,7 @@ export const VenueUpdatesTab = ({ venue }: { venue: Club }) => {
       <GlassCard className="lg:col-span-2">
         <SectionTitle icon={<Ticket className="h-4 w-4" />} title="Your events" subtitle="Manage what the public sees" />
         {isLoading ? (
-          <div className="h-16 rounded-xl bg-white/5 animate-pulse" />
+          <LogoSkeleton label="Loading events…" size={32} />
         ) : !events?.length ? (
           <p className="text-sm text-muted-foreground">No events yet — publish your first one above.</p>
         ) : (

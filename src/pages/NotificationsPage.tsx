@@ -15,6 +15,7 @@ import {
   type Notification,
 } from '@/hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
+import { LogoSkeleton } from '@/components/BrandedSkeleton';
 
 const SOCIAL_TYPES = [
   'follow', 'unfollow', 'crew_invite', 'crew_join', 'crew_vote',
@@ -138,14 +139,7 @@ const NotificationsPage = () => {
             </div>
 
             {isLoading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 5 }).map((_, index) => (
-                  <div
-                    key={index}
-                    className="h-24 animate-pulse rounded-2xl border border-white/10 bg-slate-950/80"
-                  />
-                ))}
-              </div>
+              <LogoSkeleton label="Loading notifications…" />
             ) : isError ? (
               <div role="alert" className="rounded-2xl border border-rose-400/20 bg-slate-950/80 p-8 text-center text-sm text-slate-300">
                 Unable to load notifications. Please try again.

@@ -3,6 +3,7 @@ import { GlassCard, SectionTitle } from "./GlassCard";
 import { useVenueAnalytics } from "@/hooks/useVenueOwner";
 import type { Club } from "@/hooks/useClubs";
 import { cn } from "@/lib/utils";
+import { LogoSkeleton } from "@/components/BrandedSkeleton";
 
 interface AnalyticsTabProps {
   venue?: Club;
@@ -22,6 +23,10 @@ export const AnalyticsTab = ({ venue }: AnalyticsTabProps) => {
     return <GlassCard><p className="text-sm text-muted-foreground">Select a venue to see analytics.</p></GlassCard>;
   }
 
+  if (isLoading) {
+    return <LogoSkeleton label="Loading venue analytics…" />;
+  }
+
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -38,7 +43,7 @@ export const AnalyticsTab = ({ venue }: AnalyticsTabProps) => {
               {c.icon}
             </div>
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{c.label}</div>
-            <div className="font-display text-xl font-bold text-foreground">{isLoading ? "—" : c.value}</div>
+            <div className="font-display text-xl font-bold text-foreground">{c.value}</div>
             <div className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground">
               <Star className="h-3.5 w-3.5 text-portal-cyan" /> {c.sub}
             </div>

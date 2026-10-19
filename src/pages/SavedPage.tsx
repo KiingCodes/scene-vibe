@@ -8,6 +8,7 @@ import type { Club } from '@/hooks/useClubs';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { LogoSkeleton } from '@/components/BrandedSkeleton';
 
 const SavedPage = () => {
   const { user } = useAuth();
@@ -63,9 +64,7 @@ const SavedPage = () => {
 
           <div className="space-y-3">
             {favsLoading ? (
-              Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="h-24 animate-pulse rounded-2xl border border-white/10 bg-slate-950/80" />
-              ))
+              <LogoSkeleton label="Loading your saved spots…" />
             ) : favsError ? (
               <div role="alert" className="rounded-2xl border border-rose-400/20 bg-slate-950/80 px-5 py-8 text-center text-sm text-slate-300">
                 Unable to load your saved spots. Please try again.

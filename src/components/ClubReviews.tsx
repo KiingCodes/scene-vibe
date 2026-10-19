@@ -7,6 +7,7 @@ import { useAwardPoints, useEarnBadge } from '@/hooks/useGamification';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
+import { LogoSkeleton } from '@/components/BrandedSkeleton';
 
 interface ClubReviewsProps {
   clubId: string;
@@ -134,7 +135,7 @@ const ClubReviews = ({ clubId }: ClubReviewsProps) => {
 
       {/* Recent feedback */}
       <div className="space-y-2 max-h-[200px] overflow-y-auto">
-        {isLoading && <p className="text-muted-foreground text-xs">Loading...</p>}
+        {isLoading && <LogoSkeleton label="Loading feedback…" size={32} className="border-0 bg-transparent py-3" />}
         {reviews?.length === 0 && !isLoading && (
           <p className="text-muted-foreground text-xs text-center">No feedback tonight yet.</p>
         )}

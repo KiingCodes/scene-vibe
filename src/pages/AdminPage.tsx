@@ -9,7 +9,6 @@ import {
   Music,
   Users,
   ArrowLeft,
-  Loader2,
   Megaphone,
   DollarSign,
   Sparkles,
@@ -65,7 +64,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LogoSkeleton } from "@/components/BrandedSkeleton";
 import {
   Dialog,
   DialogContent,
@@ -206,7 +205,7 @@ const StatCard = ({
       </div>
     </div>
     {loading ? (
-      <Skeleton className="h-9 w-20 bg-white/10" />
+      <LogoSkeleton label="" size={24} className="gap-1 border-0 bg-transparent py-1 px-1" />
     ) : (
       <div className="text-3xl font-extrabold text-white">
         {typeof value === "number" ? value.toLocaleString() : value}
@@ -420,7 +419,7 @@ const ChatModerationPanel = () => {
       </h2>
       <div className="max-h-80 space-y-2 overflow-y-auto rounded-2xl border border-cyan-500/15 bg-slate-950/70 p-2 shadow-[0_0_24px_rgba(6,182,212,0.06)] backdrop-blur-2xl">
         {isLoading ? (
-          <Skeleton className="h-24" />
+          <LogoSkeleton label="Loading messages…" size={36} className="py-3" />
         ) : !msgs?.length ? (
           <div className="rounded-xl border border-white/5 bg-slate-950/60 p-8 text-center">
             <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/10 text-cyan-300">
@@ -515,9 +514,7 @@ const UsersTab = () => {
       </div>
       <div className="glass rounded-2xl divide-y divide-border/30 overflow-hidden">
         {isLoading ? (
-          Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-14 w-full" />
-          ))
+          <LogoSkeleton label="Loading users…" size={36} className="py-4" />
         ) : !users?.length ? (
           <EmptyState icon={Users} title="No users found" />
         ) : (
@@ -922,7 +919,7 @@ const CheckinsTab = () => {
       )}
       <div className="glass rounded-2xl divide-y divide-border/30 max-h-[60vh] overflow-y-auto">
         {isLoading ? (
-          <Skeleton className="h-40 w-full" />
+          <LogoSkeleton label="Loading check-ins…" size={36} className="py-4" />
         ) : !data?.rows?.length ? (
           <EmptyState
             icon={UserCheck}
@@ -1251,7 +1248,7 @@ const AdminPage = () => {
   if (authLoading || adminLoading) {
     return (
       <div className="min-h-screen gradient-dark flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <LogoSkeleton label="Loading admin…" className="w-full max-w-md border-0 bg-transparent" />
       </div>
     );
   }
@@ -1459,7 +1456,7 @@ const AdminPage = () => {
             </TabsContent>
             <TabsContent value="moderation" className="mt-6">
               {isLoading ? (
-                <Skeleton className="h-40 w-full" />
+                <LogoSkeleton label="Loading moderation queue…" size={48} />
               ) : (
                 <ModerationTab
                   pendingClubs={pendingClubs}

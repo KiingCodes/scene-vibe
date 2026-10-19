@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useDeviceId } from './useDeviceId';
 import { useAuth } from './useAuth';
 import { useEffect } from 'react';
+import { useAwardPoints } from './useGamification';
 
 export const usePullingUpCount = (clubId: string) => {
   const queryClient = useQueryClient();
@@ -91,6 +92,7 @@ export const usePullUp = () => {
   const queryClient = useQueryClient();
   const deviceId = useDeviceId();
   const { user } = useAuth();
+  const awardPoints = useAwardPoints();
 
   return useMutation({
     mutationFn: async ({ clubId, etaMinutes }: { clubId: string; etaMinutes: number }) => {
@@ -108,6 +110,7 @@ export const usePullUp = () => {
       queryClient.invalidateQueries({ queryKey: ['pulling-up', clubId] });
       queryClient.invalidateQueries({ queryKey: ['has-pulled-up', clubId] });
       queryClient.invalidateQueries({ queryKey: ['all-pulling-up'] });
+      awardPoints.mutate({ action: 'pulling_up' });
     },
   });
 };

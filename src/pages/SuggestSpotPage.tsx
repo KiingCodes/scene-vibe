@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { MapPin, Send, ArrowLeft, Sparkles, Loader2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useAwardPoints } from '@/hooks/useGamification';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +31,7 @@ const spotSchema = z.object({
 
 const SuggestSpotPage = () => {
   const { user } = useAuth();
+  const awardPoints = useAwardPoints();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
@@ -124,6 +126,7 @@ const SuggestSpotPage = () => {
         status: 'pending',
       });
       if (error) throw error;
+      awardPoints.mutate({ action: 'suggestion' });
       toast.success('🎉 Spot submitted! It will appear once approved.');
       navigate('/');
     } catch {

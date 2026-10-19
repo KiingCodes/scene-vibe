@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Loader2, ShieldCheck } from "lucide-react";
+import { LogoSkeleton } from "@/components/BrandedSkeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -90,7 +91,7 @@ const TwoFactorDialog = ({ open, onOpenChange, onEnabled }: Props) => {
           <DialogDescription>Scan this code with Google Authenticator, Authy or 1Password, then enter the 6-digit code.</DialogDescription>
         </DialogHeader>
         {loading || !qr ? (
-          <div className="flex h-48 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+          <LogoSkeleton label="Loading security setup…" size={40} className="py-4" />
         ) : (
           <div className="space-y-4">
             <div className="mx-auto w-fit rounded-xl bg-white p-3">

@@ -19,6 +19,7 @@ import {
   type VenueTier,
 } from "@/components/business/types";
 import { useAuth } from "@/hooks/useAuth";
+import { LogoSkeleton } from "@/components/BrandedSkeleton";
 import {
   useMyClaim,
   useMySubscription,
@@ -78,13 +79,15 @@ export default function BusinessBillingPage() {
                 <span className="text-zinc-400">- Free</span>
               )}
             </h1>
-            <p className="mt-1 text-xs text-zinc-500">
-              {isLoading
-                ? "Loading plan…"
-                : sub?.renews_at
+            {isLoading ? (
+              <LogoSkeleton label="Loading plan…" size={24} className="mt-1 w-fit border-0 bg-transparent py-1 px-1" />
+            ) : (
+              <p className="mt-1 text-xs text-zinc-500">
+                {sub?.renews_at
                   ? `Renews ${new Date(sub.renews_at).toLocaleDateString()} · billed monthly`
                   : "No billing cycle yet · billed monthly once active"}
-            </p>
+              </p>
+            )}
           </div>
           <Badge
             variant="outline"

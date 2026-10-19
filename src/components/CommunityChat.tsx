@@ -15,6 +15,7 @@ import {
   CheckCheck,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { LogoSkeleton } from "@/components/BrandedSkeleton";
 import { useIsAdmin } from "@/hooks/useAdmin";
 import {
   useCommunityMessages,
@@ -458,10 +459,7 @@ const CommunityChat = () => {
           ))}
         </AnimatePresence>
         {isFetchingNextPage && (
-          <p className="text-muted-foreground text-[11px] text-center flex items-center justify-center gap-1">
-            <Loader2 className="w-3 h-3 animate-spin" /> Loading older
-            messages...
-          </p>
+          <LogoSkeleton label="Loading older messages…" size={24} className="border-0 bg-transparent py-2" />
         )}
         {hasNextPage && !isFetchingNextPage && (
           <button
@@ -475,9 +473,7 @@ const CommunityChat = () => {
           </button>
         )}
         {isLoading && (
-          <p className="text-muted-foreground text-xs text-center">
-            Loading the scene...
-          </p>
+          <LogoSkeleton label="Loading the scene…" size={36} className="border-0 bg-transparent py-4" />
         )}
         {filteredMessages?.length === 0 &&
           !isLoading &&

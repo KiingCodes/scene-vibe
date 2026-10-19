@@ -11,6 +11,7 @@ import {
   Vote,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { LogoSkeleton } from '@/components/BrandedSkeleton';
 import { useAuth } from '@/hooks/useAuth';
 import { useClubs } from '@/hooks/useClubs';
 import { useCrewMessages, useSendCrewMessage } from '@/hooks/useCrewMessages';
@@ -173,7 +174,7 @@ const CrewChatPanel = ({
         aria-live="polite"
         className="h-[450px] space-y-3 overflow-y-auto rounded-3xl border border-white/10 bg-slate-950/80 p-4 backdrop-blur-xl"
       >
-        {isLoading && <p className="py-6 text-center text-sm text-white/50">Connecting to squad chat…</p>}
+        {isLoading && <LogoSkeleton label="Loading squad chat…" size={36} className="border-0 bg-transparent py-4" />}
         {isError && <p role="alert" className="py-6 text-center text-sm text-red-300">Could not load crew chat. Please try again.</p>}
         {!isLoading && !isError && !messages?.length && (
           <p className="py-12 text-center text-sm text-white/45">Your squad channel is ready. Drop the first message.</p>
@@ -285,7 +286,7 @@ const CrewChatPanel = ({
                 <DialogDescription className="text-white/55">Share a venue with your squad without turning on live location sharing.</DialogDescription>
               </DialogHeader>
               <div className="max-h-72 space-y-2 overflow-y-auto">
-                {venuesLoading && <p className="py-4 text-center text-sm text-white/50">Loading venues…</p>}
+                {venuesLoading && <LogoSkeleton label="Loading venues…" size={32} className="border-0 bg-transparent py-3" />}
                 {venuesError && <p role="alert" className="py-4 text-center text-sm text-red-300">Could not load venues.</p>}
                 {clubs?.map(club => (
                   <button
@@ -309,7 +310,7 @@ const CrewChatPanel = ({
                 <DialogDescription className="text-white/55">Pick an approved Night Replay clip or a venue card.</DialogDescription>
               </DialogHeader>
               <div className="max-h-80 space-y-2 overflow-y-auto">
-                {videosLoading && <p className="py-3 text-center text-sm text-white/50">Loading highlights…</p>}
+                {videosLoading && <LogoSkeleton label="Loading highlights…" size={32} className="border-0 bg-transparent py-3" />}
                 {videosError && <p role="alert" className="py-3 text-center text-sm text-red-300">Could not load highlights.</p>}
                 {videos?.filter(video => video.club_id).map(video => {
                   const venue = clubs?.find(club => club.id === video.club_id);

@@ -42,12 +42,13 @@ import TrackPage from "./pages/TrackPage";
 import ActiveWalkBar from "./components/safety/ActiveWalkBar";
 import NotFound from "./pages/NotFound";
 import { useVenueRealtime } from "./hooks/useVenueRealtime";
+import { LogoSkeleton } from "./components/BrandedSkeleton";
 
 const queryClient = new QueryClient();
 
 const AuthGuard = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
-  if (loading) return null;
+  if (loading) return <LogoSkeleton className="min-h-screen border-0 bg-transparent" />;
   if (user) return <Navigate to="/" replace />;
   return <>{children}</>;
 };

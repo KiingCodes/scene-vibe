@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useEffect } from 'react';
+import { useAwardPoints } from './useGamification';
 
 export const useCrews = () => {
   const { user } = useAuth();
@@ -103,6 +104,7 @@ export const useCrewVotes = (crewId: string) => {
 export const useCreateCrew = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const awardPoints = useAwardPoints();
   return useMutation({
     mutationFn: async ({ name, description }: { name: string; description?: string }) => {
       if (!user) throw new Error('Must be signed in');
@@ -113,11 +115,15 @@ export const useCreateCrew = () => {
         .single();
       if (error) throw error;
       // Auto-join as leader
-      await supabase.from('crew_members').insert({ crew_id: data.id, user_id: user.id, role: 'leader' });
+      const { error: membershipError } = await supabase
+        .from('crew_members')
+        .insert({ crew_id: data.id, user_id: user.id, role: 'leader' });
+      if (membershipError) throw membershipError;
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-crews'] });
+      awardPoints.mutate({ action: 'create_crew' });
     },
   });
 };
@@ -125,6 +131,7 @@ export const useCreateCrew = () => {
 export const useJoinCrew = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const awardPoints = useAwardPoints();
   return useMutation({
     mutationFn: async (inviteCode: string) => {
       if (!user) throw new Error('Must be signed in');
@@ -142,6 +149,7 @@ export const useJoinCrew = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-crews'] });
+      awardPoints.mutate({ action: 'join_crew' });
     },
   });
 };

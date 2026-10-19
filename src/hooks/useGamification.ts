@@ -1,18 +1,19 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { toast } from 'sonner';
 
 export const BADGE_DEFINITIONS = [
-  { type: 'first_vibe', name: 'First Vibe', emoji: '🔥', description: 'Send your first vibe', points: 10 },
-  { type: 'vibe_master', name: 'Vibe Master', emoji: '⚡', description: 'Send 10 vibes', points: 50 },
-  { type: 'reviewer', name: 'Critic', emoji: '🎤', description: 'Leave your first review', points: 15 },
-  { type: 'dj_rater', name: 'DJ Scout', emoji: '🎧', description: 'Rate a DJ for the first time', points: 15 },
-  { type: 'explorer', name: 'Explorer', emoji: '🗺️', description: 'Visit 5 different clubs', points: 30 },
-  { type: 'spot_suggester', name: 'Trendsetter', emoji: '💡', description: 'Suggest a new spot', points: 25 },
-  { type: 'regular', name: 'Regular', emoji: '👑', description: 'Active for 7 days', points: 50 },
-  { type: 'social', name: 'Social Butterfly', emoji: '🦋', description: 'Chat in 3 different clubs', points: 20 },
-  { type: 'night_owl', name: 'Night Owl', emoji: '🦉', description: 'Active after midnight', points: 10 },
-  { type: 'top_10', name: 'Top 10', emoji: '🏆', description: 'Reach the leaderboard top 10', points: 100 },
+  { type: 'first_vibe', name: 'SCENE First Vibe', emoji: '🔥', description: 'Send your first vibe', points: 10 },
+  { type: 'vibe_master', name: 'SCENE Vibe Master', emoji: '⚡', description: 'Send 10 vibes', points: 50 },
+  { type: 'reviewer', name: 'SCENE Critic', emoji: '🎤', description: 'Leave your first review', points: 15 },
+  { type: 'dj_rater', name: 'SCENE DJ Scout', emoji: '🎧', description: 'Rate a DJ for the first time', points: 15 },
+  { type: 'explorer', name: 'SCENE Explorer', emoji: '🗺️', description: 'Visit 5 different clubs', points: 30 },
+  { type: 'spot_suggester', name: 'SCENE Trendsetter', emoji: '💡', description: 'Suggest a new spot', points: 25 },
+  { type: 'regular', name: 'SCENE Regular', emoji: '👑', description: 'Active for 7 days', points: 50 },
+  { type: 'social', name: 'SCENE Social Butterfly', emoji: '🦋', description: 'Chat in 3 different clubs', points: 20 },
+  { type: 'night_owl', name: 'SCENE Night Owl', emoji: '🦉', description: 'Active after midnight', points: 10 },
+  { type: 'top_10', name: 'SCENE Top 10', emoji: '🏆', description: 'Reach the leaderboard top 10', points: 100 },
 ];
 
 export const POINT_VALUES = {
@@ -26,6 +27,12 @@ export const POINT_VALUES = {
   video_post: 15,
   video_like: 1,
   comment: 2,
+  join_crew: 8,
+  create_crew: 15,
+  follow: 1,
+  night_replay: 10,
+  daily_login: 5,
+  after_midnight: 5,
 };
 
 export const getLevelFromPoints = (points: number) => {
@@ -110,34 +117,49 @@ export const useAwardPoints = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ action }: { action: keyof typeof POINT_VALUES }) => {
-      if (!user) return;
-      const pts = POINT_VALUES[action];
+    mutationFn: async ({ action, userId }: { action: keyof typeof POINT_VALUES; userId?: string }) => {
+      const awardUserId = userId || user?.id;
+      if (!awardUserId) return;
 
-      // Upsert points
-      const { data: existing } = await supabase
+      const now = new Date();
+      const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const afterMidnightKey = `scene-after-midnight:${awardUserId}`;
+      const earnsAfterMidnightBonus = action !== 'after_midnight'
+        && now.getHours() < 5
+        && localStorage.getItem(afterMidnightKey) !== localDate;
+      const pts = POINT_VALUES[action] + (earnsAfterMidnightBonus ? POINT_VALUES.after_midnight : 0);
+
+      const { data: existing, error: selectError } = await supabase
         .from('user_points')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', awardUserId)
         .maybeSingle();
+      if (selectError) throw selectError;
 
       if (existing) {
         const newPoints = existing.points + pts;
         const newLevel = getLevelFromPoints(newPoints).level;
-        await supabase
+        const { error } = await supabase
           .from('user_points')
           .update({ points: newPoints, level: newLevel, updated_at: new Date().toISOString() })
-          .eq('user_id', user.id);
+          .eq('user_id', awardUserId);
+        if (error) throw error;
       } else {
         const newLevel = getLevelFromPoints(pts).level;
-        await supabase
+        const { error } = await supabase
           .from('user_points')
-          .insert({ user_id: user.id, points: pts, level: newLevel });
+          .insert({ user_id: awardUserId, points: pts, level: newLevel });
+        if (error) throw error;
       }
+
+      if (earnsAfterMidnightBonus) localStorage.setItem(afterMidnightKey, localDate);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-points'] });
       queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
+    },
+    onError: (error) => {
+      toast.error(`Could not award points: ${error instanceof Error ? error.message : 'Unknown error'}`);
     },
   });
 };

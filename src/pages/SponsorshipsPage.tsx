@@ -11,6 +11,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { LogoSkeleton } from "@/components/BrandedSkeleton";
 import type { SponsorAssetType } from "@/components/business/types";
 import { useCampaigns, useCreateCampaign, useRedemptions, type Campaign } from "@/hooks/useBusinessAdmin";
 
@@ -142,7 +143,7 @@ export default function SponsorshipsPage() {
 
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           <div className="space-y-3">
-            {isLoading && <div className={`${glass} p-6 text-center text-sm text-zinc-500`}>Loading campaigns…</div>}
+            {isLoading && <LogoSkeleton label="Loading campaigns…" />}
             {!isLoading && campaigns.length === 0 && (
               <div className="rounded-2xl border border-white/5 bg-slate-950/60 p-8 text-center text-sm text-zinc-400">
                 No campaigns yet. Use “New Campaign” to launch your first brand activation.

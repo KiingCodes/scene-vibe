@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAdminAuditLog } from '@/hooks/useAdminStats';
+import { LogoSkeleton } from '@/components/BrandedSkeleton';
 
 const glass = 'rounded-2xl border border-white/10 bg-zinc-950/80 backdrop-blur-2xl';
 
@@ -118,7 +119,7 @@ const AuditTrail = ({ targetUserId, compact }: { targetUserId?: string; compact?
       )}
 
       <div className="divide-y divide-white/5">
-        {isLoading && <div className="p-6 text-center text-sm text-zinc-500">Loading trail…</div>}
+        {isLoading && <LogoSkeleton label="Loading audit trail…" size={36} className="py-4" />}
         {!isLoading && rows.length === 0 && (
           <div className="p-6 text-center text-sm text-zinc-500">No admin actions match this view yet.</div>
         )}

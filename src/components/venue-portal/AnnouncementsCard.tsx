@@ -7,6 +7,7 @@ import { GlassCard, SectionTitle } from "./GlassCard";
 import { useVenueAnnouncements, usePostAnnouncement, useDeleteAnnouncement } from "@/hooks/useVenueOwner";
 import type { Club } from "@/hooks/useClubs";
 import { cn } from "@/lib/utils";
+import { LogoSkeleton } from "@/components/BrandedSkeleton";
 
 const PRESETS = ["Free entry before 11 PM", "DJ set starting now", "2-for-1 cocktails until midnight", "No queue right now"];
 const DURATIONS = [1, 3, 6, 12];
@@ -61,7 +62,7 @@ export const AnnouncementsCard = ({ venue }: { venue: Club }) => {
 
       <div className="mt-5 space-y-2">
         {isLoading ? (
-          <div className="h-12 animate-pulse rounded-xl bg-white/5" />
+          <LogoSkeleton label="Loading announcements…" size={32} />
         ) : !items?.length ? (
           <p className="text-sm text-muted-foreground">No live announcements right now.</p>
         ) : (

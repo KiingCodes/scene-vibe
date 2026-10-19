@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import DestinationPicker, { type Destination } from '@/components/safety/DestinationPicker';
+import { LogoSkeleton } from '@/components/BrandedSkeleton';
 import {
   triggerLocalSafetyAlert,
   useActiveSafetySession,
@@ -193,10 +194,7 @@ const SafetyPage = () => {
       <Navbar />
       <main className="w-full max-w-md mx-auto px-4 pt-24 pb-12">
         {activeLoading ? (
-          <div className="flex min-h-48 w-full items-center justify-center gap-3 text-sm text-white/55">
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-300/30 border-t-emerald-300" />
-            Checking your safety status…
-          </div>
+          <LogoSkeleton label="Checking your safety status…" className="min-h-48" />
         ) : !active ? (
           <section className="w-full space-y-5">
             <header className="flex min-w-0 items-center gap-3 py-1">

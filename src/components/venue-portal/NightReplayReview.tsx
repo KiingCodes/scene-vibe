@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { usePendingNightReplays, useReviewNightReplay } from "@/hooks/useNightReplays";
+import { LogoSkeleton } from "@/components/BrandedSkeleton";
 
 const NightReplayReview = ({ clubId }: { clubId: string }) => {
   const { data: submissions, isLoading, isError } = usePendingNightReplays(clubId);
@@ -24,7 +25,7 @@ const NightReplayReview = ({ clubId }: { clubId: string }) => {
         <p className="mt-1 text-sm text-muted-foreground">Review clips tagged to your venue before they appear on Night Replay.</p>
       </div>
 
-      {isLoading && <p className="text-sm text-muted-foreground">Loading submissions…</p>}
+      {isLoading && <LogoSkeleton label="Loading submissions…" size={40} />}
       {isError && <p role="alert" className="text-sm text-red-300">Could not load replay submissions. Please try again.</p>}
       {!isLoading && !isError && !submissions?.length && (
         <p className="rounded-xl border border-white/10 bg-white/5 px-4 py-6 text-center text-sm text-white/60">

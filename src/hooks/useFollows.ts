@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useAwardPoints } from './useGamification';
 
 /** Counts of followers/following for a given user */
 export const useFollowCounts = (userId?: string) => {
@@ -40,26 +41,31 @@ export const useIsFollowing = (targetId?: string) => {
 export const useToggleFollow = () => {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const awardPoints = useAwardPoints();
   return useMutation({
     mutationFn: async ({ targetId, isFollowing }: { targetId: string; isFollowing: boolean }) => {
       if (!user) throw new Error('Sign in to follow');
       if (user.id === targetId) throw new Error("Can't follow yourself");
       if (isFollowing) {
-        await supabase
+        const { error } = await supabase
           .from('user_follows')
           .delete()
           .eq('follower_id', user.id)
           .eq('following_id', targetId);
+        if (error) throw error;
       } else {
-        await supabase
+        const { error } = await supabase
           .from('user_follows')
           .insert({ follower_id: user.id, following_id: targetId });
+        if (error) throw error;
       }
+      return !isFollowing;
     },
-    onSuccess: (_, { targetId }) => {
+    onSuccess: (wasAdded, { targetId }) => {
       qc.invalidateQueries({ queryKey: ['is-following', user?.id, targetId] });
       qc.invalidateQueries({ queryKey: ['follow-counts', targetId] });
       qc.invalidateQueries({ queryKey: ['follow-counts', user?.id] });
+      if (wasAdded) awardPoints.mutate({ action: 'follow' });
     },
   });
 };

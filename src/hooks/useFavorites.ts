@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useAwardPoints } from './useGamification';
 
 /**
  * Fetches a set of club IDs that the current user has favorited.
@@ -52,6 +53,7 @@ export const useFavoriteClubs = () => {
 export const useToggleFavorite = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const awardPoints = useAwardPoints();
 
   return useMutation({
     mutationFn: async ({ clubId, isFav }: { clubId: string; isFav: boolean }) => {
@@ -72,14 +74,16 @@ export const useToggleFavorite = () => {
 
         if (error) throw error;
       }
+      return !isFav;
     },
 
-    onSuccess: () => {
+    onSuccess: (wasAdded) => {
       // Invalidate queries so UI updates immediately
       if (user) {
         queryClient.invalidateQueries({ queryKey: ['favorites', user.id] });
         queryClient.invalidateQueries({ queryKey: ['favorite-clubs', user.id] });
       }
+      if (wasAdded) awardPoints.mutate({ action: 'favorite' });
     },
   });
 };

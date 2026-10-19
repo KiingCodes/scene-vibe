@@ -10,7 +10,7 @@ import { useClub } from '@/hooks/useClubs';
 import { useVibeCount, useHasVibed, useVibe, useAllVibes } from '@/hooks/useVibes';
 import { usePullingUpCount, useHasPulledUp, usePullUp } from '@/hooks/usePullingUp';
 import { useAuth } from '@/hooks/useAuth';
-import { useAwardPoints, useEarnBadge } from '@/hooks/useGamification';
+import { useEarnBadge } from '@/hooks/useGamification';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useCommunityMessages } from '@/hooks/useCommunityChat';
@@ -19,6 +19,7 @@ import { VerifiedVenueBadge } from '@/components/VerifiedBadge';
 import { isVerifiedVenue } from '@/hooks/useVenueOwner';
 import { Settings2 } from 'lucide-react';
 import VenueAnnouncementBanner from '@/components/venue-portal/VenueAnnouncementBanner';
+import { LogoSkeleton } from '@/components/BrandedSkeleton';
 
 // Neon capacity badge — replaces the faint grey bar next to "Empty"
 const CapacityBadge = ({ vibeCount }: { vibeCount: number }) => {
@@ -60,7 +61,6 @@ const ClubDetailPage = () => {
   const vibeMutation = useVibe();
   const { data: pullingUpCount } = usePullingUpCount(id!);
   const { user } = useAuth();
-  const awardPoints = useAwardPoints();
   const earnBadge = useEarnBadge();
   const isTrending = (vibeCount || 0) >= 3;
   const { messages } = useCommunityMessages();
@@ -82,7 +82,6 @@ const ClubDetailPage = () => {
     }
     try {
       await vibeMutation.mutateAsync(id!);
-      awardPoints.mutate({ action: 'vibe' });
       earnBadge.mutate({ badgeType: 'first_vibe' });
       toast.success('🔥 Vibed!');
     } catch {
@@ -94,8 +93,8 @@ const ClubDetailPage = () => {
     return (
       <div className="min-h-screen gradient-dark">
         <Navbar />
-        <div className="pt-24 container mx-auto px-4">
-          <div className="glass rounded-xl h-96 animate-pulse" />
+        <div className="pt-24 container mx-auto max-w-5xl px-4">
+          <LogoSkeleton label="Loading venue…" />
         </div>
       </div>
     );

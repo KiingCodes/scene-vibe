@@ -5,9 +5,9 @@ import {
 import Animated3DEmoji, { type Animated3DEmojiName } from '@/components/ui/Animated3DEmoji';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/hooks/useAuth';
-import { useLeaderboard, useUserPoints, useUserBadges, BADGE_DEFINITIONS, getLevelFromPoints } from '@/hooks/useGamification';
+import { useLeaderboard, useUserPoints, useUserBadges, BADGE_DEFINITIONS, getLevelFromPoints, POINT_VALUES } from '@/hooks/useGamification';
 import { useFollowCounts, useIsFollowing, useToggleFollow } from '@/hooks/useFollows';
-import { SkeletonBlock, LogoSkeleton } from '@/components/BrandedSkeleton';
+import { LogoSkeleton } from '@/components/BrandedSkeleton';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 
@@ -20,23 +20,23 @@ const item = {
   show: { opacity: 1, y: 0 },
 };
 
-const pointActions: { action: string; pts: number; emoji: Animated3DEmojiName; featured?: boolean }[] = [
-  { action: 'Vibe a club', pts: 5, emoji: 'fire' },
-  { action: 'Leave a review', pts: 10, emoji: 'star' },
-  { action: 'Rate DJ/Music', pts: 8, emoji: 'headphones' },
-  { action: 'Suggest a spot', pts: 20, emoji: 'lightbulb' },
-  { action: 'Pull up', pts: 5, emoji: 'car' },
-  { action: 'Save a club', pts: 3, emoji: 'heart' },
-  { action: 'Send a message', pts: 2, emoji: 'chat' },
-  { action: 'Post a video', pts: 15, emoji: 'video' },
-  { action: 'Like a video', pts: 1, emoji: 'thumbsUp' },
-  { action: 'Comment on video', pts: 2, emoji: 'chat' },
-  { action: 'Join a crew', pts: 8, emoji: 'users' },
-  { action: 'Create a crew', pts: 15, emoji: 'rocket' },
-  { action: 'Follow a user', pts: 1, emoji: 'user' },
-  { action: 'Night-replay shared', pts: 10, emoji: 'moon' },
-  { action: 'Daily login streak', pts: 5, emoji: 'fire', featured: true },
-  { action: 'Active after midnight', pts: 5, emoji: 'moon' },
+const pointActions: { action: keyof typeof POINT_VALUES; label: string; emoji: Animated3DEmojiName; featured?: boolean }[] = [
+  { action: 'vibe', label: 'Vibe a club', emoji: 'fire' },
+  { action: 'review', label: 'Leave a review', emoji: 'star' },
+  { action: 'rating', label: 'Rate DJ/Music', emoji: 'headphones' },
+  { action: 'suggestion', label: 'Suggest a spot', emoji: 'lightbulb' },
+  { action: 'pulling_up', label: 'Pull up', emoji: 'car' },
+  { action: 'favorite', label: 'Save a club', emoji: 'heart' },
+  { action: 'message', label: 'Send a message', emoji: 'chat' },
+  { action: 'video_post', label: 'Post a video', emoji: 'video' },
+  { action: 'video_like', label: 'Like a video', emoji: 'thumbsUp' },
+  { action: 'comment', label: 'Comment on video', emoji: 'chat' },
+  { action: 'join_crew', label: 'Join a crew', emoji: 'users' },
+  { action: 'create_crew', label: 'Create a crew', emoji: 'rocket' },
+  { action: 'follow', label: 'Follow a user', emoji: 'user' },
+  { action: 'night_replay', label: 'Submit a Night Replay', emoji: 'moon' },
+  { action: 'daily_login', label: 'Daily login streak', emoji: 'fire', featured: true },
+  { action: 'after_midnight', label: 'Active after midnight', emoji: 'moon' },
 ];
 
 const RowFollowBtn = ({ targetId }: { targetId: string }) => {
@@ -68,7 +68,7 @@ const LeaderboardPage = () => {
   const { user } = useAuth();
   const { data: leaderboard, isLoading } = useLeaderboard();
   const { data: myPoints } = useUserPoints();
-  const { data: myBadges } = useUserBadges();
+  const { data: myBadges, isLoading: badgesLoading } = useUserBadges();
   const { data: myCounts } = useFollowCounts(user?.id);
 
   const levelInfo = getLevelFromPoints(myPoints?.points || 0);
@@ -152,8 +152,11 @@ const LeaderboardPage = () => {
             {/* Badges */}
             <div>
               <p className="mb-3 text-sm font-semibold text-white">Your Badge Vault</p>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-                {badgeDefinitions.map(badge => {
+              {badgesLoading ? (
+                <LogoSkeleton label="Loading your badges…" size={40} />
+              ) : (
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                  {badgeDefinitions.map(badge => {
                   const earned = badge.type === 'scene_legend'
                     ? levelInfo.level === 10 || earnedBadgeTypes.has('top_10')
                     : earnedBadgeTypes.has(badge.type);
@@ -175,8 +178,9 @@ const LeaderboardPage = () => {
                       <span className="truncate">{badge.name}</span>
                     </motion.div>
                   );
-                })}
-              </div>
+                  })}
+                </div>
+              )}
             </div>
           </motion.div>
         )}
@@ -190,7 +194,7 @@ const LeaderboardPage = () => {
             Every action you take in the scene earns points. Level up to unlock badges, verified status (Lv. 8) and the leaderboard.
           </p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-            {pointActions.map(({ action, pts, emoji, featured }) => (
+            {pointActions.map(({ action, label, emoji, featured }) => (
               <motion.div
                 key={action}
                 variants={{ hidden: { opacity: 0 }, show: { opacity: 1 } }}
@@ -200,11 +204,12 @@ const LeaderboardPage = () => {
                     : 'border-white/10 bg-slate-900/60'
                 }`}
               >
-                <Animated3DEmoji name={emoji} label={action} featured={featured} />
+                <Animated3DEmoji name={emoji} label={label} featured={featured} />
                 <div className="min-w-0">
-                  <p className="text-xs font-medium leading-snug text-white">{action}</p>
-                  <p className="mt-1 text-sm font-black text-cyan-300">+{pts} pts</p>
-                  {featured && <p className="text-[10px] text-orange-200/80">Consecutive daily logins</p>}
+                  <p className="text-xs font-medium leading-snug text-white">{label}</p>
+                  <p className="mt-1 text-sm font-black text-cyan-300">+{POINT_VALUES[action]} pts</p>
+                  {featured && <p className="text-[10px] text-orange-200/80">Once daily; consecutive logins build your streak</p>}
+                  {action === 'after_midnight' && <p className="text-[10px] text-slate-400">Bonus on your first action before 5 a.m.</p>}
                 </div>
               </motion.div>
             ))}
@@ -230,12 +235,7 @@ const LeaderboardPage = () => {
           <h3 className="mb-4 flex items-center gap-2 font-semibold text-white">
             <Medal className="h-5 w-5 text-amber-300" /> Top Night Owls &amp; Squads
           </h3>
-          {isLoading && (
-            <div className="space-y-2">
-              <LogoSkeleton label="Tallying ranks…" />
-              {Array.from({ length: 5 }).map((_, i) => <SkeletonBlock key={i} className="h-12" />)}
-            </div>
-          )}
+          {isLoading && <LogoSkeleton label="Tallying ranks…" />}
           <div className="space-y-2">
             {leaderboard?.map((entry, i) => {
               const lvl = getLevelFromPoints(entry.points);

@@ -30,6 +30,7 @@ export const useVideos = (clubId?: string) => {
 export const useUploadVideo = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const award = useAwardPoints();
 
   return useMutation({
     mutationFn: async ({ file, clubId, caption }: { file: File; clubId?: string; caption?: string }) => {
@@ -57,6 +58,7 @@ export const useUploadVideo = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['pending-night-replays'] });
+      award.mutate({ action: 'video_post' });
     },
   });
 };
@@ -125,24 +127,26 @@ export const useToggleLike = () => {
     mutationFn: async ({ videoId, liked }: { videoId: string; liked: boolean }) => {
       if (!user) throw new Error('Must be signed in');
       if (liked) {
-        await supabase.from('video_likes').delete().eq('video_id', videoId).eq('user_id', user.id);
+        const { error } = await supabase.from('video_likes').delete().eq('video_id', videoId).eq('user_id', user.id);
+        if (error) throw error;
         return { awarded: false };
       } else {
-        await supabase.from('video_likes').insert({ video_id: videoId, user_id: user.id });
+        const { error } = await supabase.from('video_likes').insert({ video_id: videoId, user_id: user.id });
+        if (error) throw error;
         // Harden points: only award the first time this user ever likes this video
         const key = `awarded:like:${user.id}:${videoId}`;
         const already = typeof localStorage !== 'undefined' && localStorage.getItem(key);
-        if (!already) {
-          try { localStorage.setItem(key, '1'); } catch {}
-          return { awarded: true };
-        }
-        return { awarded: false };
+        return { awarded: !already, awardKey: key };
       }
     },
     onSuccess: (res, { videoId }) => {
       queryClient.invalidateQueries({ queryKey: ['video-likes', videoId] });
       queryClient.invalidateQueries({ queryKey: ['videos'] });
-      if (res?.awarded) award.mutate({ action: 'video_like' });
+      if (res?.awarded && res.awardKey) {
+        award.mutate({ action: 'video_like' }, {
+          onSuccess: () => localStorage.setItem(res.awardKey, '1'),
+        });
+      }
     },
   });
 };

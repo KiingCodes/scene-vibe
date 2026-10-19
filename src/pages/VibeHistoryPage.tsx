@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { History, Flame, Calendar, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
+import { LogoSkeleton } from '@/components/BrandedSkeleton';
 import { useAuth } from '@/hooks/useAuth';
 import { useClubs } from '@/hooks/useClubs';
 import { supabase } from '@/integrations/supabase/client';
@@ -116,11 +117,7 @@ const VibeHistoryPage = () => {
         </motion.div>
 
         {isLoading && (
-          <div className="space-y-3">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="glass rounded-xl h-16 animate-pulse" />
-            ))}
-          </div>
+          <LogoSkeleton label="Loading the scene…" />
         )}
 
         {!isLoading && timeline.length === 0 && (

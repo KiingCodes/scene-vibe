@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { replayUploadPath, validateReplayFile } from '@/lib/nightReplay';
+import { useAwardPoints } from './useGamification';
 
 const replaySelect = '*, venue:clubs!night_replays_venue_id_fkey(name, image_url)';
 
@@ -48,6 +49,7 @@ export const useLatestReplay = () => {
 export const useSubmitNightReplay = () => {
   const { user } = useAuth();
   const client = useQueryClient();
+  const awardPoints = useAwardPoints();
   return useMutation({
     mutationFn: async ({ file, clubId, caption }: { file: File; clubId: string; caption?: string }) => {
       if (!user) throw new Error('Sign in to submit a highlight');
@@ -69,6 +71,7 @@ export const useSubmitNightReplay = () => {
     onSuccess: () => {
       client.invalidateQueries({ queryKey: ['night-replays'] });
       client.invalidateQueries({ queryKey: ['pending-night-replays'] });
+      awardPoints.mutate({ action: 'night_replay' });
     },
   });
 };

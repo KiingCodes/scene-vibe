@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
+import { useAwardPoints } from '@/hooks/useGamification';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -9,6 +10,7 @@ import background from '@/assets/background.jpg'; // 👈 your background image
 
 const AuthPage = () => {
   const { signIn, signUp } = useAuth();
+  const awardPoints = useAwardPoints();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,7 +23,7 @@ const AuthPage = () => {
 
     try {
       if (isLogin) {
-        const { error } = await signIn(email, password);
+        const { error, user } = await signIn(email, password);
         if (error) {
           if (error.message.includes('Invalid login credentials')) {
             toast.error('Invalid email or password');
@@ -31,6 +33,27 @@ const AuthPage = () => {
             toast.error(error.message);
           }
         } else {
+          if (user) {
+            const today = new Date();
+            const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            const streakKey = `scene-login-streak:${user.id}`;
+            const previousDate = localStorage.getItem(`${streakKey}:date`) || '';
+            const previousStreak = Number(localStorage.getItem(`${streakKey}:count`) || '0');
+            if (previousDate !== todayKey) {
+              const yesterday = new Date(today);
+              yesterday.setDate(today.getDate() - 1);
+              const yesterdayKey = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+              const nextStreak = previousDate === yesterdayKey && Number.isSafeInteger(previousStreak)
+                ? previousStreak + 1
+                : 1;
+              awardPoints.mutate({ action: 'daily_login', userId: user.id }, {
+                onSuccess: () => {
+                  localStorage.setItem(`${streakKey}:date`, todayKey);
+                  localStorage.setItem(`${streakKey}:count`, String(nextStreak));
+                },
+              });
+            }
+          }
           toast.success('Welcome back! 🔥');
         }
       } else {
@@ -132,7 +155,7 @@ const AuthPage = () => {
               disabled={loading}
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
             >
-              {loading ? 'Loading...' : isLogin ? 'Sign In' : 'Sign Up'}
+              {loading ? (isLogin ? 'Signing in…' : 'Creating account…') : isLogin ? 'Sign In' : 'Sign Up'}
             </Button>
           </form>
 

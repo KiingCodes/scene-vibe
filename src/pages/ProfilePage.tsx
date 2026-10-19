@@ -38,6 +38,7 @@ import { toast } from "sonner";
 import Animated3DEmoji, {
   type Animated3DEmojiName,
 } from "@/components/ui/Animated3DEmoji";
+import { LogoSkeleton } from "@/components/BrandedSkeleton";
 
 const VERIFIED_LEVEL = 8; // VIP level = auto-verified
 const BADGE_EMOJIS: Record<string, Animated3DEmojiName> = {
@@ -117,7 +118,7 @@ const ProfilePage = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { data: points } = useUserPoints();
-  const { data: badges } = useUserBadges();
+  const { data: badges, isLoading: badgesLoading } = useUserBadges();
   const { data: stats } = useProfileStats();
   const { data: recentActivity } = useRecentActivity();
   const { data: isAdmin } = useIsAdmin();
@@ -458,10 +459,13 @@ const ProfilePage = () => {
         >
           <h2 className="font-display mb-3 flex items-center gap-2 font-semibold text-white">
             <Trophy className="w-5 h-5 text-yellow-400" /> Badges (
-            {badges?.length || 0}/{BADGE_DEFINITIONS.length})
+            {badgesLoading ? "…" : badges?.length || 0}/{BADGE_DEFINITIONS.length})
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {BADGE_DEFINITIONS.map((badge) => {
+          {badgesLoading ? (
+            <LogoSkeleton label="Loading your badges…" size={40} />
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {BADGE_DEFINITIONS.map((badge) => {
               const earned = earnedBadgeTypes.has(badge.type);
               return (
                 <motion.div
@@ -485,8 +489,9 @@ const ProfilePage = () => {
                   </div>
                 </motion.div>
               );
-            })}
-          </div>
+              })}
+            </div>
+          )}
         </motion.div>
 
         {/* Recent Activity */}

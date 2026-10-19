@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Building2, Check, X, MapPin, Phone, Mail, FileText, ShieldCheck, Loader2, Download } from 'lucide-react';
+import { Building2, Check, X, MapPin, Phone, Mail, FileText, ShieldCheck, Download } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Skeleton } from '@/components/ui/skeleton';
+import { LogoSkeleton } from '@/components/BrandedSkeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useVenueClaims, useClaimDocumentUrl, useModerateClaim, type VenueClaim } from '@/hooks/useVenueClaims';
@@ -32,7 +32,7 @@ const DocumentLightbox = ({ path, name, onClose }: { path: string; name?: string
           <DialogDescription>Private document — signed link expires in 5 minutes.</DialogDescription>
         </DialogHeader>
         <div className="rounded-xl overflow-hidden border border-border/50 bg-black/40 min-h-[320px] flex items-center justify-center">
-          {isLoading && <Loader2 className="w-6 h-6 animate-spin text-primary" />}
+          {isLoading && <LogoSkeleton label="Loading document…" size={48} className="border-0 bg-transparent py-4" />}
           {error && <p className="text-sm text-destructive px-4 text-center">Could not load this document.</p>}
           {url && (isPdf
             ? <iframe src={url} title={name || 'Claim document'} className="w-full h-[70vh]" />
@@ -170,7 +170,7 @@ const VenueClaimsTab = () => {
       </Tabs>
 
       {isLoading ? (
-        <div className="space-y-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-44 w-full rounded-2xl" />)}</div>
+        <LogoSkeleton label="Loading venue claims…" />
       ) : !claims?.length ? (
         <div className="text-center py-10 glass rounded-xl">
           <Building2 className="w-10 h-10 text-muted-foreground/40 mx-auto mb-2" />

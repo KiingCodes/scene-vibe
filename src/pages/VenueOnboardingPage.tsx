@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { LogoSkeleton } from '@/components/BrandedSkeleton';
 import Navbar from '@/components/Navbar';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -454,10 +455,10 @@ const VenueOnboardingPage = () => {
                         onChange={(e) => handleFile(e.target.files?.[0] || null)}
                       />
                       {uploading
-                        ? <Loader2 className="w-8 h-8 mx-auto mb-2 text-primary animate-spin" aria-hidden="true" />
+                        ? <LogoSkeleton label="Uploading securely…" size={40} className="border-0 bg-transparent py-2" />
                         : <Upload className="w-8 h-8 mx-auto mb-2 text-primary" strokeWidth={1.5} aria-hidden="true" />}
                       {uploading ? (
-                        <p className="text-sm font-semibold text-foreground">Uploading securely…</p>
+                        null
                       ) : file ? (
                         <div>
                           <p className="text-sm font-semibold text-foreground">{file.name}</p>

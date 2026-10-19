@@ -6,6 +6,7 @@ import 'leaflet/dist/leaflet.css';
 import { formatDistanceToNow } from 'date-fns';
 import { MapPin, Shield, Siren } from 'lucide-react';
 import { usePublicSafetySession } from '@/hooks/useSafety';
+import { LogoSkeleton } from '@/components/BrandedSkeleton';
 
 const walkerIcon = L.divIcon({
   className: 'custom-marker',
@@ -28,8 +29,8 @@ const TrackPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center text-white/60">
-        Loading live track…
+      <div className="min-h-screen bg-[#0a0a0f] px-4 pt-24">
+        <LogoSkeleton label="Loading live track…" className="mx-auto max-w-xl" />
       </div>
     );
   }

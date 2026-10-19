@@ -14,6 +14,7 @@ import { useClubs } from '@/hooks/useClubs';
 import { useSubmitNightReplay, useNightReplays } from '@/hooks/useNightReplays';
 import { validateReplayFile } from '@/lib/nightReplay';
 import { toast } from 'sonner';
+import { LogoSkeleton } from '@/components/BrandedSkeleton';
 
 const NightReplayPage = () => {
   const { user } = useAuth();
@@ -227,11 +228,7 @@ const NightReplayPage = () => {
             <Button variant="outline" className="mt-4" onClick={() => refetch()}>Try again</Button>
           </div>
         ) : isLoading ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <div key={index} className="aspect-[9/16] animate-pulse rounded-2xl border border-fuchsia-500/20 bg-slate-900/80" />
-            ))}
-          </div>
+          <LogoSkeleton label="Loading Night Replay…" />
         ) : replays.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 10 }}

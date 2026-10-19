@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useMyVenues } from "@/hooks/useVenueOwner";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { LogoSkeleton } from "@/components/BrandedSkeleton";
 
 const Shell = ({ children }: { children: React.ReactNode }) => (
   <div className="min-h-screen">
@@ -22,7 +23,7 @@ const VenuePortalPage = () => {
   const [selected, setSelected] = useState<string | null>(params.get("venue"));
 
   if (loading || (user && isLoading)) {
-    return <Shell><div className="mx-auto max-w-6xl h-64 rounded-2xl bg-white/5 animate-pulse" /></Shell>;
+    return <Shell><LogoSkeleton label="Loading the scene…" className="mx-auto max-w-6xl" /></Shell>;
   }
 
   if (!user || !venues?.length) {

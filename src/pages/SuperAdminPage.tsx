@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { LogoSkeleton } from "@/components/BrandedSkeleton";
 import { Link } from "react-router-dom";
 import type { VenueTier } from "@/components/business/types";
 import { useAdminStats, useAdminUsers, useAdminUserActions } from "@/hooks/useAdminStats";
@@ -174,7 +175,7 @@ export default function SuperAdminPage() {
                   className="h-9 border-white/10 bg-white/5" />
               </div>
               {claimsLoading ? (
-                <div className="py-10 text-center text-sm text-zinc-500">Loading venues…</div>
+                <LogoSkeleton label="Loading venues…" size={40} className="py-5" />
               ) : filtered.length === 0 ? (
                 <div className="py-10 text-center text-sm text-zinc-500">No venue claims yet.</div>
               ) : (

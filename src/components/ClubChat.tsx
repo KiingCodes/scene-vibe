@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useVenueOwnerIds } from '@/hooks/useVenueOwner';
 import { OfficialAccountTag } from '@/components/VerifiedBadge';
+import { LogoSkeleton } from '@/components/BrandedSkeleton';
 
 const VERIFIED_LEVEL = 8;
 
@@ -85,7 +86,7 @@ const ClubChat = ({ clubId, clubName }: ClubChatProps) => {
       </div>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-2">
-        {isLoading && <p className="text-muted-foreground text-xs text-center">Loading...</p>}
+        {isLoading && <LogoSkeleton label="Loading chat…" size={32} className="border-0 bg-transparent py-3" />}
         {messages?.length === 0 && !isLoading && (
           <p className="text-muted-foreground text-xs text-center py-8">No messages yet. Start the conversation!</p>
         )}
