@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { Heart } from "lucide-react";
-import jewelIqLogo from "@/assets/jeweliq-logo.png";
 import WhatsNewDialog from "@/components/WhatsNewDialog";
 
 const Footer = () => (
@@ -114,26 +113,6 @@ const Footer = () => (
           Made with <Heart className="w-3 h-3 text-secondary" /> for nightlife
           lovers
         </p>
-      </div>
-
-      <div className="border-t border-border/20 mt-6 pt-6 flex flex-col items-center justify-center gap-3">
-        <p className="text-xs sm:text-sm font-display font-medium text-muted-foreground tracking-wide">
-          Designed by
-        </p>
-        <a
-          href="https://jeweliq.tech"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block transition-transform hover:scale-105"
-          aria-label="JewelIQ"
-        >
-          <img
-            src={jewelIqLogo}
-            alt="JewelIQ — Designed by JewelIQ"
-            className="h-14 sm:h-16 md:h-20 w-auto object-contain drop-shadow-[0_0_20px_rgba(56,189,248,0.35)]"
-            loading="lazy"
-          />
-        </a>
         <WhatsNewDialog />
       </div>
     </div>

@@ -27,7 +27,7 @@ interface ClubCardProps {
 const ClubCard = ({ club, vibeCount = 0, pullingUpCount = 0, index }: ClubCardProps) => {
   const { data: announcements = [] } = usePublicVenueAnnouncements(false);
   const activeAnnouncement = announcements.find((announcement) => announcement.club_id === club.id);
-  const waitMinutes = club.wait_time_minutes;
+  const waitMinutes = club.owner_id ? club.wait_time_minutes : 0;
   const { user } = useAuth();
   const { data: hasVibed } = useHasVibed(club.id);
   const vibeMutation = useVibe();

@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { normalizeDoorWait, doorWaitLabel, BROADCAST_CHANNELS } from '@/lib/venueCommand';
 
 describe('venue command rules', () => {
-  it('defaults missing or invalid wait values to 15–20 minutes', () => {
+  it('defaults missing or invalid wait values to no wait', () => {
     for (const value of [undefined, null, NaN, '15', -1, Infinity]) {
-      expect(normalizeDoorWait(value)).toBe(15);
-      expect(doorWaitLabel(value)).toBe('15-20 min');
+      expect(normalizeDoorWait(value)).toBe(0);
+      expect(doorWaitLabel(value)).toBe('No wait');
     }
   });
   it('preserves zero as no wait', () => {

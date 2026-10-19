@@ -222,6 +222,13 @@ const ClubDetailPage = () => {
 
               {/* Info tiles — unified minimalist row */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {club.owner_id && club.wait_time_minutes > 0 && (
+                  <div className="rounded-xl p-3 bg-white/[0.03] border border-white/10 hover:border-primary/30 transition-colors">
+                    <Clock className="w-4 h-4 text-primary/80 mb-2" strokeWidth={1.75} />
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Door wait</p>
+                    <p className="text-sm font-semibold text-foreground truncate">{club.wait_time_minutes} min</p>
+                  </div>
+                )}
                 {club.genre && (
                   <div className="rounded-xl p-3 bg-white/[0.03] border border-white/10 hover:border-primary/30 transition-colors">
                     <Music className="w-4 h-4 text-primary/80 mb-2" strokeWidth={1.75} />

@@ -8,7 +8,7 @@ export const BROADCAST_CHANNELS = [
 ] as const;
 
 export const normalizeDoorWait = (value: unknown): number =>
-  typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 90 ? value : 15;
+  typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 90 ? value : 0;
 
 export const doorWaitLabel = (value: unknown): string => {
   const minutes = normalizeDoorWait(value);

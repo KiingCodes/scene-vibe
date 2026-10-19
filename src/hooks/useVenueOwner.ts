@@ -252,6 +252,12 @@ export const useUpdateVenue = () => {
     },
     onSuccess: (club) => {
       qc.setQueryData(['club', club.id], club);
+      qc.setQueriesData<Club[]>({ queryKey: ['clubs'] }, (clubs) =>
+        clubs?.map((cachedClub) => cachedClub.id === club.id ? club : cachedClub),
+      );
+      qc.setQueriesData<Club[]>({ queryKey: ['my-venues'] }, (venues) =>
+        venues?.map((cachedVenue) => cachedVenue.id === club.id ? club : cachedVenue),
+      );
       qc.invalidateQueries({ queryKey: ['clubs'] });
       qc.invalidateQueries({ queryKey: ['my-venues'] });
     },

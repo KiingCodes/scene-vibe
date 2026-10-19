@@ -1,4 +1,4 @@
-ALTER TABLE public.clubs ADD COLUMN IF NOT EXISTS wait_time_minutes integer NOT NULL DEFAULT 15 CHECK (wait_time_minutes BETWEEN 0 AND 90);
+ALTER TABLE public.clubs ADD COLUMN IF NOT EXISTS wait_time_minutes integer NOT NULL DEFAULT 0 CHECK (wait_time_minutes BETWEEN 0 AND 90);
 ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS venue_id uuid REFERENCES public.clubs(id), ADD COLUMN IF NOT EXISTS sender_name text, ADD COLUMN IF NOT EXISTS sender_type text NOT NULL DEFAULT 'user' CHECK (sender_type IN ('user','venue')), ADD COLUMN IF NOT EXISTS is_verified_venue boolean NOT NULL DEFAULT false, ADD COLUMN IF NOT EXISTS announcement_id uuid UNIQUE REFERENCES public.venue_announcements(id) ON DELETE CASCADE;
 ALTER TABLE public.venue_announcements ADD COLUMN IF NOT EXISTS channel_id text NOT NULL DEFAULT 'live-clubs';
 CREATE INDEX IF NOT EXISTS messages_channel_country_created_idx ON public.messages(channel_id,country,created_at DESC);
