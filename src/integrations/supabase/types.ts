@@ -96,7 +96,6 @@ export type Database = {
           is_verified: boolean
           lat: number
           live_status: string | null
-          wait_time_minutes: number
           lng: number
           name: string
           opening_hours: string | null
@@ -126,7 +125,6 @@ export type Database = {
           is_verified?: boolean
           lat: number
           live_status?: string | null
-          wait_time_minutes?: number
           lng: number
           name: string
           opening_hours?: string | null
@@ -156,7 +154,6 @@ export type Database = {
           is_verified?: boolean
           lat?: number
           live_status?: string | null
-          wait_time_minutes?: number
           lng?: number
           name?: string
           opening_hours?: string | null
@@ -241,51 +238,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "crews"
             referencedColumns: ["id"]
-          },
-        ]
-      }
-      crew_messages: {
-        Row: {
-          content: string
-          created_at: string
-          crew_id: string
-          id: string
-          message_type: string
-          metadata: Json
-          user_id: string
-        }
-        Insert: {
-          content?: string
-          created_at?: string
-          crew_id: string
-          id?: string
-          message_type?: string
-          metadata?: Json
-          user_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          crew_id?: string
-          id?: string
-          message_type?: string
-          metadata?: Json
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "crew_messages_crew_id_fkey"
-            columns: ["crew_id"]
-            isOneToOne: false
-            referencedRelation: "crews"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "crew_messages_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
           },
         ]
       }
