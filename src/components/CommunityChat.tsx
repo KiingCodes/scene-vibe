@@ -571,7 +571,7 @@ const CommunityChat = () => {
                       {(isVenue || ownerIds?.has(msg.user_id)) && <OfficialAccountTag />}
                       <span className="rounded-full bg-white/[0.07] px-1.5 py-0.5 text-[9px] text-muted-foreground">
                         {isVenue
-                          ? 'Venue announcement'
+                          ? msgType === 'event' ? 'Venue event' : 'Venue announcement'
                           : ownerIds?.has(msg.user_id)
                           ? "Venue VIP"
                           : isAdmin && isOwn
