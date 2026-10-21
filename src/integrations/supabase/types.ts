@@ -706,6 +706,7 @@ export type Database = {
           content: string
           country: string
           created_at: string
+          event_id: string | null
           flag_count: number
           id: string
           is_hidden: boolean
@@ -725,6 +726,7 @@ export type Database = {
           content: string
           country?: string
           created_at?: string
+          event_id?: string | null
           flag_count?: number
           id?: string
           is_hidden?: boolean
@@ -744,6 +746,7 @@ export type Database = {
           content?: string
           country?: string
           created_at?: string
+          event_id?: string | null
           flag_count?: number
           id?: string
           is_hidden?: boolean
@@ -769,6 +772,13 @@ export type Database = {
             columns: ["club_id"]
             isOneToOne: false
             referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
           {
