@@ -1,5 +1,6 @@
-- [ ] Connect verified venue broadcasts and active-channel realtime chat.
-- [ ] Persist door wait minutes with a safe fallback and fix announcement dependencies.
+- [x] Connect verified venue broadcasts and active-channel realtime chat.
+- [x] Persist door wait minutes with a safe fallback and fix announcement dependencies.
+- [x] Auto-broadcast venue-owned events into SCENE Pulse (#Live-Clubs) and remove the chat post when the event is deleted.
 - [ ] Test broadcasts, permissions and live delivery end to end.
 - [x] Configure protected Night Replay storage and secure schema.
 - [x] Connect highlight uploads, active feed, and venue reviews.
