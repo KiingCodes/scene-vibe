@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
-import { MessageCircle, Home, User, Heart, Shield, BarChart3, Trophy, Users, Moon, Sparkles, ChevronDown, Check, MoreHorizontal, Bell, Building2, Crown, ShieldCheck, CalendarDays } from 'lucide-react';
+import { MessageCircle, Home, User, Heart, Shield, BarChart3, Trophy, Users, Moon, ChevronDown, Check, Lock, MoreHorizontal, Bell, Building2, Crown, ShieldCheck, CalendarDays } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
 import { useMyVenues } from '@/hooks/useVenueOwner';
@@ -9,7 +9,7 @@ import NotificationBell from '@/components/NotificationBell';
 import navbarLogo from '@/assets/navbar-logo.png';
 import { useUnreadCount } from '@/hooks/useNotifications';
 import { useLiveChatCount } from '@/hooks/useLiveChatCount';
-import { useCountry, COUNTRIES, type CountryCode } from '@/contexts/CountryContext';
+import { useCountry, COUNTRIES } from '@/contexts/CountryContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,7 +43,6 @@ const MORE_ITEMS = [
 const ADMIN_ITEMS = [
   { path: '/admin',              icon: Shield,    label: 'Command Center' },
   { path: '/admin/super',        icon: Crown,     label: 'Super Admin' },
-  { path: '/admin/sponsorships', icon: Sparkles,  label: 'Sponsorships' },
   { path: '/business/billing',   icon: Building2, label: 'Venue Billing' },
 ];
 
@@ -61,25 +60,41 @@ const CountrySwitcher = ({ align = 'start' }: { align?: 'start' | 'end' }) => {
           <ChevronDown className="w-3 h-3 text-white/60 group-hover:text-[#00e6d6] transition-colors" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align={align} className="w-56 bg-[#0a0a0f]/95 border-white/10 backdrop-blur-xl">
-        <DropdownMenuLabel className="text-[10px] uppercase tracking-[0.2em] text-[#00e6d6]/80">
-          Choose your scene
+      <DropdownMenuContent align={align} className="z-50 w-72 rounded-2xl border border-cyan-500/30 bg-slate-950/90 p-4 text-white shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_25px_rgba(6,182,212,0.15)] ring-1 ring-white/10 backdrop-blur-2xl sm:p-5 animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200 ease-out">
+        <DropdownMenuLabel className="mb-3 border-b border-white/5 px-0 py-0 pb-2 text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-400/90 sm:text-[11px]">
+          CHOOSE YOUR SCENE
         </DropdownMenuLabel>
-        <DropdownMenuSeparator className="bg-white/10" />
         {COUNTRIES.map((c) => {
-          const active = c.code === country;
+          const active = c.code === 'ZA' && country === 'ZA';
+          const locked = c.code === 'ZW';
           return (
             <DropdownMenuItem
               key={c.code}
-              onClick={() => setCountry(c.code as CountryCode)}
-              className="gap-3 py-2.5 focus:bg-white/5 cursor-pointer"
+              disabled={locked}
+              onClick={() => {
+                if (!locked) setCountry(c.code);
+              }}
+              className={locked
+                ? 'mt-2 cursor-not-allowed pointer-events-none rounded-xl border border-white/5 bg-white/[0.02] p-3 opacity-60 focus:bg-white/[0.02]'
+                : 'gap-3 rounded-xl border border-cyan-500/30 bg-cyan-950/20 p-3 transition-all hover:border-cyan-400/50 focus:bg-cyan-950/20 focus:text-white'}
             >
               <span className="text-xl">{c.flag}</span>
               <div className="flex-1">
-                <div className="text-sm font-semibold text-white/90">{c.name}</div>
-                <div className="text-[10px] text-white/50">{c.cities.slice(0, 3).join(' • ')}</div>
+                <div className="text-sm font-semibold text-white">{c.name}</div>
+                <div className="mt-0.5 text-xs text-slate-400">{c.cities.slice(0, 3).join(' • ')}</div>
               </div>
-              {active && <Check className="w-4 h-4 text-[#00e6d6]" />}
+              {locked ? (
+                <span className="flex items-center">
+                  <span className="rounded-full border border-fuchsia-500/30 bg-fuchsia-500/20 px-2 py-0.5 text-[9px] font-bold tracking-widest text-fuchsia-300 shadow-[0_0_10px_rgba(217,70,239,0.2)]">
+                    COMING SOON
+                  </span>
+                  <Lock className="ml-1 inline h-3 w-3 text-fuchsia-400" />
+                </span>
+              ) : active ? (
+                <span className="rounded-full bg-cyan-500/10 p-1 text-cyan-400">
+                  <Check className="h-4 w-4" />
+                </span>
+              ) : null}
             </DropdownMenuItem>
           );
         })}

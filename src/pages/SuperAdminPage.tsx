@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  ArrowLeft, ShieldAlert, Building2, Sparkles, DollarSign, CheckCircle2, XCircle,
-  Sliders, BarChart3, Zap, Ticket, Crown, Search, Ban,
+  ArrowLeft, ShieldAlert, Building2, DollarSign, CheckCircle2, XCircle,
+  Sliders, Zap, Crown, Search, Ban,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,8 +18,7 @@ import { useAdminRealtime } from "@/hooks/useAdminRealtime";
 import AuditTrail from "@/components/admin/AuditTrail";
 import { useVenueClaims, useModerateClaim } from "@/hooks/useVenueClaims";
 import {
-  useCampaigns, usePlatformFees, useRevenue, useSaveFees,
-  useUpsertSubscription, useVenueSubscriptions,
+  usePlatformFees, useRevenue, useSaveFees, useUpsertSubscription, useVenueSubscriptions,
 } from "@/hooks/useBusinessAdmin";
 
 const money = (cents: number, cur = "R") =>
@@ -61,7 +60,6 @@ export default function SuperAdminPage() {
   const { data: stats } = useAdminStats();
   const { data: claims = [], isLoading: claimsLoading } = useVenueClaims("all");
   const { data: subs = [] } = useVenueSubscriptions();
-  const { data: campaigns = [] } = useCampaigns();
   const { data: fees } = usePlatformFees();
   const { data: revenue } = useRevenue();
   const { data: users = [] } = useAdminUsers(userQuery);
@@ -129,9 +127,6 @@ export default function SuperAdminPage() {
     }
   };
 
-  const totalImpressions = campaigns.reduce((s, c) => s + c.impressions, 0);
-  const totalBudget = campaigns.reduce((s, c) => s + c.budget_cents, 0);
-
   return (
     <div className="min-h-screen bg-zinc-950 pb-28 text-zinc-100">
       <div className="mx-auto max-w-6xl px-4 pt-6">
@@ -150,9 +145,6 @@ export default function SuperAdminPage() {
           </div>
           <div className="flex gap-2">
             <Button asChild variant="outline" size="sm" className="border-white/10 bg-white/5">
-              <Link to="/admin/sponsorships">Sponsorships</Link>
-            </Button>
-            <Button asChild variant="outline" size="sm" className="border-white/10 bg-white/5">
               <Link to="/admin">Command Center</Link>
             </Button>
           </div>
@@ -168,7 +160,6 @@ export default function SuperAdminPage() {
         <Tabs defaultValue="venues" className="mt-6">
           <TabsList className="w-full justify-start overflow-x-auto border border-white/10 bg-zinc-900/70 backdrop-blur-2xl">
             <TabsTrigger value="venues"><Building2 className="mr-1.5 h-4 w-4" />Venues</TabsTrigger>
-            <TabsTrigger value="sponsor"><Sparkles className="mr-1.5 h-4 w-4" />Sponsorships</TabsTrigger>
             <TabsTrigger value="finance"><Sliders className="mr-1.5 h-4 w-4" />Financial</TabsTrigger>
             <TabsTrigger value="security"><ShieldAlert className="mr-1.5 h-4 w-4" />Security</TabsTrigger>
           </TabsList>
@@ -237,35 +228,6 @@ export default function SuperAdminPage() {
               </div>
               )}
             </div>
-          </TabsContent>
-
-          <TabsContent value="sponsor" className="mt-4 space-y-3">
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-              <MetricCard icon={Sparkles} label="Active campaigns" value={`${campaigns.filter(c => c.status === "active").length}`} tone="#EC4899" />
-              <MetricCard icon={BarChart3} label="Impressions" value={totalImpressions.toLocaleString()} tone="#06B6D4" />
-              <MetricCard icon={DollarSign} label="Voucher budget" value={money(totalBudget)} tone="#10B981" />
-              <MetricCard icon={Ticket} label="Redemptions" value={campaigns.reduce((s, c) => s + c.redemptions, 0).toLocaleString()} tone="#F59E0B" />
-            </div>
-            <div className={`${glass} divide-y divide-white/5`}>
-              {campaigns.length === 0 && (
-                <div className="p-6 text-center text-sm text-zinc-500">No campaigns yet — create one below.</div>
-              )}
-              {campaigns.map((c) => (
-                <div key={c.id} className="flex items-center justify-between gap-3 p-4">
-                  <div>
-                    <div className="font-semibold">{c.brand} — {c.title}</div>
-                    <div className="text-xs text-zinc-500">{c.asset_type} · {(c.venues || []).join(", ") || "All venues"}</div>
-                  </div>
-                  <div className="text-right text-xs text-zinc-400">
-                    <div>{money(c.spent_cents)} / {money(c.budget_cents)}</div>
-                    <div>{c.impressions.toLocaleString()} impressions</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <Button asChild className="w-full bg-[#EC4899] text-white hover:bg-[#EC4899]/90">
-              <Link to="/admin/sponsorships">Create Global Campaign</Link>
-            </Button>
           </TabsContent>
 
           <TabsContent value="finance" className="mt-4 space-y-3">

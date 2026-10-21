@@ -101,9 +101,7 @@ const TermsGate = () => {
             <Button
               onClick={accept}
               disabled={!agreed}
-              className={`h-auto w-full rounded-2xl bg-gradient-to-r from-[#FF6B4A] via-[#D946EF] to-[#06B6D4] py-4 text-base font-bold text-white shadow-lg shadow-fuchsia-500/25 transition-all hover:opacity-95 active:scale-[0.98] disabled:from-slate-700 disabled:via-slate-700 disabled:to-slate-600 disabled:text-slate-400 disabled:shadow-none disabled:opacity-70 ${
-                agreed ? 'motion-safe:animate-pulse' : ''
-              }`}
+              className="h-auto w-full rounded-2xl bg-cyan-400 py-4 text-base font-bold text-slate-950 shadow-lg shadow-cyan-500/25 transition-colors hover:bg-cyan-300 active:scale-[0.98] disabled:bg-slate-700 disabled:text-slate-400 disabled:shadow-none"
             >
               <Check className="h-4 w-4" /> Unlock SCENE Access
             </Button>

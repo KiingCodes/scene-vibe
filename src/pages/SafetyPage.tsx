@@ -18,6 +18,8 @@ import {
   Siren,
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
+import boltLogo from '@/assets/bolt-logo.png';
+import uberLogo from '@/assets/uber-logo.svg';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -49,6 +51,107 @@ const FollowWalker = ({ lat, lng }: { lat: number; lng: number }) => {
     map.panTo([lat, lng], { animate: true, duration: 0.5 });
   }, [lat, lng, map]);
   return null;
+};
+
+type RideProvider = 'Uber' | 'Bolt';
+
+const QuickRideHome = ({
+  active,
+}: {
+  active?: {
+    current_lat: number | null;
+    current_lng: number | null;
+    start_lat: number;
+    start_lng: number;
+  } | null;
+}) => {
+  const [requestingRide, setRequestingRide] = useState(false);
+
+  const dispatchRide = async (provider: RideProvider) => {
+    setRequestingRide(true);
+    try {
+      let lat: number;
+      let lng: number;
+
+      try {
+        if (!('geolocation' in navigator)) throw new Error('Location is not available on this device');
+        const position = await new Promise<GeolocationPosition>((resolve, reject) =>
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10_000,
+            maximumAge: 30_000,
+          }),
+        );
+        lat = position.coords.latitude;
+        lng = position.coords.longitude;
+      } catch (error) {
+        const fallbackLat = active?.current_lat ?? active?.start_lat;
+        const fallbackLng = active?.current_lng ?? active?.start_lng;
+        if (fallbackLat == null || fallbackLng == null) throw error;
+        lat = fallbackLat;
+        lng = fallbackLng;
+      }
+
+      const webUrl = provider === 'Uber'
+        ? `https://m.uber.com/ul/?action=setPickup&pickup[latitude]=${lat}&pickup[longitude]=${lng}`
+        : `https://bolt.eu/ride?pickup_lat=${lat}&pickup_lng=${lng}`;
+      const appUrl = provider === 'Uber'
+        ? `uber://?action=setPickup&pickup[latitude]=${lat}&pickup[longitude]=${lng}`
+        : `bolt://ride?pickup_lat=${lat}&pickup_lng=${lng}`;
+
+      const fallbackTimer = window.setTimeout(() => {
+        if (document.visibilityState === 'visible') window.location.href = webUrl;
+      }, 1200);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') window.clearTimeout(fallbackTimer);
+      }, { once: true });
+
+      window.location.href = appUrl;
+    } catch (error) {
+      toast.error((error as Error).message || 'Could not get your pickup location. Enable location access and try again.');
+    } finally {
+      setRequestingRide(false);
+    }
+  };
+
+  return (
+    <section className="w-full rounded-3xl border border-white/10 bg-slate-900/70 p-4 shadow-[0_24px_80px_rgba(0,0,0,.28)] backdrop-blur-xl sm:p-5">
+      <div className="mb-4">
+        <h2 className="text-sm font-black uppercase tracking-[0.16em] text-white">Quick Ride Home</h2>
+        <p className="mt-1 text-xs text-white/45">Auto-detects current venue pickup spot</p>
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <button
+          type="button"
+          onClick={() => void dispatchRide('Uber')}
+          disabled={requestingRide}
+          className="flex min-h-20 items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/80 p-4 text-left transition-all hover:border-cyan-500/40 disabled:opacity-60"
+        >
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-cyan-400 text-slate-950">
+            <img src={uberLogo} alt="Uber logo" className="h-7 w-7 object-contain" />
+          </span>
+          <span>
+            <span className="block text-base font-black tracking-wide text-white">UBER</span>
+            <span className="block text-[11px] text-white/45">Request a pickup</span>
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => void dispatchRide('Bolt')}
+          disabled={requestingRide}
+          className="flex min-h-20 items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/80 p-4 text-left transition-all hover:border-lime-400/40 disabled:opacity-60"
+        >
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white p-1">
+            <img src={boltLogo} alt="Bolt logo" className="h-full w-full object-contain" />
+          </span>
+          <span>
+            <span className="block text-base font-black tracking-wide text-lime-300">Bolt</span>
+            <span className="block text-[11px] text-white/45">Request a pickup</span>
+          </span>
+        </button>
+      </div>
+    </section>
+  );
 };
 
 const SafetyPage = () => {
@@ -173,7 +276,7 @@ const SafetyPage = () => {
     return (
       <div className="min-h-screen w-full overflow-x-hidden bg-[#070b0a] text-white">
         <Navbar />
-        <main className="relative isolate mx-auto flex min-h-screen w-full max-w-lg items-center justify-center overflow-hidden px-4 pb-16 pt-24 text-center">
+        <main className="relative isolate mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full items-center justify-center overflow-hidden px-4 pb-24 pt-20 text-center">
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 flex select-none items-center justify-center overflow-hidden">
             <div className="absolute h-64 w-64 rounded-full bg-[radial-gradient(circle,rgba(6,182,212,0.12),rgba(217,70,239,0.06)_48%,transparent_72%)] blur-3xl md:h-96 md:w-96" />
             <img src={sceneLogo} alt="" className="h-72 w-72 object-contain opacity-[0.06] md:h-96 md:w-96" />
@@ -193,6 +296,9 @@ const SafetyPage = () => {
                 Sign in to continue
               </Button>
             </Link>
+            <div className="mt-6 text-left">
+              <QuickRideHome />
+            </div>
           </section>
         </main>
       </div>
@@ -202,11 +308,12 @@ const SafetyPage = () => {
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-[#070b0a] text-white">
       <Navbar />
-      <main className="w-full max-w-md mx-auto px-4 pt-24 pb-12">
+      <main className="mx-auto min-h-[calc(100dvh-3.5rem)] w-full max-w-none px-4 pb-24 pt-20 sm:px-6 lg:px-10">
+        <div className="mx-auto w-full">
         {activeLoading ? (
           <LogoSkeleton label="Checking your safety status…" className="min-h-48" />
         ) : !active ? (
-          <section className="w-full space-y-5">
+          <section className="grid w-full grid-cols-1 gap-5 lg:grid-cols-2">
             <header className="flex min-w-0 items-center gap-3 py-1">
               <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-emerald-400/20 bg-emerald-400/10 text-emerald-300 shadow-[0_0_24px_rgba(16,185,129,.12)]">
                 <Shield className="h-6 w-6" />
@@ -219,7 +326,7 @@ const SafetyPage = () => {
               </div>
             </header>
 
-            <div className="w-full min-w-0 rounded-3xl border border-white/[0.09] bg-white/[0.035] p-4 shadow-[0_24px_80px_rgba(0,0,0,.28)] backdrop-blur-xl">
+            <div className="w-full min-w-0 rounded-3xl border border-white/[0.09] bg-white/[0.035] p-4 shadow-[0_24px_80px_rgba(0,0,0,.28)] backdrop-blur-xl lg:row-span-3">
               <div className="mb-4 flex items-center gap-2">
                 <Navigation className="h-4 w-4 text-emerald-300" />
                 <h2 className="text-sm font-bold">Where are you headed?</h2>
@@ -272,12 +379,13 @@ const SafetyPage = () => {
               <Shield className="mr-2 h-5 w-5" />
               {start.isPending ? 'Starting your walk…' : 'Start Walk'}
             </Button>
+            <QuickRideHome />
             <p className="px-2 text-center text-[11px] leading-5 text-white/35">
               Your live location is shared only with people you send your private link to.
             </p>
           </section>
         ) : (
-          <section className="w-full min-w-0 space-y-4">
+          <section className="grid w-full min-w-0 grid-cols-1 gap-4 lg:grid-cols-2">
             <header className="flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.07] px-4 py-3">
               <div className="flex min-w-0 items-center gap-3">
                 <span className="relative grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-300/10 text-emerald-300">
@@ -305,7 +413,7 @@ const SafetyPage = () => {
               </Link>
             </header>
 
-            <div className="relative h-[min(42vh,360px)] min-h-[250px] w-full min-w-0 overflow-hidden rounded-3xl border border-white/10 bg-[#0b1110] shadow-[0_16px_50px_rgba(0,0,0,.4)]">
+            <div className="relative h-[min(58vh,600px)] min-h-[320px] w-full min-w-0 overflow-hidden rounded-3xl border border-white/10 bg-[#0b1110] shadow-[0_16px_50px_rgba(0,0,0,.4)] lg:row-span-3">
               {active.current_lat != null && active.current_lng != null ? (
                 <MapContainer
                   center={[active.current_lat, active.current_lng]}
@@ -376,6 +484,7 @@ const SafetyPage = () => {
                 <span className="truncate">Share via Device</span>
               </Button>
             </div>
+            <QuickRideHome active={active} />
             <Button
               onClick={copyTrackingLink}
               variant="outline"
@@ -402,6 +511,7 @@ const SafetyPage = () => {
             </Button>
           </section>
         )}
+        </div>
       </main>
     </div>
   );

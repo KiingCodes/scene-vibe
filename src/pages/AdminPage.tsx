@@ -11,7 +11,6 @@ import {
   ArrowLeft,
   Megaphone,
   DollarSign,
-  Sparkles,
   Activity,
   Flame,
   Search,
@@ -1369,16 +1368,6 @@ const AdminPage = () => {
             >
               <Link to="/admin/super">
                 <Crown className="w-3.5 h-3.5 mr-1.5" /> Super Admin
-              </Link>
-            </Button>
-            <Button
-              asChild
-              size="sm"
-              variant="outline"
-              className="rounded-full border-white/10 bg-slate-900/60 text-slate-300 backdrop-blur-xl transition-all hover:border-cyan-500/30 hover:bg-cyan-500/5 hover:text-cyan-200"
-            >
-              <Link to="/admin/sponsorships">
-                <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Sponsorships
               </Link>
             </Button>
             <Button

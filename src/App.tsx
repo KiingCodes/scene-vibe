@@ -21,7 +21,6 @@ import SuggestSpotPage from "./pages/SuggestSpotPage";
 import SavedPage from "./pages/SavedPage";
 import AdminPage from "./pages/AdminPage";
 import SuperAdminPage from "./pages/SuperAdminPage";
-import SponsorshipsPage from "./pages/SponsorshipsPage";
 import BusinessBillingPage from "./pages/BusinessBillingPage";
 import AdminOnly from "./components/business/AdminOnly";
 import InsightsPage from "./pages/InsightsPage";
@@ -108,14 +107,7 @@ const AppContent = () => {
             </AdminOnly>
           }
         />
-        <Route
-          path="/admin/sponsorships"
-          element={
-            <AdminOnly>
-              <SponsorshipsPage />
-            </AdminOnly>
-          }
-        />
+        <Route path="/admin/sponsorships" element={<Navigate to="/admin" replace />} />
         <Route path="/business/billing" element={<BusinessBillingPage />} />
         <Route path="/safety" element={<SafetyPage />} />
         <Route path="/track/:token" element={<TrackPage />} />
