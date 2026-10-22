@@ -4,21 +4,9 @@ import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array } from '@/lib/pushConfig';
 import { useAuth } from '@/hooks/useAuth';
 import { useDeviceId } from '@/hooks/useDeviceId';
 import { useCountry } from '@/contexts/CountryContext';
-
-const getServiceWorkerRegistration = async () => {
-  if (!('serviceWorker' in navigator) || !('Notification' in window)) return null;
-  try {
-    const registration = await navigator.serviceWorker.ready;
-    return registration;
-  } catch {
-    console.warn('SW not available');
-    return null;
-  }
-};
+import { areSceneNotificationsEnabled, notifyScene } from '@/utils/notificationEngine';
 
 export const usePushNotifications = () => {
-  const swRegistration = useRef<ServiceWorkerRegistration | null>(null);
-  const notifiedTrending = useRef<Set<string>>(new Set());
   const notifiedPullingUp = useRef<Set<string>>(new Set());
   const { user } = useAuth();
   const deviceId = useDeviceId();
@@ -32,22 +20,9 @@ export const usePushNotifications = () => {
     return result === 'granted';
   }, []);
 
-  const showNotification = useCallback(async (title: string, body: string, url?: string) => {
-    const hasPermission = await requestPermission();
-    if (!hasPermission) return;
-
-    if (swRegistration.current) {
-      swRegistration.current.showNotification(title, {
-        body,
-        icon: '/pwa-512x512.png',
-        badge: '/notification-badge.png?v=2',
-        data: { url: url || '/' },
-        vibrate: [100, 50, 100],
-      } as NotificationOptions);
-    } else {
-      new Notification(title, { body, icon: '/pwa-512x512.png', badge: '/notification-badge.png?v=2' });
-    }
-  }, [requestPermission]);
+  const showNotification = useCallback((title: string, body: string, url?: string) => {
+    void notifyScene({ title, body, url });
+  }, []);
 
   // --- REGISTER FOR BACKGROUND WEB PUSH ---
   // Runs once permission is granted; stores the browser subscription so the
@@ -56,6 +31,7 @@ export const usePushNotifications = () => {
     try {
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
       if (Notification.permission !== 'granted') return;
+      if (!areSceneNotificationsEnabled()) return;
       const reg = await navigator.serviceWorker.ready;
       let sub = await reg.pushManager.getSubscription();
       if (!sub) {
@@ -78,99 +54,10 @@ export const usePushNotifications = () => {
   }, [user, deviceId, country]);
 
   useEffect(() => {
-    getServiceWorkerRegistration().then(reg => {
-      swRegistration.current = reg;
-      // Kick off subscription right away when we already have permission.
-      if (reg && Notification.permission === 'granted') registerWebPush();
-    });
-
-    if ('Notification' in window && Notification.permission === 'default') {
-      const timer = setTimeout(async () => {
-        const ok = await requestPermission();
-        if (ok) registerWebPush();
-      }, 5000);
-      return () => clearTimeout(timer);
+    if (areSceneNotificationsEnabled() && 'Notification' in window && Notification.permission === 'granted') {
+      void registerWebPush();
     }
-  }, [requestPermission, registerWebPush]);
-
-  // --- VIBE NOTIFICATIONS ---
-  useEffect(() => {
-    const channel = supabase
-      .channel('push-vibes')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'vibes' },
-        async (payload) => {
-          const clubId = payload.new?.club_id;
-          if (!clubId) return;
-
-          const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-          const { count } = await supabase
-            .from('vibes')
-            .select('*', { count: 'exact', head: true })
-            .eq('club_id', clubId)
-            .gte('created_at', thirtyMinutesAgo);
-
-          const { data: club } = await supabase
-            .from('clubs')
-            .select('name')
-            .eq('id', clubId)
-            .maybeSingle();
-          if (!club) return;
-
-          const vibeCount = count ?? 0;
-
-          // 1. First vibe — club waking up
-          if (vibeCount === 1) {
-            showNotification(
-              `👀 ${club.name} is waking up`,
-              'Someone just sent a vibe — be the first to check it out!',
-              `/club/${clubId}`
-            );
-          }
-
-          // 2. Second vibe — energy building
-          if (vibeCount === 2) {
-            showNotification(
-              `⚡ ${club.name} is picking up`,
-              'Multiple vibes incoming — the energy is building!',
-              `/club/${clubId}`
-            );
-          }
-
-          // 3. Trending threshold (3+ vibes)
-          if (vibeCount >= 3 && !notifiedTrending.current.has(clubId)) {
-            notifiedTrending.current.add(clubId);
-            showNotification(
-              `🔥 ${club.name} is TRENDING!`,
-              'The party is heating up — do not miss out!',
-              `/club/${clubId}`
-            );
-          }
-
-          // 4. On fire (5+ vibes)
-          if (vibeCount === 5) {
-            showNotification(
-              `🚀 ${club.name} is ON FIRE!`,
-              `${vibeCount} vibes and counting — this is THE spot tonight!`,
-              `/club/${clubId}`
-            );
-          }
-
-          // 5. Legendary night (10+ vibes)
-          if (vibeCount === 10) {
-            showNotification(
-              `🏆 ${club.name} — LEGENDARY NIGHT`,
-              `${vibeCount} vibes! This one's going down in history!`,
-              `/club/${clubId}`
-            );
-          }
-        }
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [showNotification]);
+  }, [registerWebPush]);
 
   // --- PULLING UP NOTIFICATIONS ---
   useEffect(() => {
@@ -275,27 +162,87 @@ export const usePushNotifications = () => {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
         async (payload) => {
-          const clubId = payload.new?.club_id;
-          if (!clubId) return;
+          const row = payload.new;
+          const clubId = row?.club_id;
+          if (!row || row.user_id === user?.id || row.is_hidden) return;
 
-          const { data: club } = await supabase
-            .from('clubs')
-            .select('name')
-            .eq('id', clubId)
-            .maybeSingle();
-          if (!club) return;
-
+          const [{ data: club }, { data: profile }] = await Promise.all([
+            clubId
+              ? supabase.from('clubs').select('name').eq('id', clubId).maybeSingle()
+              : Promise.resolve({ data: null }),
+            row.user_id
+              ? supabase.from('profiles').select('username').eq('user_id', row.user_id).maybeSingle()
+              : Promise.resolve({ data: null }),
+          ]);
+          const channelName = typeof row.channel_id === 'string'
+            ? row.channel_id === 'global'
+              ? 'Community Hub'
+              : row.channel_id.replace(/[-_]/g, ' ').replace(/\b\w/g, (character: string) => character.toUpperCase())
+            : 'Community Hub';
+          const sender = row.sender_name || profile?.username || 'Someone';
+          const content = typeof row.content === 'string' ? row.content.replace(/\s+/g, ' ').trim() : '';
           showNotification(
-            `💬 New message in ${club.name} chat`,
-            'Join the conversation about the vibe!',
-            `/club/${clubId}`
+            `SCENE Pulse: ${club?.name || channelName}`,
+            `${sender}: ${content ? `${content.slice(0, 120)}${content.length > 120 ? '…' : ''}` : 'Sent a message'}`,
+            clubId ? `/club/${clubId}` : '/chat'
           );
         }
       )
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [showNotification]);
+  }, [showNotification, user?.id]);
+
+  // --- CREW CHECK-IN NOTIFICATIONS ---
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel('push-crew-checkins')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'crew_messages' },
+        async (payload) => {
+          const row = payload.new;
+          if (!row?.crew_id || !row?.user_id || row.user_id === user.id || row.message_type !== 'location_drop') return;
+
+          const { data: membership, error: membershipError } = await supabase
+            .from('crew_members')
+            .select('crew_id')
+            .eq('crew_id', row.crew_id)
+            .eq('user_id', user.id)
+            .maybeSingle();
+          if (membershipError) {
+            console.error('Could not verify crew notification membership', membershipError);
+            return;
+          }
+          if (!membership) return;
+
+          const [{ data: profile, error: profileError }, venueResult] = await Promise.all([
+            supabase.from('profiles').select('username').eq('user_id', row.user_id).maybeSingle(),
+            row.metadata?.venue_id
+              ? supabase.from('clubs').select('name').eq('id', row.metadata.venue_id).maybeSingle()
+              : Promise.resolve({ data: null, error: null }),
+          ]);
+          if (profileError) {
+            console.error('Could not load crew check-in sender', profileError);
+            return;
+          }
+          if (venueResult.error) {
+            console.error('Could not load crew check-in venue', venueResult.error);
+            return;
+          }
+
+          showNotification(
+            'Crew Check-In 📍',
+            `${profile?.username || 'A crew member'} just dropped a pin at ${venueResult.data?.name || 'a location'}.`,
+            '/crews'
+          );
+        }
+      )
+      .subscribe();
+
+    return () => { void supabase.removeChannel(channel); };
+  }, [showNotification, user]);
 
   // --- FAVORITE / SAVED CLUB NOTIFICATIONS ---
   useEffect(() => {

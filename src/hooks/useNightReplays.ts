@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { replayUploadPath, validateReplayFile } from '@/lib/nightReplay';
 import { useAwardPoints } from './useGamification';
+import { cleanGoogleImageUrl } from '@/utils/cleanGoogleImageUrl';
 
 const replaySelect = '*, venue:clubs!night_replays_venue_id_fkey(name, image_url)';
 
@@ -36,7 +37,14 @@ export const useNightReplays = (clubId?: string) => {
       if (clubId) query = query.eq('venue_id', clubId);
       const { data, error } = await query;
       if (error) throw error;
-      return Promise.all((data || []).map(async replay => ({ ...replay, video_url: await playbackUrl(replay.video_url) })));
+      return Promise.all((data || []).map(async replay => ({
+        ...replay,
+        venue: replay.venue ? {
+          ...replay.venue,
+          image_url: replay.venue.image_url ? cleanGoogleImageUrl(replay.venue.image_url) : replay.venue.image_url,
+        } : replay.venue,
+        video_url: await playbackUrl(replay.video_url),
+      })));
     },
   });
 };
@@ -85,7 +93,14 @@ export const usePendingNightReplays = (clubId: string) => useQuery({
       .eq('venue_id', clubId).eq('status', 'pending').gt('expires_at', new Date().toISOString())
       .not('video_url', 'is', null).order('created_at');
     if (error) throw error;
-    return Promise.all((data || []).map(async replay => ({ ...replay, video_url: await playbackUrl(replay.video_url) })));
+    return Promise.all((data || []).map(async replay => ({
+      ...replay,
+      venue: replay.venue ? {
+        ...replay.venue,
+        image_url: replay.venue.image_url ? cleanGoogleImageUrl(replay.venue.image_url) : replay.venue.image_url,
+      } : replay.venue,
+      video_url: await playbackUrl(replay.video_url),
+    })));
   },
 });
 

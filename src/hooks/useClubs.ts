@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
 import { useCountry } from '@/contexts/CountryContext';
+import { cleanGoogleImageUrl } from '@/utils/cleanGoogleImageUrl';
 
 export type Club = Tables<'clubs'>;
 
@@ -39,7 +40,7 @@ export const useClubs = () => {
         lat: pc.lat,
         lng: pc.lng,
         description: pc.description,
-        image_url: pc.image_url,
+        image_url: pc.image_url ? cleanGoogleImageUrl(pc.image_url) : pc.image_url,
         genre: pc.genre,
         capacity: pc.capacity,
         opening_hours: pc.opening_hours,
@@ -67,7 +68,10 @@ export const useClubs = () => {
       // Merge, avoiding duplicates by id
       const mainIds = new Set((mainClubs || []).map(c => c.id));
       const merged = [
-        ...(mainClubs || []),
+        ...(mainClubs || []).map(club => ({
+          ...club,
+          image_url: club.image_url ? cleanGoogleImageUrl(club.image_url) : club.image_url,
+        })),
         ...communityClubs.filter(c => !mainIds.has(c.id)),
       ];
       return merged;
@@ -86,7 +90,13 @@ export const useClub = (id: string) => {
         .select('*')
         .eq('id', id)
         .maybeSingle();
-      if (club) return club as Club;
+      if (club) {
+        const typedClub = club as Club;
+        return {
+          ...typedClub,
+          image_url: typedClub.image_url ? cleanGoogleImageUrl(typedClub.image_url) : typedClub.image_url,
+        };
+      }
 
       // Try approved pending_clubs
       const { data: pc, error: e2 } = await supabase
@@ -106,7 +116,7 @@ export const useClub = (id: string) => {
         lat: pc.lat,
         lng: pc.lng,
         description: pc.description,
-        image_url: pc.image_url,
+        image_url: pc.image_url ? cleanGoogleImageUrl(pc.image_url) : pc.image_url,
         genre: pc.genre,
         capacity: pc.capacity,
         opening_hours: pc.opening_hours,

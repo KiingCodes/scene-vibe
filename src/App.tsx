@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -43,6 +44,7 @@ import ActiveWalkBar from "./components/safety/ActiveWalkBar";
 import NotFound from "./pages/NotFound";
 import { useVenueRealtime } from "./hooks/useVenueRealtime";
 import { LogoSkeleton } from "./components/BrandedSkeleton";
+import { applyHighContrastNeon } from "@/utils/contrastMode";
 
 const queryClient = new QueryClient();
 
@@ -54,11 +56,17 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
 };
 
 const AppContent = () => {
+  const { user } = useAuth();
   useTrendingNotifications();
   usePushNotifications();
   useWhatsNew();
   useReminderNotifications();
   useVenueRealtime();
+
+  useEffect(() => {
+    const sceneSettings = user?.user_metadata?.scene_settings as { highContrastNeon?: boolean } | undefined;
+    applyHighContrastNeon(sceneSettings?.highContrastNeon ?? false);
+  }, [user]);
 
   return (
     <BrowserRouter>

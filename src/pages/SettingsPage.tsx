@@ -50,6 +50,8 @@ import TwoFactorDialog from "@/components/settings/TwoFactorDialog";
 import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array } from "@/lib/pushConfig";
 import { useDeviceId } from "@/hooks/useDeviceId";
 import { useCountry } from "@/contexts/CountryContext";
+import { SCENE_NOTIFICATION_PREFERENCE_KEY } from "@/utils/notificationEngine";
+import { applyHighContrastNeon } from "@/utils/contrastMode";
 
 /** Preferences persisted as columns on the user's profile row. */
 type ProfilePrefs = {
@@ -191,6 +193,9 @@ const SettingsPage = () => {
       ...DEFAULT_EXTRA,
       ...((user.user_metadata?.scene_settings as Partial<ExtraState> | undefined) ?? {}),
     });
+    applyHighContrastNeon(
+      (user.user_metadata?.scene_settings as Partial<ExtraState> | undefined)?.highContrastNeon ?? false,
+    );
     (async () => {
       setPrefsLoading(true);
       const [{ data, error }, { data: factors }] = await Promise.all([
@@ -206,6 +211,11 @@ const SettingsPage = () => {
         await supabase.from("profiles").update({ two_factor_enabled: mfaOn }).eq("user_id", user.id);
       }
       setPrefs(loaded);
+      try {
+        window.localStorage.setItem(SCENE_NOTIFICATION_PREFERENCE_KEY, String(loaded.push_notifications));
+      } catch (storageError) {
+        console.error("Could not sync SCENE notification preference", storageError);
+      }
       setPrefsLoading(false);
     })();
     return () => { cancelled = true; };
@@ -248,11 +258,13 @@ const SettingsPage = () => {
     const previous = extra;
     const next = { ...extra, [key]: value };
     setExtra(next);
+    if (key === "highContrastNeon") applyHighContrastNeon(value);
     setSavingKey(key);
     const { error } = await supabase.auth.updateUser({ data: { scene_settings: next } });
     setSavingKey(null);
     if (error) {
       setExtra(previous);
+      if (key === "highContrastNeon") applyHighContrastNeon(previous.highContrastNeon);
       toast.error("Could not save that setting");
       return;
     }
@@ -273,7 +285,15 @@ const SettingsPage = () => {
         }
       } catch { /* browser cleanup is best-effort */ }
       setSavingKey(null);
-      await updatePref("push_notifications", false);
+      const saved = await updatePref("push_notifications", false);
+      if (saved) {
+        try {
+          window.localStorage.setItem(SCENE_NOTIFICATION_PREFERENCE_KEY, "false");
+        } catch (storageError) {
+          console.error("Could not save SCENE notification preference", storageError);
+          toast.error("Could not save the notification preference on this device");
+        }
+      }
       return;
     }
     if (!("Notification" in window)) {
@@ -305,7 +325,15 @@ const SettingsPage = () => {
       // Permission granted but background push unavailable (e.g. preview iframe) — keep the preference.
     }
     setSavingKey(null);
-    await updatePref("push_notifications", true);
+    const saved = await updatePref("push_notifications", true);
+    if (saved) {
+      try {
+        window.localStorage.setItem(SCENE_NOTIFICATION_PREFERENCE_KEY, "true");
+      } catch (storageError) {
+        console.error("Could not save SCENE notification preference", storageError);
+        toast.error("Could not save the notification preference on this device");
+      }
+    }
   };
 
   // --- 2FA ---
@@ -569,8 +597,8 @@ const SettingsPage = () => {
           <Section eyebrow="03 / Stay in the loop" title="Notifications">
             <SettingRow
               icon={Smartphone}
-              title="Push notifications"
-              description="Get alerts on this device, even when SCENE is closed"
+              title="Allow SCENE Notifications"
+              description="Get safety, SCENE Pulse, venue vibe, and crew activity alerts"
             >
               {prefToggle("push_notifications", togglePush)}
             </SettingRow>
@@ -607,8 +635,8 @@ const SettingsPage = () => {
             </SettingRow>
             <SettingRow
               icon={Moon}
-              title="High contrast neon mode"
-              description="Boost contrast for brighter, easier scanning at night"
+              title="Boost Contrast"
+              description="Brighter text, clearer controls, and stronger cyan accents for easier night-time scanning"
             >
               {toggle("highContrastNeon")}
             </SettingRow>

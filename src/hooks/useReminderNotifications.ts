@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { areSceneNotificationsEnabled, notifyScene } from '@/utils/notificationEngine';
 
 /**
  * Sends a friendly local reminder notification to users who:
@@ -29,7 +30,7 @@ const isStandalone = () => {
   return (
     window.matchMedia?.('(display-mode: standalone)').matches ||
     // iOS Safari
-    (window.navigator as any).standalone === true
+    (window.navigator as Navigator & { standalone?: boolean }).standalone === true
   );
 };
 
@@ -38,6 +39,7 @@ export const useReminderNotifications = () => {
     if (typeof window === 'undefined') return;
     if (!('Notification' in window)) return;
     if (Notification.permission !== 'granted') return;
+    if (!areSceneNotificationsEnabled()) return;
     if (!isStandalone()) return;
 
     let last = 0;
@@ -49,23 +51,10 @@ export const useReminderNotifications = () => {
     // Delay slightly so it doesn't compete with splash/whatsnew
     const t = setTimeout(async () => {
       try {
-        const reg = await navigator.serviceWorker?.ready;
-        if (reg && reg.showNotification) {
-          reg.showNotification(pick.title, {
-            body: pick.body,
-            icon: '/pwa-192x192.png',
-            badge: '/pwa-192x192.png',
-            data: { url: '/' },
-            tag: 'scene-reminder',
-            // @ts-ignore
-            vibrate: [80, 40, 80],
-          });
-        } else {
-          new Notification(pick.title, { body: pick.body, icon: '/pwa-192x192.png' });
-        }
+        await notifyScene({ title: pick.title, body: pick.body, url: '/' });
         try { localStorage.setItem(KEY, String(Date.now())); } catch { /* ignore */ }
-      } catch {
-        /* ignore */
+      } catch (error) {
+        console.error('Could not display SCENE reminder notification', error);
       }
     }, 8000);
 

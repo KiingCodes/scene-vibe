@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MapContainer, Marker, Polyline, TileLayer, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -16,6 +16,7 @@ import {
   Share2,
   Shield,
   Siren,
+  Users,
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import boltLogo from '@/assets/bolt-logo.png';
@@ -26,18 +27,59 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import sceneLogo from '@/assets/scene-logo.jpg';
 import scenePinLogo from '@/assets/logo.png';
+import walkMeHomeIcon from '@/assets/walkmehome-icon.png';
 import Animated3DEmoji from '@/components/ui/Animated3DEmoji';
 import DestinationPicker, { type Destination } from '@/components/safety/DestinationPicker';
 import { LogoSkeleton } from '@/components/BrandedSkeleton';
 import {
   triggerLocalSafetyAlert,
+  useEmergencyContacts,
   useActiveSafetySession,
   useEndSafetySession,
   useSetSafetyAlert,
   useStartSafetySession,
+  type SafetySession,
 } from '@/hooks/useSafety';
+import { areSceneNotificationsEnabled, notifyScene } from '@/utils/notificationEngine';
 
-const WALK_TIMES = [10, 15, 20, 30, 45, 60];
+const EMERGENCY_CONTACT_KEY = 'scene_emergency_contact';
+
+const normalizeSouthAfricanPhone = (phone: string) => {
+  const compact = phone.trim().replace(/[\s()-]/g, '');
+  if (!/^(?:\+27|27|0)[1-9]\d{8}$/.test(compact)) return null;
+  const digits = compact.replace(/\D/g, '');
+  return compact.startsWith('0') ? `27${digits.slice(1)}` : digits;
+};
+
+const readSavedEmergencyContact = () => {
+  try {
+    return window.localStorage.getItem(EMERGENCY_CONTACT_KEY) ?? '';
+  } catch (error) {
+    console.error('Could not read the saved emergency contact', error);
+    return '';
+  }
+};
+
+const triggerWhatsAppSOS = (session: SafetySession) => {
+  let savedContact: string;
+  try {
+    savedContact = window.localStorage.getItem(EMERGENCY_CONTACT_KEY) ?? '';
+  } catch (error) {
+    console.error('Could not read the saved emergency contact for SOS', error);
+    toast.error('Could not access your saved emergency contact for the safety alert.');
+    return;
+  }
+
+  const phone = normalizeSouthAfricanPhone(savedContact);
+  if (!phone) {
+    toast.error('Your emergency contact is missing or invalid. Add a valid South African number to Walk Me Home.');
+    return;
+  }
+
+  const trackingUrl = `${window.location.origin}/track/${session.share_token}`;
+  const message = `I may need help. My Walk Me Home timer has expired. Please check my live location: ${trackingUrl}`;
+  window.location.assign(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`);
+};
 
 const walkerIcon = L.divIcon({
   className: 'scene-logo-marker',
@@ -146,13 +188,13 @@ const QuickRideHome = ({
           type="button"
           onClick={() => void dispatchRide('Bolt')}
           disabled={requestingRide}
-          className="flex min-h-20 items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/80 p-4 text-left transition-all hover:border-lime-400/40 disabled:opacity-60"
+          className="flex min-h-20 items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/80 p-4 text-left transition-all hover:border-cyan-400/40 disabled:opacity-60"
         >
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white p-1">
             <img src={boltLogo} alt="Bolt logo" className="h-full w-full object-contain" />
           </span>
           <span>
-            <span className="block text-base font-black tracking-wide text-lime-300">Bolt</span>
+            <span className="block text-base font-black tracking-wide text-cyan-300">Bolt</span>
             <span className="block text-[11px] text-white/45">Request a pickup</span>
           </span>
         </button>
@@ -163,13 +205,24 @@ const QuickRideHome = ({
 
 const SafetyPage = () => {
   const { user } = useAuth();
+  const { data: emergencyContacts } = useEmergencyContacts();
   const { data: active, isLoading: activeLoading } = useActiveSafetySession();
   const start = useStartSafetySession();
   const end = useEndSafetySession();
   const setAlert = useSetSafetyAlert();
   const [destination, setDestination] = useState<Destination | null>(null);
-  const [walkMinutes, setWalkMinutes] = useState(20);
+  const [walkMinutes, setWalkMinutes] = useState('');
+  const parsedWalkMinutes = Number(walkMinutes);
+  const validWalkMinutes =
+    walkMinutes.trim() !== '' &&
+    Number.isSafeInteger(parsedWalkMinutes) &&
+    parsedWalkMinutes > 0 &&
+    parsedWalkMinutes <= 2_147_483_647;
   const [now, setNow] = useState(Date.now());
+  const [emergencyPhone, setEmergencyPhone] = useState(readSavedEmergencyContact);
+  const emergencyPhoneInput = useRef<HTMLInputElement>(null);
+  const expirationAlertSession = useRef<string | null>(null);
+  const normalizedEmergencyPhone = normalizeSouthAfricanPhone(emergencyPhone);
   const activeId = active?.id;
 
   useEffect(() => {
@@ -189,9 +242,42 @@ const SafetyPage = () => {
     remainingSeconds % 60,
   ).padStart(2, '0')}`;
 
+  useEffect(() => {
+    if (!active || active.status !== 'active' || remainingSeconds > 0 || expirationAlertSession.current === active.id) {
+      return;
+    }
+    expirationAlertSession.current = active.id;
+    triggerWhatsAppSOS(active);
+  }, [active, remainingSeconds]);
+
+  const updateEmergencyPhone = (phone: string) => {
+    setEmergencyPhone(phone);
+    try {
+      window.localStorage.setItem(EMERGENCY_CONTACT_KEY, phone);
+    } catch (error) {
+      console.error('Could not save the emergency contact', error);
+      toast.error('Could not save your emergency contact on this device.');
+    }
+  };
+
+  const setPrimaryContact = () => {
+    const primaryContact = emergencyContacts?.[0];
+    if (!primaryContact) {
+      emergencyPhoneInput.current?.focus();
+      toast.info('No saved emergency contacts yet. Enter a number to set your primary contact.');
+      return;
+    }
+    updateEmergencyPhone(primaryContact.phone_number);
+    toast.success(`${primaryContact.contact_name || primaryContact.name} set as your primary contact`);
+  };
+
   const startWalk = async () => {
     if (!destination) {
       toast.error('Choose your destination on the map first');
+      return;
+    }
+    if (!validWalkMinutes) {
+      toast.error('Enter a whole number of minutes greater than zero');
       return;
     }
     if (!('geolocation' in navigator)) {
@@ -209,18 +295,26 @@ const SafetyPage = () => {
         destination_name: destination.label.trim() || 'Destination',
         start_lat: position.coords.latitude,
         start_lng: position.coords.longitude,
-        eta_minutes: walkMinutes,
+        eta_minutes: parsedWalkMinutes,
       });
-      toast.success('Your safety walk is live');
+      if (areSceneNotificationsEnabled()) {
+        void notifyScene({
+          title: 'Walk Me Home Active 👣',
+          body: 'Beacon activated. ETA timer running.',
+          url: '/safety',
+        });
+      } else {
+        toast.success('Your safety walk is live');
+      }
     } catch (error) {
       toast.error((error as Error).message || 'Could not start your safety walk');
     }
   };
 
   const shareViaWhatsApp = () => {
-    if (!active) return;
-    const destinationName = active.destination_name || 'my destination';
-    const message = `I'm walking to ${destinationName}. Follow my live location: ${trackingUrl}`;
+    const message = active
+      ? `I'm walking to ${active.destination_name || 'my destination'}. Follow my live location: ${trackingUrl}`
+      : 'I am setting up a Walk Me Home safety walk. I will share my live tracking link with you shortly.';
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
   };
 
@@ -281,7 +375,7 @@ const SafetyPage = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen w-full overflow-x-hidden bg-[#070b0a] text-white">
+      <div className="min-h-screen w-full overflow-x-hidden bg-[#070b10] text-white">
         <Navbar />
         <main className="relative isolate mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full items-center justify-center overflow-hidden px-4 pb-24 pt-20 text-center">
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 flex select-none items-center justify-center overflow-hidden">
@@ -313,7 +407,7 @@ const SafetyPage = () => {
   }
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-[#070b0a] text-white">
+    <div className="min-h-screen w-full overflow-x-hidden bg-[#070b10] text-white">
       <Navbar />
       <main className="mx-auto min-h-[calc(100dvh-3.5rem)] w-full max-w-none px-4 pb-24 pt-20 sm:px-6 lg:px-10">
         <div className="mx-auto w-full">
@@ -322,11 +416,11 @@ const SafetyPage = () => {
         ) : !active ? (
           <section className="grid w-full grid-cols-1 gap-5 lg:grid-cols-2">
             <header className="flex min-w-0 items-center gap-3 py-1">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-emerald-400/20 bg-emerald-400/10 text-emerald-300 shadow-[0_0_24px_rgba(16,185,129,.12)]">
-                <Shield className="h-6 w-6" />
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 text-cyan-300 shadow-[0_0_24px_rgba(6,182,212,.16)]">
+                <img src={walkMeHomeIcon} alt="" className="h-8 w-8 object-contain" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-300/75">
+                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-cyan-300/75">
                   Personal safety
                 </p>
                 <h1 className="truncate text-2xl font-black tracking-tight">Walk Me Home</h1>
@@ -335,7 +429,7 @@ const SafetyPage = () => {
 
             <div className="w-full min-w-0 rounded-3xl border border-white/[0.09] bg-white/[0.035] p-4 shadow-[0_24px_80px_rgba(0,0,0,.28)] backdrop-blur-xl lg:row-span-3">
               <div className="mb-4 flex items-center gap-2">
-                <Navigation className="h-4 w-4 text-emerald-300" />
+                <Navigation className="h-4 w-4 text-cyan-300" />
                 <h2 className="text-sm font-bold">Where are you headed?</h2>
               </div>
               <DestinationPicker value={destination} onChange={setDestination} />
@@ -350,38 +444,88 @@ const SafetyPage = () => {
                 }
                 disabled={!destination}
                 placeholder="Home, hotel, or a friend's place"
-                className="mt-1.5 h-11 w-full min-w-0 rounded-xl border-white/10 bg-black/25 text-white placeholder:text-white/30 focus-visible:ring-emerald-400/50"
+                className="mt-1.5 h-11 w-full min-w-0 rounded-xl border-white/10 bg-black/25 text-white placeholder:text-white/30 focus-visible:ring-cyan-400/50"
               />
+              <div className="mt-5 rounded-2xl border border-white/10 bg-slate-950/55 p-3 sm:p-4">
+                <label htmlFor="emergency-contact" className="block text-xs font-bold uppercase tracking-wider text-cyan-400">
+                  Emergency Safety Contact
+                </label>
+                <Input
+                  ref={emergencyPhoneInput}
+                  id="emergency-contact"
+                  type="tel"
+                  autoComplete="tel"
+                  inputMode="tel"
+                  value={emergencyPhone}
+                  onChange={(event) => updateEmergencyPhone(event.target.value)}
+                  placeholder="+27 82 123 4567 or 082 123 4567"
+                  aria-invalid={emergencyPhone.length > 0 && !normalizedEmergencyPhone}
+                  className={`mt-2 h-11 rounded-xl border-white/10 bg-slate-900/80 px-3 text-sm text-white placeholder:text-slate-500 focus-visible:border-cyan-400 focus-visible:ring-0 ${
+                    emergencyPhone.length > 0 && !normalizedEmergencyPhone ? 'border-rose-400/70' : ''
+                  }`}
+                />
+                <p className={`mt-1.5 text-[11px] ${normalizedEmergencyPhone ? 'text-cyan-300/80' : 'text-white/45'}`}>
+                  {normalizedEmergencyPhone
+                    ? 'Valid South African number saved on this device.'
+                    : 'Enter a valid South African number starting with +27, 27, or 0.'}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={setPrimaryContact}
+                    className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1.5 text-[11px] font-semibold text-cyan-200 transition-colors hover:border-cyan-300/60 hover:bg-cyan-400/20"
+                  >
+                    Set Primary Contact
+                  </button>
+                  <button
+                    type="button"
+                    onClick={shareViaWhatsApp}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] font-semibold text-white/75 transition-colors hover:border-cyan-400/30 hover:text-cyan-200"
+                  >
+                    <Users className="h-3.5 w-3.5" />
+                    My Night Crew
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div className="w-full min-w-0 rounded-3xl border border-white/[0.09] bg-white/[0.035] p-4 backdrop-blur-xl">
               <div className="mb-3 flex items-center gap-2">
-                <Clock3 className="h-4 w-4 text-emerald-300" />
+                <Clock3 className="h-4 w-4 text-cyan-300" />
                 <h2 className="text-sm font-bold">Estimated walk time</h2>
               </div>
-              <div className="grid w-full grid-cols-3 gap-2">
-                {WALK_TIMES.map((minutes) => (
-                  <button
-                    key={minutes}
-                    type="button"
-                    aria-pressed={walkMinutes === minutes}
-                    onClick={() => setWalkMinutes(minutes)}
-                    className={`h-10 min-w-0 rounded-xl border text-sm font-bold transition-colors ${
-                      walkMinutes === minutes
-                        ? 'border-emerald-300/50 bg-emerald-300 text-emerald-950'
-                        : 'border-white/10 bg-black/20 text-white/65 hover:border-white/25'
-                    }`}
-                  >
-                    {minutes} min
-                  </button>
-                ))}
+              <div className="relative">
+                <Input
+                  id="walk-duration"
+                  type="number"
+                  min="1"
+                  max="2147483647"
+                  step="1"
+                  inputMode="numeric"
+                  value={walkMinutes}
+                  onChange={(event) => setWalkMinutes(event.target.value)}
+                  placeholder="Enter minutes"
+                  aria-label="Estimated walk time in minutes"
+                  aria-invalid={walkMinutes !== '' && !validWalkMinutes}
+                  className={`h-12 rounded-xl border-white/10 bg-slate-900/80 pr-16 text-white placeholder:text-slate-500 focus-visible:border-cyan-400 focus-visible:ring-0 ${
+                    walkMinutes !== '' && !validWalkMinutes ? 'border-rose-400/70' : ''
+                  }`}
+                />
+                <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-sm text-white/45">
+                  minutes
+                </span>
               </div>
+              <p className={`mt-2 text-[11px] ${walkMinutes !== '' && !validWalkMinutes ? 'text-rose-300' : 'text-white/45'}`}>
+                {walkMinutes !== '' && !validWalkMinutes
+                  ? 'Enter a positive whole number of minutes.'
+                  : 'Enter the time you expect your walk to take.'}
+              </p>
             </div>
 
             <Button
               onClick={startWalk}
-              disabled={start.isPending}
-              className="h-14 w-full rounded-2xl bg-emerald-400 text-base font-black tracking-wide text-emerald-950 shadow-[0_0_32px_rgba(16,185,129,.25)] transition-shadow hover:bg-emerald-300 hover:shadow-[0_0_42px_rgba(16,185,129,.36)] disabled:opacity-60"
+              disabled={start.isPending || !normalizedEmergencyPhone || !validWalkMinutes}
+              className="mx-auto h-14 w-full max-w-sm justify-self-center rounded-2xl bg-cyan-400 text-base font-black tracking-wide text-slate-950 shadow-[0_0_32px_rgba(6,182,212,.25)] transition-shadow hover:bg-cyan-300 hover:shadow-[0_0_42px_rgba(6,182,212,.36)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Shield className="mr-2 h-5 w-5" />
               {start.isPending ? 'Starting your walk…' : 'Start Walk'}
@@ -393,20 +537,20 @@ const SafetyPage = () => {
           </section>
         ) : (
           <section className="grid w-full min-w-0 grid-cols-1 gap-4 lg:grid-cols-2">
-            <header className="flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.07] px-4 py-3">
+            <header className="flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.07] px-4 py-3">
               <div className="flex min-w-0 items-center gap-3">
-                <span className="relative grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-300/10 text-emerald-300">
+                <span className="relative grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-cyan-300/10 text-cyan-300">
                   {active.status === 'panic_alert' ? (
                     <Siren className="h-5 w-5 text-rose-400" />
                   ) : (
                     <Radio className="h-5 w-5" />
                   )}
                   {active.status === 'active' && (
-                    <span className="absolute right-1 top-1 h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-300" />
+                    <span className="absolute right-1 top-1 h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-300" />
                   )}
                 </span>
                 <div className="min-w-0">
-                  <p className={`truncate text-[10px] font-black uppercase tracking-[0.2em] ${active.status === 'panic_alert' ? 'text-rose-300' : 'text-emerald-300'}`}>
+                  <p className={`truncate text-[10px] font-black uppercase tracking-[0.2em] ${active.status === 'panic_alert' ? 'text-rose-300' : 'text-cyan-300'}`}>
                     {active.status === 'panic_alert' ? 'Help alert active' : 'Safety walk active'}
                   </p>
                   <h1 className="truncate text-base font-bold">{active.destination_name || 'Your destination'}</h1>
@@ -414,7 +558,7 @@ const SafetyPage = () => {
               </div>
               <Link
                 to={`/track/${active.share_token}`}
-                className="shrink-0 text-xs font-bold text-emerald-300 underline-offset-4 hover:underline"
+                className="shrink-0 text-xs font-bold text-cyan-300 underline-offset-4 hover:underline"
               >
                 Live link
               </Link>
@@ -435,7 +579,7 @@ const SafetyPage = () => {
                   />
                   <Polyline
                     positions={[[active.start_lat, active.start_lng], [active.current_lat, active.current_lng]]}
-                    pathOptions={{ color: '#10b981', weight: 4, opacity: 0.75, dashArray: '7 8' }}
+                    pathOptions={{ color: '#06b6d4', weight: 4, opacity: 0.75, dashArray: '7 8' }}
                   />
                   <Marker position={[active.current_lat, active.current_lng]} icon={walkerIcon}>
                     <Tooltip permanent direction="top" offset={[0, -12]}>You · live</Tooltip>
@@ -444,12 +588,12 @@ const SafetyPage = () => {
                 </MapContainer>
               ) : (
                 <div className="flex h-full flex-col items-center justify-center gap-2 text-white/45">
-                  <LocateFixed className="h-6 w-6 text-emerald-300" />
+                  <LocateFixed className="h-6 w-6 text-cyan-300" />
                   <span className="text-sm">Waiting for your location…</span>
                 </div>
               )}
-              <div className="pointer-events-none absolute left-3 top-3 z-[500] flex max-w-[calc(100%-1.5rem)] items-center gap-2 rounded-full border border-white/10 bg-[#07100d]/85 px-3 py-1.5 text-[10px] font-bold text-emerald-200 backdrop-blur-md">
-                <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-emerald-300" />
+              <div className="pointer-events-none absolute left-3 top-3 z-[500] flex max-w-[calc(100%-1.5rem)] items-center gap-2 rounded-full border border-white/10 bg-[#07101a]/85 px-3 py-1.5 text-[10px] font-bold text-cyan-200 backdrop-blur-md">
+                <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-cyan-300" />
                 <span className="truncate">
                   {active.current_lat != null && active.current_lng != null
                     ? `Updated ${formatDistanceToNow(new Date(active.last_ping_at), { addSuffix: true })}`
@@ -461,7 +605,7 @@ const SafetyPage = () => {
             <div className="grid w-full grid-cols-[1fr_auto] items-center gap-3 rounded-2xl border border-white/[0.09] bg-white/[0.035] px-4 py-3 backdrop-blur-xl">
               <div className="min-w-0">
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">Walk countdown</p>
-                <p className={`mt-0.5 font-mono text-3xl font-black tabular-nums ${remainingSeconds === 0 ? 'text-amber-300' : 'text-emerald-300'}`}>
+                <p className={`mt-0.5 font-mono text-3xl font-black tabular-nums ${remainingSeconds === 0 ? 'text-amber-300' : 'text-cyan-300'}`}>
                   {countdown}
                 </p>
               </div>
@@ -485,7 +629,7 @@ const SafetyPage = () => {
               <Button
                 onClick={shareViaDevice}
                 variant="outline"
-                className="h-12 min-w-0 rounded-xl border-emerald-300/30 bg-emerald-300/[0.08] px-2 text-sm font-bold text-emerald-100 hover:bg-emerald-300/[0.15]"
+                className="h-12 min-w-0 rounded-xl border-cyan-300/30 bg-cyan-300/[0.08] px-2 text-sm font-bold text-cyan-100 hover:bg-cyan-300/[0.15]"
               >
                 <Share2 className="mr-1.5 h-4 w-4 shrink-0" />
                 <span className="truncate">Share via Device</span>
@@ -511,7 +655,7 @@ const SafetyPage = () => {
             <Button
               onClick={arriveSafely}
               disabled={end.isPending}
-              className="h-14 w-full rounded-2xl bg-emerald-300 text-base font-black text-emerald-950 shadow-[0_0_28px_rgba(16,185,129,.2)] hover:bg-emerald-200 disabled:opacity-60"
+              className="h-14 w-full rounded-2xl bg-cyan-300 text-base font-black text-slate-950 shadow-[0_0_28px_rgba(6,182,212,.2)] hover:bg-cyan-200 disabled:opacity-60"
             >
               <Check className="mr-2 h-5 w-5" />
               {end.isPending ? 'Finishing walk…' : 'I Arrived Safely'}

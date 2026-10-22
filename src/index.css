@@ -4,6 +4,37 @@
 @tailwind components;
 @tailwind utilities;
 
+html.high-contrast-neon {
+  --muted-foreground: 240 5% 78%;
+  --border: 240 6% 30%;
+  --input: 240 6% 30%;
+  --ring: 189 94% 55%;
+}
+
+.high-contrast-neon [class~="text-white/25"],
+.high-contrast-neon [class~="text-white/30"],
+.high-contrast-neon [class~="text-white/35"],
+.high-contrast-neon [class~="text-white/40"],
+.high-contrast-neon [class~="text-white/45"],
+.high-contrast-neon [class~="text-white/50"],
+.high-contrast-neon [class~="text-white/55"],
+.high-contrast-neon [class~="text-white/60"],
+.high-contrast-neon [class~="text-slate-400"],
+.high-contrast-neon [class~="text-slate-500"] {
+  color: rgb(226 232 240 / 0.88) !important;
+}
+
+.high-contrast-neon [class~="border-white/5"],
+.high-contrast-neon [class~="border-white/10"],
+.high-contrast-neon [class~="border-white/15"] {
+  border-color: rgb(255 255 255 / 0.24) !important;
+}
+
+.high-contrast-neon :focus-visible {
+  outline: 2px solid rgb(34 211 238 / 0.95);
+  outline-offset: 2px;
+}
+
 .leaflet-div-icon.scene-logo-marker {
   border: 0;
   background: transparent;

@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
 import { Shield, MapPin, X, Siren } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { notifyScene } from '@/utils/notificationEngine';
 import DuressPinPad from './DuressPinPad';
 import {
   DURESS_PIN,
@@ -29,6 +30,28 @@ const ActiveWalkBar = () => {
   const setAlert = useSetSafetyAlert();
   const [pinOpen, setPinOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const notifiedGracePeriod = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!session || session.status !== 'active' || session.eta_minutes < 2) return;
+
+    const checkGracePeriod = () => {
+      const expiresAt = new Date(session.started_at).getTime() + session.eta_minutes * 60_000;
+      const remainingSeconds = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+      if (remainingSeconds > 120 || remainingSeconds <= 0 || notifiedGracePeriod.current === session.id) return;
+
+      notifiedGracePeriod.current = session.id;
+      void notifyScene({
+        title: 'Safety Check-In Required 🚨',
+        body: '2 minutes remaining to confirm arrival.',
+        url: '/safety',
+      });
+    };
+
+    checkGracePeriod();
+    const timer = window.setInterval(checkGracePeriod, 1000);
+    return () => window.clearInterval(timer);
+  }, [session]);
 
   if (!session || pathname === '/safety') return null;
 

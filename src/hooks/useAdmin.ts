@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { cleanGoogleImageUrl } from '@/utils/cleanGoogleImageUrl';
 
 export const useIsAdmin = () => {
   const { user } = useAuth();
@@ -29,7 +30,10 @@ export const usePendingClubs = () => {
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data;
+      return data?.map(club => ({
+        ...club,
+        image_url: club.image_url ? cleanGoogleImageUrl(club.image_url) : club.image_url,
+      }));
     },
   });
 };

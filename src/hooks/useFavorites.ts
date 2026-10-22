@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useAwardPoints } from './useGamification';
+import { cleanGoogleImageUrl } from '@/utils/cleanGoogleImageUrl';
 
 /**
  * Fetches a set of club IDs that the current user has favorited.
@@ -41,7 +42,10 @@ export const useFavoriteClubs = () => {
 
       if (error) throw error;
 
-      return data?.map(f => f.clubs).filter(Boolean) || [];
+      return data?.map(f => f.clubs).filter(Boolean).map(club => ({
+        ...club,
+        image_url: club.image_url ? cleanGoogleImageUrl(club.image_url) : club.image_url,
+      })) || [];
     },
     enabled: !!user,
   });

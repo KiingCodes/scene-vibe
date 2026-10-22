@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import { notifyScene } from '@/utils/notificationEngine';
 
 export const useTrendingNotifications = () => {
   const queryClient = useQueryClient();
@@ -29,11 +29,6 @@ export const useTrendingNotifications = () => {
           if (count === 3 && !notifiedClubs.current.has(clubId)) {
             notifiedClubs.current.add(clubId);
 
-            // Haptic feedback for trending alerts
-            if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-              try { navigator.vibrate([60, 40, 120, 40, 60]); } catch {}
-            }
-
             // Fetch club name
             const { data: club } = await supabase
               .from('clubs')
@@ -42,19 +37,16 @@ export const useTrendingNotifications = () => {
               .single();
 
             if (club) {
-              toast.success(`🔥 ${club.name} is now TRENDING!`, {
-                description: 'The party is heating up!',
-                duration: 5000,
+              void notifyScene({
+                title: 'Venue Trending 🔥',
+                body: `${club.name} crowd level just surged to Peak Vibe!`,
+                url: `/club/${clubId}`,
               });
             }
           }
 
           // Also show a subtle notification for any vibe
           if (count && count > 0 && count < 3) {
-            // Soft haptic tick on every fresh vibe
-            if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-              try { navigator.vibrate(25); } catch {}
-            }
             const { data: club } = await supabase
               .from('clubs')
               .select('name')
@@ -62,9 +54,10 @@ export const useTrendingNotifications = () => {
               .single();
 
             if (club) {
-              toast(`🔥 Someone just vibed ${club.name}`, {
-                description: `${count} vibe${count > 1 ? 's' : ''} in the last 24h`,
-                duration: 3000,
+              void notifyScene({
+                title: `🔥 Someone just vibed ${club.name}`,
+                body: `${count} vibe${count > 1 ? 's' : ''} in the last 24h`,
+                url: `/club/${clubId}`,
               });
             }
           }

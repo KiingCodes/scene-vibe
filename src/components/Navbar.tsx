@@ -7,6 +7,7 @@ import { useMyVenues } from '@/hooks/useVenueOwner';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/components/NotificationBell';
 import navbarLogo from '@/assets/navbar-logo.png';
+import walkMeHomeIcon from '@/assets/walkmehome-icon.png';
 import { useUnreadCount } from '@/hooks/useNotifications';
 import { useLiveChatCount } from '@/hooks/useLiveChatCount';
 import { useCountry, COUNTRIES } from '@/contexts/CountryContext';
@@ -185,7 +186,15 @@ const Navbar = () => {
                     />
                   )}
                   <div className="relative">
-                    <Icon className={`w-5 h-5 ${active ? 'drop-shadow-[0_0_8px_rgba(0,230,214,0.8)]' : ''}`} />
+                    {path === '/safety' ? (
+                      <img
+                        src={walkMeHomeIcon}
+                        alt=""
+                        className={`h-6 w-6 object-contain ${active ? 'drop-shadow-[0_0_8px_rgba(0,230,214,0.8)]' : ''}`}
+                      />
+                    ) : (
+                      <Icon className={`w-5 h-5 ${active ? 'drop-shadow-[0_0_8px_rgba(0,230,214,0.8)]' : ''}`} />
+                    )}
                     {isChat && liveChat > 0 && (
                       <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-gradient-to-r from-[#00e6d6] to-[#ff2e93] text-[9px] font-black text-black flex items-center justify-center shadow-[0_0_10px_rgba(0,230,214,0.6)]">
                         {liveChat > 99 ? '99+' : liveChat}

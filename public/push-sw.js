@@ -11,11 +11,11 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: payload.body,
-    icon: '/pwa-512x512.png',
-    badge: '/notification-badge.png?v=2',
+    icon: '/notification-icon.png',
+    badge: '/notification-badge.png',
     tag: payload.tag || 'scene',
     renotify: true,
-    vibrate: [80, 40, 80],
+    vibrate: [200, 100, 200],
     data: { url: payload.url || '/' },
   };
 
