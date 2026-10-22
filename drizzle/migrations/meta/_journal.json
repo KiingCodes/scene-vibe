@@ -36,6 +36,13 @@
       "when": 1792417122110,
       "tag": "0004_restore_missing_crew_messages_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792591597351,
+      "tag": "0005_venue_event_chat_broadcasts",
+      "breakpoints": true
     }
   ]
 }
