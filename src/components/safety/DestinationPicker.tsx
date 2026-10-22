@@ -4,14 +4,21 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Locate } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import scenePinLogo from '@/assets/logo.png';
 
 export type Destination = { lat: number; lng: number; label: string };
 
 const pinIcon = L.divIcon({
-  className: 'custom-marker',
-  html: `<div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#00e6d6,#ff2e93);border:2px solid white;box-shadow:0 0 14px rgba(0,230,214,0.7)"></div>`,
-  iconSize: [28, 28],
-  iconAnchor: [14, 14],
+  className: 'scene-logo-marker',
+  html: `<div class="relative flex h-10 w-10 items-center justify-center">
+    <div class="absolute -inset-2 animate-ping rounded-full bg-cyan-500/30"></div>
+    <div class="relative z-10 flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-cyan-400 bg-slate-950 p-1 shadow-[0_0_20px_rgba(6,182,212,0.6)]">
+      <img src="${scenePinLogo}" alt="SCENE" class="h-full w-full object-contain" />
+    </div>
+    <div class="absolute -bottom-1 h-2 w-2 rotate-45 bg-cyan-400"></div>
+  </div>`,
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
 });
 
 const ClickCatcher = ({ onPick }: { onPick: (lat: number, lng: number) => void }) => {
@@ -59,7 +66,10 @@ const DestinationPicker = ({
     <div className="space-y-2">
       <div className="relative h-56 rounded-xl overflow-hidden border border-white/10">
         <MapContainer center={center} zoom={14} className="h-full w-full" zoomControl={false}>
-          <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" attribution="&copy; OpenStreetMap, &copy; CARTO" />
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          />
           <ClickCatcher onPick={(lat, lng) => onChange({ lat, lng, label: value?.label || '' })} />
           <Recenter lat={center[0]} lng={center[1]} />
           {value && <Marker position={[value.lat, value.lng]} icon={pinIcon} />}

@@ -5,14 +5,21 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { formatDistanceToNow } from 'date-fns';
 import { MapPin, Shield, Siren } from 'lucide-react';
+import scenePinLogo from '@/assets/logo.png';
 import { usePublicSafetySession } from '@/hooks/useSafety';
 import { LogoSkeleton } from '@/components/BrandedSkeleton';
 
 const walkerIcon = L.divIcon({
-  className: 'custom-marker',
-  html: '<div style="width:24px;height:24px;border-radius:50%;background:#00e6d6;border:3px solid white;box-shadow:0 0 18px rgba(0,230,214,0.9)"></div>',
-  iconSize: [24, 24],
-  iconAnchor: [12, 12],
+  className: 'scene-logo-marker',
+  html: `<div class="relative flex h-10 w-10 items-center justify-center">
+    <div class="absolute -inset-2 animate-ping rounded-full bg-cyan-500/30"></div>
+    <div class="relative z-10 flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-cyan-400 bg-slate-950 p-1 shadow-[0_0_20px_rgba(6,182,212,0.6)]">
+      <img src="${scenePinLogo}" alt="SCENE" class="h-full w-full object-contain" />
+    </div>
+    <div class="absolute -bottom-1 h-2 w-2 rotate-45 bg-cyan-400"></div>
+  </div>`,
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
 });
 
 const Follow = ({ lat, lng }: { lat: number; lng: number }) => {
@@ -76,8 +83,8 @@ const TrackPage = () => {
       <div className="flex-1 relative">
         <MapContainer center={current} zoom={16} className="h-full w-full min-h-[60vh]" zoomControl={false}>
           <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            attribution="&copy; OpenStreetMap, &copy; CARTO"
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           />
           <Polyline positions={[start, current]} pathOptions={{ color: '#10b981', weight: 4, opacity: 0.75 }} />
           <Marker position={current} icon={walkerIcon}>

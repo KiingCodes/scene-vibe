@@ -4,6 +4,11 @@
 @tailwind components;
 @tailwind utilities;
 
+.leaflet-div-icon.scene-logo-marker {
+  border: 0;
+  background: transparent;
+}
+
 /* BASE LAYER */
 @layer base {
   :root {

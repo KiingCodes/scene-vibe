@@ -25,6 +25,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import sceneLogo from '@/assets/scene-logo.jpg';
+import scenePinLogo from '@/assets/logo.png';
 import Animated3DEmoji from '@/components/ui/Animated3DEmoji';
 import DestinationPicker, { type Destination } from '@/components/safety/DestinationPicker';
 import { LogoSkeleton } from '@/components/BrandedSkeleton';
@@ -39,10 +40,16 @@ import {
 const WALK_TIMES = [10, 15, 20, 30, 45, 60];
 
 const walkerIcon = L.divIcon({
-  className: 'safety-hud-marker',
-  html: '<div style="width:22px;height:22px;border:3px solid white;border-radius:50%;background:#10b981;box-shadow:0 0 22px rgba(16,185,129,.9)"></div>',
-  iconSize: [22, 22],
-  iconAnchor: [11, 11],
+  className: 'scene-logo-marker',
+  html: `<div class="relative flex h-10 w-10 items-center justify-center">
+    <div class="absolute -inset-2 animate-ping rounded-full bg-cyan-500/30"></div>
+    <div class="relative z-10 flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-cyan-400 bg-slate-950 p-1 shadow-[0_0_20px_rgba(6,182,212,0.6)]">
+      <img src="${scenePinLogo}" alt="SCENE" class="h-full w-full object-contain" />
+    </div>
+    <div class="absolute -bottom-1 h-2 w-2 rotate-45 bg-cyan-400"></div>
+  </div>`,
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
 });
 
 const FollowWalker = ({ lat, lng }: { lat: number; lng: number }) => {
@@ -423,8 +430,8 @@ const SafetyPage = () => {
                   scrollWheelZoom={false}
                 >
                   <TileLayer
-                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                    attribution="&copy; OpenStreetMap, &copy; CARTO"
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   />
                   <Polyline
                     positions={[[active.start_lat, active.start_lng], [active.current_lat, active.current_lng]]}
