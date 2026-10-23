@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import { Link } from 'react-router-dom';
 import { Navigation, Flame, Plus, Minus, Locate } from 'lucide-react';
 import type { Club } from '@/hooks/useClubs';
+import scenePinLogo from '@/assets/logo.png';
 
 // Fix default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -16,21 +17,17 @@ L.Icon.Default.mergeOptions({
 
 const createClubIcon = (isTrending: boolean) => {
   return L.divIcon({
-    className: 'custom-marker',
-    html: `<div style="
-      width: 32px; height: 32px; border-radius: 50%;
-      background: ${isTrending ? 'linear-gradient(135deg, hsl(330,100%,60%), hsl(280,100%,60%))' : 'linear-gradient(135deg, hsl(174,100%,50%), hsl(200,100%,50%))'};
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 0 ${isTrending ? '15px' : '8px'} ${isTrending ? 'hsl(330,100%,60%,0.5)' : 'hsl(174,100%,50%,0.4)'};
-      border: 2px solid white;
-    ">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-      </svg>
+    className: 'scene-logo-marker',
+    html: `<div class="relative flex h-10 w-10 items-center justify-center">
+      <div class="absolute -inset-2 animate-ping rounded-full ${isTrending ? 'bg-pink-500/30' : 'bg-cyan-500/30'}"></div>
+      <div class="relative z-10 flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 ${isTrending ? 'border-pink-400' : 'border-cyan-400'} bg-slate-950 p-1 shadow-[0_0_20px_rgba(6,182,212,0.6)]">
+        <img src="${scenePinLogo}" alt="SCENE" class="h-full w-full object-contain" />
+      </div>
+      <div class="absolute -bottom-1 h-2 w-2 rotate-45 ${isTrending ? 'bg-pink-400' : 'bg-cyan-400'}"></div>
     </div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32],
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
+    popupAnchor: [0, -40],
   });
 };
 
@@ -54,7 +51,7 @@ const FlyToClub = ({ club }: { club: Club | undefined }) => {
   const map = useMap();
   useEffect(() => {
     if (club) {
-      map.flyTo([club.lat, club.lng], 15, { duration: 1 });
+      map.flyTo([club.lat, club.lng], 17, { duration: 1 });
     }
   }, [club, map]);
   return null;
@@ -100,6 +97,10 @@ const DensityControls = () => {
 
 const ClubMap = ({ clubs, vibeCounts = {}, selectedClubId, showLabels = false }: ClubMapProps) => {
   const selectedClub = clubs.find(c => c.id === selectedClubId);
+  const focusedClub = selectedClub ?? (clubs.length === 1 ? clubs[0] : undefined);
+  const initialCenter: [number, number] = focusedClub
+    ? [focusedClub.lat, focusedClub.lng]
+    : [-26.15, 28.05];
 
   const directionsUrl = (lat: number, lng: number, mode: 'driving' | 'walking' | 'transit') =>
     `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=${mode}`;
@@ -120,18 +121,18 @@ const ClubMap = ({ clubs, vibeCounts = {}, selectedClubId, showLabels = false }:
   return (
     <div className="w-full h-full rounded-xl overflow-hidden border border-border/50">
       <MapContainer
-        center={[-26.15, 28.05]}
-        zoom={11}
+        center={initialCenter}
+        zoom={focusedClub ? 17 : 11}
         zoomControl={false}
         className="w-full h-full"
         style={{ background: 'hsl(240 10% 4%)' }}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <DensityControls />
-        {selectedClub && <FlyToClub club={selectedClub} />}
+        {focusedClub && <FlyToClub club={focusedClub} />}
         {clubs.map(club => {
           const isTrending = (vibeCounts[club.id] || 0) >= 3;
           // Only show permanent label for trending clubs or the selected one — reduces overcrowding
@@ -154,6 +155,7 @@ const ClubMap = ({ clubs, vibeCounts = {}, selectedClubId, showLabels = false }:
                       <span title="Verified venue" style={{ color: 'rgb(16,185,129)' }}>✔</span>
                     )}
                   </h3>
+                  <p className="text-xs text-gray-600 mb-1">{club.address}</p>
                   <p className="text-xs text-gray-600 mb-1">{club.area}</p>
                   {vibeCounts[club.id] && (
                     <p className="text-xs flex items-center gap-1 mb-2">
